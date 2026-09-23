@@ -1,0 +1,22 @@
+# Normalise line endings.
+#
+# Without this, a Windows checkout rewrites every file to CRLF and a macOS or
+# Linux teammate then sees the whole repo as modified. Committing LF and letting
+# each machine check out what it prefers keeps diffs to the lines that actually
+# changed.
+* text=auto eol=lf
+
+# Binary files git must never try to convert.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
+*.hbc  binary
+
+# Generated - collapse it in pull requests so reviews stay readable.
+package-lock.json linguist-generated=true diff=npm

@@ -1,0 +1,351 @@
+import React, { useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+
+import {
+  Screen,
+  Stack,
+  Row,
+  Text,
+  Card,
+  Chip,
+  Button,
+  Icon,
+  Touchable,
+  ProgressBar,
+  EmptyState,
+  BottomSheet,
+  ListRow,
+  useToast,
+} from '@/design-system/components';
+import { useTheme } from '@/design-system/theme';
+import { Routes } from '@/navigation/routes';
+import {
+  usePlanningStore,
+  useWeddingStore,
+  selectAllTasks,
+  selectAllCategories,
+  selectWedding,
+} from '@/store';
+import { analytics, AnalyticsEvents } from '@/services/analytics';
+import {
+  TaskStatus,
+  calculateProgress,
+  isTaskOverdue,
+  isTaskOpen,
+  isSnoozeActive,
+} from '@/models';
+import { daysUntil } from '@/lib/date';
+import { TaskRow } from '@/features/planning/TaskRow';
+
+/**
+ * Planning tab - the checklist (PRD s.7).
+ *
+ * Grouped by time rather than by category by default. A couple does not open
+ * this screen asking "what is left under Vendors", they open it asking "what do
+ * I need to do now" - so the first group is always what is late or imminent,
+ * and categories are a filter rather than the structure.
+ */
+
+const FILTERS = [
+  { key: 'open', label: 'To do' },
+  { key: 'overdue', label: 'Overdue' },
+  { key: 'soon', label: 'Next 30 days' },
+  { key: 'done', label: 'Done' },
+  { key: 'all', label: 'Everything' },
+];
+
+const SORTS = [
+  { key: 'due', label: 'By due date', icon: 'calendar' },
+  { key: 'priority', label: 'By priority', icon: 'alert' },
+  { key: 'title', label: 'Alphabetically', icon: 'sort' },
+];
+
+/** Time buckets, in the order they are shown. */
+const GROUPS = [
+  { key: 'overdue', title: 'Overdue', tone: 'danger' },
+  { key: 'week', title: 'This week' },
+  { key: 'month', title: 'This month' },
+  { key: 'later', title: 'Later' },
+  { key: 'someday', title: 'No date yet' },
+  { key: 'snoozed', title: 'Snoozed' },
+  { key: 'done', title: 'Done' },
+];
+
+function bucketFor(task) {
+  if (task.status === TaskStatus.DONE) return 'done';
+  if (isSnoozeActive(task)) return 'snoozed';
+  if (!task.dueDate) return 'someday';
+  if (isTaskOverdue(task)) return 'overdue';
+
+  const days = daysUntil(task.dueDate);
+  if (days <= 7) return 'week';
+  if (days <= 31) return 'month';
+  return 'later';
+}
+
+export default function PlanningScreen() {
+  const router = useRouter();
+  const { spacing } = useTheme();
+  const toast = useToast();
+
+  const tasks = usePlanningStore(selectAllTasks);
+  const categories = usePlanningStore(selectAllCategories);
+  const toggleTask = usePlanningStore((state) => state.toggleTask);
+  const wedding = useWeddingStore(selectWedding);
+
+  const [filter, setFilter] = useState('open');
+  const [categoryId, setCategoryId] = useState(null);
+  const [sort, setSort] = useState('due');
+  const [sortOpen, setSortOpen] = useState(false);
+
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  );
+
+  const progress = useMemo(() => calculateProgress(tasks), [tasks]);
+  const openCount = useMemo(() => tasks.filter(isTaskOpen).length, [tasks]);
+  const overdueCount = useMemo(() => tasks.filter((t) => isTaskOverdue(t)).length, [tasks]);
+
+  const visible = useMemo(() => {
+    let list = tasks;
+
+    if (categoryId) list = list.filter((task) => task.categoryId === categoryId);
+
+    switch (filter) {
+      case 'overdue':
+        list = list.filter((task) => isTaskOverdue(task));
+        break;
+      case 'soon':
+        list = list.filter(
+          (task) => isTaskOpen(task) && task.dueDate && daysUntil(task.dueDate) <= 30
+        );
+        break;
+      case 'done':
+        list = list.filter((task) => task.status === TaskStatus.DONE);
+        break;
+      case 'all':
+        break;
+      case 'open':
+      default:
+        list = list.filter(isTaskOpen);
+    }
+
+    const byDue = (a, b) => {
+      if (!a.dueDate && !b.dueDate) return 0;
+      if (!a.dueDate) return 1;
+      if (!b.dueDate) return -1;
+      return a.dueDate < b.dueDate ? -1 : a.dueDate > b.dueDate ? 1 : 0;
+    };
+
+    const rank = { high: 0, normal: 1, low: 2 };
+    const comparator =
+      sort === 'priority'
+        ? (a, b) => (rank[a.priority] ?? 1) - (rank[b.priority] ?? 1) || byDue(a, b)
+        : sort === 'title'
+          ? (a, b) => a.title.localeCompare(b.title)
+          : byDue;
+
+    return [...list].sort(comparator);
+  }, [tasks, filter, categoryId, sort]);
+
+  const grouped = useMemo(() => {
+    const buckets = new Map(GROUPS.map((group) => [group.key, []]));
+    for (const task of visible) buckets.get(bucketFor(task))?.push(task);
+    return GROUPS.map((group) => ({ ...group, tasks: buckets.get(group.key) ?? [] })).filter(
+      (group) => group.tasks.length > 0
+    );
+  }, [visible]);
+
+  const handleToggle = (task) => {
+    const updated = toggleTask(task.id);
+    if (updated?.status === TaskStatus.DONE) {
+      // Undo matters here: the checkbox is small and the list moves underneath
+      // it as the task jumps to the Done group.
+      toast.success(`${task.title} - done`, {
+        actionLabel: 'Undo',
+        onAction: () => toggleTask(task.id),
+      });
+    }
+  };
+
+  const handleFilter = (key) => {
+    setFilter(key);
+    analytics.track(AnalyticsEvents.TASKS_FILTERED, { filter: key, categoryId });
+  };
+
+  // --- Empty: no plan has been generated yet -------------------------------
+  if (tasks.length === 0) {
+    return (
+      <Screen bottomInset={spacing.xxl}>
+        <Stack gap="lg">
+          <Header overdueCount={0} />
+          <EmptyState
+            icon="checklist"
+            title="No tasks yet"
+            message={
+              wedding
+                ? 'Add your first task, or let us rebuild a checklist shaped around your date.'
+                : 'Finish setting up your wedding and we will build a checklist shaped around your date and your stage.'
+            }
+            actionLabel={wedding ? 'Add a task' : 'Set up my wedding'}
+            onAction={() => router.push(wedding ? Routes.taskAdd : Routes.onboarding)}
+          />
+        </Stack>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen
+      bottomInset={spacing.xxl}
+      footer={
+        <Button label="Add a task" iconLeft="plus" onPress={() => router.push(Routes.taskAdd)} />
+      }
+    >
+      <Stack gap="lg">
+        <Header overdueCount={overdueCount} onSortPress={() => setSortOpen(true)} />
+
+        {/* --- Progress ---------------------------------------------------- */}
+        <Card tone="muted" onPress={() => router.push(Routes.progress)}>
+          <Stack gap="xs">
+            <Row justify="space-between" align="baseline">
+              <Text variant="h4">{Math.round(progress * 100)}% done</Text>
+              <Text variant="bodySm" color="muted">
+                {openCount} still to do
+              </Text>
+            </Row>
+            <ProgressBar value={progress} />
+          </Stack>
+        </Card>
+
+        {/* --- Filters ----------------------------------------------------- */}
+        <Stack gap="xs">
+          <Row gap="xs" wrap align="flex-start">
+            {FILTERS.map((entry) => (
+              <Chip
+                key={entry.key}
+                label={entry.label}
+                selected={filter === entry.key}
+                onPress={() => handleFilter(entry.key)}
+              />
+            ))}
+          </Row>
+
+          <Row gap="xs" wrap align="flex-start">
+            <Chip
+              label="All categories"
+              selected={categoryId === null}
+              onPress={() => setCategoryId(null)}
+              size="sm"
+            />
+            {categories.map((category) => (
+              <Chip
+                key={category.id}
+                label={category.name}
+                size="sm"
+                selected={categoryId === category.id}
+                onPress={() => setCategoryId(category.id)}
+              />
+            ))}
+          </Row>
+        </Stack>
+
+        {/* --- The list ---------------------------------------------------- */}
+        {visible.length === 0 ? (
+          <EmptyState
+            compact
+            icon="check"
+            title="Nothing here"
+            message="No tasks match this filter. That is usually good news."
+            actionLabel="Show everything"
+            onAction={() => {
+              setFilter('all');
+              setCategoryId(null);
+            }}
+          />
+        ) : (
+          <Stack gap="lg">
+            {grouped.map((group) => (
+              <Stack key={group.key} gap="none">
+                <Row justify="space-between" align="baseline">
+                  <Text variant="eyebrow" color={group.tone ?? 'subtle'}>
+                    {group.title}
+                  </Text>
+                  <Text variant="caption" color="subtle">
+                    {group.tasks.length}
+                  </Text>
+                </Row>
+
+                {group.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    categoryName={categoryNameById.get(task.categoryId)}
+                    onToggle={handleToggle}
+                    onPress={() => router.push(Routes.taskDetail(task.id))}
+                  />
+                ))}
+              </Stack>
+            ))}
+          </Stack>
+        )}
+      </Stack>
+
+      {/* --- Sort sheet ---------------------------------------------------- */}
+      <BottomSheet visible={sortOpen} onClose={() => setSortOpen(false)} title="Sort tasks">
+        <Stack gap="none">
+          {SORTS.map((entry) => (
+            <ListRow
+              key={entry.key}
+              icon={entry.icon}
+              title={entry.label}
+              trailing={sort === entry.key ? <Icon name="check" size="md" color="brand" /> : null}
+              showChevron={false}
+              onPress={() => {
+                setSort(entry.key);
+                setSortOpen(false);
+              }}
+            />
+          ))}
+        </Stack>
+      </BottomSheet>
+    </Screen>
+  );
+}
+
+/**
+ * The tab's own title block. A plain function rather than a component defined
+ * inside `PlanningScreen`: a nested definition gets a fresh identity on every
+ * render, which would remount the header each time a filter chip is tapped.
+ */
+function Header({ overdueCount, onSortPress }) {
+  return (
+    <Row justify="space-between" align="flex-end">
+      <Stack gap="xxs" style={{ flex: 1 }}>
+        <Text variant="eyebrow" color="subtle">
+          Planning
+        </Text>
+        <Text variant="h1" heading>
+          Your checklist
+        </Text>
+        {overdueCount > 0 ? (
+          <Text variant="bodySm" color="danger">
+            {overdueCount} {overdueCount === 1 ? 'task is' : 'tasks are'} overdue
+          </Text>
+        ) : null}
+      </Stack>
+
+      {onSortPress ? (
+        <Touchable onPress={onSortPress} accessibilityLabel="Sort tasks" hitSlop={12}>
+          <Row gap="xxs">
+            <Icon name="sort" size="md" color="inkMuted" />
+            <Text variant="actionSm" color="muted">
+              Sort
+            </Text>
+          </Row>
+        </Touchable>
+      ) : null}
+    </Row>
+  );
+}

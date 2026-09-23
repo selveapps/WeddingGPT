@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "WeddingGPT",
+    "slug": "weddinggpt",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "weddinggpt",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FFFBF7",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.weddinggpt.app"
+    },
+    "android": {
+      "package": "com.weddinggpt.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFBF7",
+          "dark": { "backgroundColor": "#191413" }
+        }
+      ]
+    ],
+    "experiments": {
+      "tsconfigPaths": true,
+      "typedRoutes": false
+    }
+  }
+}
