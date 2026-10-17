@@ -174,7 +174,7 @@ export default function CountdownScreen() {
         </Card>
 
         {/* --- Upcoming deadlines -------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="Between now and then"
             title="Upcoming deadlines"

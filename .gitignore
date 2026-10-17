@@ -4,8 +4,11 @@ dist/
 web-build/
 *.log
 npm-debug.*
-.env
-.env.local
+.env*
+!.env.example
+venv/
+# Stray empty nested repo - never commit it.
+/WeddingGPT/
 .DS_Store
 android/
 ios/

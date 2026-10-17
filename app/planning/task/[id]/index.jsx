@@ -299,6 +299,7 @@ export default function TaskDetailScreen() {
           {SNOOZE_OPTIONS.map((option) => (
             <ListRow
               key={option.days}
+              inset={false}
               icon="snooze"
               title={option.label}
               onPress={() => handleSnooze(option.days)}

@@ -15,6 +15,7 @@ import {
   AnimatedNumber,
   SectionHeader,
   EmptyState,
+  PageHeader,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
@@ -30,6 +31,7 @@ import {
 import { summariseBudget, summariseCategory, PAYMENT_STATUS_META } from '@/models';
 import { formatMoney, formatMoneyCompact, percentOf } from '@/lib/currency';
 import { formatMediumDate } from '@/lib/date';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
 
 /**
  * Budget tab (PRD s.8).
@@ -71,15 +73,8 @@ export default function BudgetScreen() {
   if (!hasBudget) {
     return (
       <Screen bottomInset={spacing.xxl}>
-        <Stack gap="lg">
-          <Stack gap="xxs">
-            <Text variant="eyebrow" color="subtle">
-              Budget
-            </Text>
-            <Text variant="h1" heading>
-              Where the money goes
-            </Text>
-          </Stack>
+        <Stack gap="xl">
+          <PageHeader eyebrow="Budget" title="Where the money goes" trailing={<NotificationBell />} />
 
           <EmptyState
             icon="budget"
@@ -104,24 +99,15 @@ export default function BudgetScreen() {
         />
       }
     >
-      <Stack gap="lg">
-        <Row justify="space-between" align="flex-end">
-          <Stack gap="xxs" style={{ flex: 1 }}>
-            <Text variant="eyebrow" color="subtle">
-              Budget
-            </Text>
-            <Text variant="h1" heading>
-              Where the money goes
-            </Text>
-          </Stack>
-          <Text
-            variant="actionSm"
-            color="brand"
-            onPress={() => router.push(Routes.budgetSetup)}
-          >
-            Edit total
-          </Text>
-        </Row>
+      <Stack gap="xl">
+        <PageHeader
+          eyebrow="Budget"
+          title="Where the money goes"
+          trailing={<NotificationBell />}
+          actionLabel="Edit total"
+          actionIcon="edit"
+          onActionPress={() => router.push(Routes.budgetSetup)}
+        />
 
         {/* --- Over budget warning ----------------------------------------- */}
         {summary.isOverBudget ? (
@@ -186,7 +172,7 @@ export default function BudgetScreen() {
         </Card>
 
         {/* --- Categories --------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="The split"
             title="By category"
@@ -218,7 +204,7 @@ export default function BudgetScreen() {
         </Stack>
 
         {/* --- Recent expenses ---------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader eyebrow="Latest" title="Recent expenses" />
 
           {recent.length === 0 ? (

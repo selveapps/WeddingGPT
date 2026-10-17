@@ -161,7 +161,7 @@ export default function GuestDetailScreen() {
         </Row>
 
         {/* --- RSVP --------------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="Their reply"
             title="RSVP"

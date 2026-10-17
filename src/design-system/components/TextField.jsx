@@ -39,6 +39,8 @@ export const TextField = forwardRef(function TextField(
     /** Icon name rendered at the end; pressing it calls `onIconPress`. */
     icon,
     onIconPress,
+    /** Screen-reader label for the icon button. Say what it does, e.g. "Show password". */
+    iconAccessibilityLabel,
     onBlur,
     onFocus,
     style,
@@ -163,7 +165,7 @@ export const TextField = forwardRef(function TextField(
               haptic="light"
               scaleOnPress={false}
               hitSlop={12}
-              accessibilityLabel={`${label ?? 'Field'} action`}
+              accessibilityLabel={iconAccessibilityLabel ?? `${label ?? 'Field'} action`}
             >
               <Icon name={icon} size="md" color="inkMuted" />
             </Touchable>

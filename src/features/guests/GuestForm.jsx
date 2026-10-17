@@ -158,7 +158,7 @@ export function GuestForm({
       </Stack>
 
       {households.length > 0 ? (
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="Who they come with"
             title="Household"
@@ -184,7 +184,7 @@ export function GuestForm({
         </Stack>
       ) : null}
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Have they replied" title="RSVP" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(RSVP_STATUS_META).map(([value, meta]) => (
@@ -199,7 +199,7 @@ export function GuestForm({
         </Row>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Have they been asked" title="Invitation" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(INVITATION_STATUS_META).map(([value, meta]) => (
@@ -214,7 +214,7 @@ export function GuestForm({
         </Row>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Bringing someone" title="Plus one" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(PLUS_ONE_STATUS_META).map(([value, meta]) => (
@@ -239,7 +239,7 @@ export function GuestForm({
         ) : null}
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="At the table" title="Meal" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(MEAL_PREFERENCE_META).map(([value, meta]) => (
@@ -269,7 +269,7 @@ export function GuestForm({
         />
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Anything else" title="Tags and notes" />
         <TextField
           label="Tags"

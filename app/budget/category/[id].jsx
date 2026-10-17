@@ -177,7 +177,7 @@ export default function BudgetCategoryScreen() {
         </Card>
 
         {/* --- Expenses ----------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="What is in it"
             title={`${mine.length} ${mine.length === 1 ? 'expense' : 'expenses'}`}

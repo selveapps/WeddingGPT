@@ -18,6 +18,7 @@ import {
   ListRow,
   ConfirmSheet,
   useToast,
+  PageHeader,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
@@ -35,6 +36,7 @@ import {
   INVITATION_STATUS_META,
 } from '@/models';
 import { GuestRow } from '@/features/guests/GuestRow';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
 
 /**
  * Guests tab (PRD s.9).
@@ -129,22 +131,17 @@ export default function GuestsScreen() {
   if (guests.length === 0) {
     return (
       <Screen bottomInset={spacing.xxl}>
-        <Stack gap="lg">
-          <Stack gap="xxs">
-            <Text variant="eyebrow" color="subtle">
-              Guests
-            </Text>
-            <Text variant="h1" heading>
-              Your guest list
-            </Text>
-          </Stack>
+        <Stack gap="xl">
+          <PageHeader eyebrow="Guests" title="Your guest list" trailing={<NotificationBell />} />
 
           <EmptyState
             icon="guests"
             title="No guests yet"
-            message="Start with the people you are certain about. You can group them into households and track RSVPs as replies come in."
-            actionLabel="Add a guest"
-            onAction={() => router.push(Routes.guestAdd)}
+            message="Bring people in from your phone's contacts, or add them one by one. You can group them into households and track RSVPs as replies come in."
+            actionLabel="Import from contacts"
+            onAction={() => router.push(Routes.guestImport)}
+            secondaryActionLabel="Add a guest by hand"
+            onSecondaryAction={() => router.push(Routes.guestAdd)}
           />
         </Stack>
       </Screen>
@@ -171,29 +168,36 @@ export default function GuestsScreen() {
             />
           </Row>
         ) : (
-          <Button
-            label="Add a guest"
-            iconLeft="plus"
-            onPress={() => router.push(Routes.guestAdd)}
-          />
+          <Row gap="xs">
+            <Button
+              label="Import"
+              variant="secondary"
+              iconLeft="userPlus"
+              style={{ flex: 1 }}
+              onPress={() => router.push(Routes.guestImport)}
+              accessibilityHint="Pick guests from your phone's contacts"
+            />
+            <Button
+              label="Add guest"
+              iconLeft="plus"
+              style={{ flex: 1 }}
+              onPress={() => router.push(Routes.guestAdd)}
+            />
+          </Row>
         )
       }
     >
-      <Stack gap="lg">
-        <Stack gap="xxs">
-          <Text variant="eyebrow" color="subtle">
-            Guests
-          </Text>
-          <Text variant="h1" heading>
-            Your guest list
-          </Text>
-          {households.length > 0 ? (
-            <Text variant="bodySm" color="muted">
-              {guests.length} people across {households.length}{' '}
-              {households.length === 1 ? 'household' : 'households'}
-            </Text>
-          ) : null}
-        </Stack>
+      <Stack gap="xl">
+        <PageHeader
+          eyebrow="Guests"
+          title="Your guest list"
+          subtitle={
+            households.length > 0
+              ? `${guests.length} people across ${households.length} ${households.length === 1 ? 'household' : 'households'}`
+              : `${guests.length} ${guests.length === 1 ? 'person' : 'people'} so far`
+          }
+          trailing={<NotificationBell />}
+        />
 
         {/* --- RSVP snapshot ------------------------------------------------ */}
         <Card tone="raised">
@@ -247,7 +251,7 @@ export default function GuestsScreen() {
         </Stack>
 
         {/* --- The list ------------------------------------------------------ */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow={selecting ? `${selectedIds.length} selected` : 'Everyone'}
             title={`${visible.length} ${visible.length === 1 ? 'guest' : 'guests'}`}
@@ -307,6 +311,7 @@ export default function GuestsScreen() {
             {Object.entries(RSVP_STATUS_META).map(([value, meta]) => (
               <ListRow
                 key={value}
+                inset={false}
                 title={meta.label}
                 showChevron={false}
                 onPress={() =>
@@ -332,6 +337,7 @@ export default function GuestsScreen() {
             {Object.entries(INVITATION_STATUS_META).map(([value, meta]) => (
               <ListRow
                 key={value}
+                inset={false}
                 title={meta.label}
                 showChevron={false}
                 onPress={() =>

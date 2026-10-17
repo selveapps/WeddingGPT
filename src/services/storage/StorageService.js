@@ -36,6 +36,9 @@ export const StorageKeys = {
 
   WEDDING: 'wedding:current',
   USER: 'user:current',
+
+  /** Local sign-in accounts. Removed once auth moves to a hosted provider. */
+  AUTH_ACCOUNTS: 'auth:accounts',
   COUPLE: 'couple:current',
 
   TASKS: 'planning:tasks',

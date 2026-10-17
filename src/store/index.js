@@ -4,13 +4,24 @@ import { useWeddingStore } from './weddingStore';
 import { usePlanningStore } from './planningStore';
 import { useBudgetStore } from './budgetStore';
 import { useGuestStore } from './guestStore';
+import { useAIStore } from './aiStore';
+import { useNotificationStore } from './notificationStore';
 
 export * from './weddingStore';
 export * from './planningStore';
 export * from './budgetStore';
 export * from './guestStore';
+export * from './aiStore';
+export * from './notificationStore';
 
-const STORES = [useWeddingStore, usePlanningStore, useBudgetStore, useGuestStore];
+const STORES = [
+  useWeddingStore,
+  usePlanningStore,
+  useBudgetStore,
+  useGuestStore,
+  useAIStore,
+  useNotificationStore,
+];
 
 /**
  * Gate the app until every persisted store has rehydrated from disk.
@@ -64,10 +75,21 @@ export function useStoreHydration() {
   return hydrated;
 }
 
+/**
+ * Re-read every persisted store from disk. Backs the launch screen's Retry: if
+ * storage throws during hydration, zustand never reports the store as
+ * hydrated, so without a retry the app would wait on the splash forever.
+ */
+export function rehydrateAllStores() {
+  return Promise.allSettled(STORES.map((store) => store.persist.rehydrate()));
+}
+
 /** Wipe every store. Used by "delete account" and development resets. */
 export function resetAllStores() {
   useWeddingStore.getState().reset();
   usePlanningStore.getState().reset();
   useBudgetStore.getState().reset();
   useGuestStore.getState().reset();
+  useAIStore.getState().reset();
+  useNotificationStore.getState().reset();
 }

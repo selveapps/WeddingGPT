@@ -23,8 +23,8 @@ import {
   selectHasBudget,
   selectWedding,
 } from '@/store';
-import { DEFAULT_BUDGET_ALLOCATION, BUDGET_OPTIONS } from '@/models';
-import { formatMoney, formatMoneyCompact } from '@/lib/currency';
+import { DEFAULT_BUDGET_ALLOCATION, budgetOptionsFor } from '@/models';
+import { formatMoney, formatMoneyCompact, DEFAULT_CURRENCY } from '@/lib/currency';
 import { MoneyField } from '@/features/shared/MoneyField';
 
 /**
@@ -44,11 +44,14 @@ export default function BudgetSetupScreen() {
   const budget = useBudgetStore(selectBudget);
   const initialiseBudget = useBudgetStore((state) => state.initialiseBudget);
   const setTotal = useBudgetStore((state) => state.setTotal);
+  const setBudgetCurrency = useBudgetStore((state) => state.setCurrency);
 
   const wedding = useWeddingStore(selectWedding);
   const updateWedding = useWeddingStore((state) => state.updateWedding);
 
-  const currency = budget?.currency ?? wedding?.currency;
+  // US launch: every budget is in dollars. Saving also moves any older
+  // workspace that was created in another currency onto USD.
+  const currency = DEFAULT_CURRENCY;
   const [total, setTotalInput] = useState(budget?.total ?? wedding?.budgetTotal ?? null);
 
   // Only meaningful for a new budget. Once categories exist the couple may have
@@ -67,13 +70,14 @@ export default function BudgetSetupScreen() {
 
     if (hasBudget) {
       setTotal(total);
+      setBudgetCurrency(currency);
     } else {
       initialiseBudget({ weddingId: wedding?.id, total, currency });
     }
 
     // Keep the wedding's own copy in step, so the plan screen and any future
     // export agree with the budget store.
-    if (wedding) updateWedding({ budgetTotal: total });
+    if (wedding) updateWedding({ budgetTotal: total, currency });
 
     toast.success(hasBudget ? 'Budget updated' : 'Budget created');
     router.replace(Routes.budget);
@@ -124,7 +128,7 @@ export default function BudgetSetupScreen() {
                 Or pick a band
               </Text>
               <Row gap="xs" wrap align="flex-start">
-                {BUDGET_OPTIONS.filter((option) => option.value !== null).map((option) => (
+                {budgetOptionsFor(currency).filter((option) => option.value !== null).map((option) => (
                   <Button
                     key={option.label}
                     label={option.label}
@@ -140,7 +144,7 @@ export default function BudgetSetupScreen() {
 
           {/* --- Preview ----------------------------------------------------- */}
           {preview.length > 0 ? (
-            <Stack gap="xs">
+            <Stack gap="sm">
               <SectionHeader
                 eyebrow="What that looks like"
                 title="Your starting split"

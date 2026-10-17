@@ -91,13 +91,13 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
         />
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="When" title="Due date" />
         <DateField label="Due" value={dueDate} onChange={setDueDate} />
       </Stack>
 
       {categories.length > 0 ? (
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader eyebrow="Where it belongs" title="Category" />
           <Row gap="xs" wrap align="flex-start">
             <Chip
@@ -119,7 +119,7 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
         </Stack>
       ) : null}
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="How urgent" title="Priority" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(TASK_PRIORITY_META).map(([value, meta]) => (
@@ -133,7 +133,7 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
         </Row>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Whose job" title="Assigned to" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(ASSIGNEE_META).map(([value, meta]) => (
@@ -148,7 +148,7 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
         </Row>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Anything else" title="Notes" />
         <TextField
           label="Notes"

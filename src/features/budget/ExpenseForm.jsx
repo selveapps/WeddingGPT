@@ -23,7 +23,7 @@ import { MoneyField } from '@/features/shared/MoneyField';
  *
  * "Committed" is asked as a plain question rather than left to the payment
  * status, because the two are genuinely independent: a signed contract you have
- * not paid a rupee on is committed money, and a casual estimate you already
+ * not paid a dollar on is committed money, and a casual estimate you already
  * paid a deposit against is not. `summariseBudget` relies on that distinction
  * to produce a remaining figure the couple can act on.
  */
@@ -152,7 +152,7 @@ export function ExpenseForm({
       </Stack>
 
       {categories.length > 0 ? (
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader eyebrow="Where it belongs" title="Category" />
           <Row gap="xs" wrap align="flex-start">
             <Chip
@@ -174,7 +174,7 @@ export function ExpenseForm({
         </Stack>
       ) : null}
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader
           eyebrow="How firm is it"
           title="Committed or estimated"
@@ -194,7 +194,7 @@ export function ExpenseForm({
         </Row>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Payment" title="Status" />
         <Row gap="xs" wrap align="flex-start">
           {Object.entries(PAYMENT_STATUS_META).map(([value, meta]) => (
@@ -212,13 +212,13 @@ export function ExpenseForm({
         </Text>
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Dates" title="When" />
         <DateField label="Payment due" value={dueDate} onChange={setDueDate} />
         <DateField label="Date paid" value={date} onChange={setDate} icon="check" />
       </Stack>
 
-      <Stack gap="xs">
+      <Stack gap="sm">
         <SectionHeader eyebrow="Anything else" title="Notes" />
         <TextField
           label="Notes"

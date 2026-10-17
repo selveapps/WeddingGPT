@@ -73,10 +73,11 @@ they import nothing from the layers above.
 ```text
 app/                       Routes. File-based, via expo-router.
   _layout.jsx              Fonts, splash, providers, root stack
-  index.jsx                Launch gate - waits for hydration, then routes
+  index.jsx                Launch gate - brand intro while hydrating, then routes
+  assistant/               [id] - a conversation with WeddingGPT
   design-system.jsx        Component gallery
   (tabs)/                  The five-tab shell (Home, Planning, Guests, Budget, AI)
-  onboarding/              Welcome, [step] (all 11 questions), plan reveal
+  onboarding/              The journey (hello + 4 steps, one screen), plan reveal
   home/                    Countdown detail, planning progress detail
   planning/                task/new, task/[id], task/[id]/edit, category/[id]
   budget/                  setup, category/[id], expense/new, expense/[id]
@@ -88,17 +89,21 @@ src/
     theme/                 ThemeProvider, useTheme, useMotion, font loading
     components/            35 exported components - the only styling surface
   features/                Composite parts shared by two or more routes
-    onboarding/            ChoiceAnswer, MultiAnswer, DateAnswer
+    launch/                BrandIntro (logo animation)
+    home/                  DateSheet (add or change the date from the dashboard)
+    assistant/             MessageBubble, MessageText, Composer, SuggestionCard, review sheet
+    onboarding/            Companion, ChoiceAnswer, DateAnswer, buildWorkspace
     planning/              TaskRow, TaskForm
     budget/                ExpenseForm
     guests/                GuestRow, GuestForm
     shared/                DateField, MoneyField
   models/                  Entity factories, status enums, derived calculations
-    onboarding.js          The 11-question script, as data
+    onboarding.js          The 4-step script, as data
     planGeneration.js      49-task checklist template + plan generator
   store/                   zustand stores, persisted via StorageService
   services/
     storage/               StorageService contract + AsyncStorage/memory impls
+    ai/                    AIService, on-device provider (local/), Claude proxy client
     analytics/             Provider-agnostic event tracking
   navigation/              Route table + custom tab bar
   lib/                     id, date, currency, validation, haptics
@@ -123,8 +128,8 @@ change *and* the analytics event. Completing a task fires
 `TASK_COMPLETED` once, from `planningStore`, no matter which of the four
 screens triggered it.
 
-**Money is integer minor units.** Paise/cents, never floats. Formatting happens
-at the edge in `lib/currency` (`₹4.5L`, `₹1.2Cr` compact forms included).
+**Money is integer minor units.** Cents, never floats. Formatting happens at
+the edge in `lib/currency` (`$45K`, `$1.2M` compact forms included).
 
 **Dates are `YYYY-MM-DD` strings.** A wedding happens on a calendar day; storing
 an instant makes the countdown drift across timezones.
@@ -142,7 +147,7 @@ tappable surface goes through `Touchable`, which enforces a 44pt target.
 | 1 — Foundation | Architecture, design system, navigation, persistence, data models, components | **Done** |
 | 2 — Onboarding | Conversational flow, per-answer persistence, resume, personalised plan | **Done** |
 | 3 — Core workspace | Home, Planning, Budget, Guests | **Done** |
-| 4 — AI | Chat, context system, conversation persistence, confirmation workflow | Not started - tab is a placeholder |
+| 4 — AI | Chat, context system, conversation persistence, confirmation workflow | **Done** |
 | 5 — Vendors & Vision | Vendor management, style quiz, moodboard | Models only, no screens |
 | 6 — Monetisation | Paywall, subscription states, purchase flow | Not started |
 | 7 — Polish | Animations, haptics, accessibility, final UX pass | Ongoing |
@@ -210,14 +215,127 @@ Two deliberate choices in the generator:
   is one tap, households whose invitation status cascades to their members, and
   multi-select for bulk RSVP, invitation and delete.
 
+### Launch, onboarding and the dashboard (PRD s.3.1, s.4)
+
+- **Brand intro.** `BrandIntro` draws the two rings in, settles the gilt stone,
+  raises "WeddingGPT" letter by letter and sweeps a hairline beneath it - about
+  two seconds, tap to skip, instant under Reduce Motion. It plays while the
+  stores rehydrate, so it doubles as the loading state.
+- **Launch error state.** If storage fails to rehydrate, zustand never reports
+  the store as ready and the app used to wait forever. After 8s the gate now
+  shows an error with Retry (`rehydrateAllStores`).
+- **No sign-in.** The workspace lives on the device; there is no account gate.
+  Routing is simply: no wedding yet -> onboarding, otherwise -> Home.
+- **Onboarding is one screen.** A companion (the rings mark) breathes, hops when
+  an answer lands, and says each question in a speech bubble. Four steps -
+  names, date, guests, budget - and the choice steps advance on tap. Skip is on
+  every step and goes straight to the dashboard.
+- **There is always a dashboard.** `buildWorkspace` turns whatever was answered,
+  including nothing, into a wedding, a checklist and (if given) a budget. It is
+  idempotent; Home calls it too, so a deep link before onboarding still lands
+  on a working dashboard. A missing date is a card on Home that opens
+  `DateSheet`, not a blocker.
+- **Haptics and motion.** Motion is deliberately quiet: no bouncing, springing
+  or staggered cascades. The companion mark is still, presses dip opacity
+  rather than scale, and new content fades in place. The one exception is the
+  launch intro (`features/launch/BrandIntro.jsx`): a ~3s skippable hello where
+  two graceful swans (`launch/elegantSwanArt.js`, separate from the cute
+  mascot) glide in and make a heart with their necks (`WeddingSwans`),
+  the wordmark rises and hearts drift up (`FloatingHearts`, which continues behind the onboarding welcome). A selected option fills and shows a check; the next step can be ticked
+  off from Home. All of it collapses to instant under Reduce Motion, and every
+  haptic goes through `lib/haptics`.
+- **Currency.** US launch: USD only, no currency picker. Budget bands are in
+  `models/onboarding.js` (`budgetOptionsFor`). Older workspaces stored in
+  another currency format as USD and are moved to USD on the next budget save.
+- **Partner and local.** Onboarding asks only for your own name. Home has
+  *Invite your partner* (native share sheet; set `EXPO_PUBLIC_INVITE_URL` to
+  include a link) and *Venues and vendors* (`app/home/local.jsx`), which saves
+  the wedding city and opens map searches per vendor category.
+- **Famous venues.** `models/venues.js` holds a hand-picked list of
+  well-known wedding venues for about 20 major US metros (matched by city,
+  neighbourhood or suburb). They show on Home, on the plan reveal and on the
+  local screen; every venue opens a map search for the real listing. Every
+  city also gets style searches (gardens, barns, rooftops...).
+- **Import guests from contacts.** `app/guests/import.jsx` reads the address
+  book via `expo-contacts` (permission asked only on that screen), skips
+  people already on the list (phone, email or name match) and bulk-adds the
+  rest. Needs a development build or store build; not available on web.
+- **Mascot and app icon.** The mascot is a swan couple - a bride with a veil
+  and flower crown and a groom with a top hat and bow tie - whose necks make a
+  heart. They are drawn once in `features/mascot/swanArt.js`, and the icon
+  tile (the swans on ivory-to-rose, the app's own palette) once in
+  `features/mascot/appIconArt.js`. Those two files are the only source: the
+  in-app `<Mascot />` and `npm run icons`,
+  which exports the store icon, Android adaptive icon, favicon and the
+  Android notification icon (a white silhouette, as Android requires) to
+  `assets/`. The native splash is plain ivory. The script renders with
+  headless Chrome or Edge (`CHROME_PATH` to override). Icons only change in a
+  new native build, not in Expo Go.
+- **Daily checklist.** Each morning Home shows up to three plan tasks for today
+  (`models/daily.js`, held for the day in `planningStore.today`). An 8am local
+  notification names the day's tasks; it is scheduled 14 days ahead and
+  rebuilt whenever the plan changes.
+
+### What Phase 4 delivered - The assistant (PRD s.12-14)
+
+Layered exactly as s.14 draws it: **UI -> `aiStore` -> `AIService` -> provider**.
+
+- **Two providers, one interface.** The *on-device* provider
+  (`services/ai/local`) answers from a curated knowledge base - 45 intents, several with
+  sub-topics, across the couple's own plan, budget and RSVPs, etiquette, vendor questions,
+  timelines, emergencies, message drafting, and customer-support questions about
+  the app itself. It is free, instant and works offline. The *remote* provider
+  sends the conversation to Claude through `server/ai-proxy`. With a proxy
+  configured, the on-device assistant still answers whenever the proxy is
+  unreachable, and says so under the reply.
+- **Context, not the database.** Each question carries `buildWeddingContext`:
+  countdown, formatted budget totals, RSVP counts, progress, overdue and upcoming
+  task titles. Never guest names or contact details. The chat shows what it can
+  see as chips.
+- **The AI never writes (s.13).** Checklists and drafted messages arrive as
+  suggestions. The review sheet lets the couple rename or remove tasks, or edit
+  the message; tasks are created only on "Add to plan", and a message is only
+  ever sent by the couple, through the system share sheet.
+- **Every state.** Thinking (typing dots, static under Reduce Motion), a
+  progressive reveal, error with Retry, and replies interrupted by the app
+  closing come back as retryable rather than stuck.
+- **Persistence.** Conversations, messages and suggestions persist; recent
+  conversations are listed on the Assistant tab (long-press to delete).
+
+### Connecting the assistant to Claude
+
+The API key lives on a server, never in the app.
+
+```bash
+cd server/ai-proxy
+npm install
+cp .env.example .env      # add ANTHROPIC_API_KEY and an APP_TOKEN
+npm start                 # http://localhost:8787
+```
+
+Then in the app root, copy `.env.example` to `.env`, set
+`EXPO_PUBLIC_AI_PROXY_URL` (your computer's LAN IP when testing on a phone) and
+`EXPO_PUBLIC_AI_APP_TOKEN`, and restart with `npm run start:clear`.
+
+The proxy uses `claude-opus-5` with server-side refusal fallbacks enabled
+(`fallbacks: "default"`), caches the system prompt, and exposes two strict tools
+(`propose_tasks`, `draft_message`) so proposals come back structured. `AI_EFFORT`
+(default `medium`) trades answer depth against chat speed. To deploy, run it
+anywhere Node 20+ runs and put it behind HTTPS.
+
 ---
 
 ## Not yet wired
 
-- **AI provider.** `AIService` is designed for a mock-first implementation with a
-  real provider behind the same interface. Neither exists yet (Phase 4).
-  When a real provider is added, the API key must sit behind a backend proxy —
-  shipping it in the app bundle exposes it on every device.
+- **Hosted accounts.** Accounts are device-local: they do not sync, do not
+  survive a reinstall, and there is no password reset. The workspace belongs to
+  the device, not the account - a second account signed in on the same phone
+  sees the same wedding. Both go away when `services/auth/index.js` points at a
+  real provider and storage is partitioned per account.
+
+- **Claude, live.** The proxy is built and its request handling is tested, but
+  it has not yet been run against the real API from this repo - that needs your
+  API key (see "Connecting the assistant to Claude").
 - **App icon and splash artwork.** Currently Expo defaults. Branded assets are a
   Phase 7 item.
 - **Subscriptions.** `SubscriptionService` is specified but not implemented

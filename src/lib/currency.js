@@ -1,15 +1,19 @@
 /**
  * Money helpers.
  *
- * All amounts are stored as integer minor units (paise, cents) to keep budget
- * arithmetic exact - floating point rupees drift once you start summing dozens
+ * All amounts are stored as integer minor units (cents) to keep budget
+ * arithmetic exact - floating point dollars drift once you start summing dozens
  * of expenses. Formatting happens only at the edge, in the UI.
+ *
+ * The app launches for US couples, so USD is the only currency offered and
+ * there is no currency picker. The other entries in `CURRENCY_META` remain so
+ * that any stored amount still formats sensibly; anything unknown (including
+ * workspaces created before the picker was removed) formats as USD.
  */
 
-export const DEFAULT_CURRENCY = 'INR';
+export const DEFAULT_CURRENCY = 'USD';
 
 const CURRENCY_META = {
-  INR: { symbol: '₹', minorPerMajor: 100, locale: 'en-IN' },
   USD: { symbol: '$', minorPerMajor: 100, locale: 'en-US' },
   EUR: { symbol: '€', minorPerMajor: 100, locale: 'en-IE' },
   GBP: { symbol: '£', minorPerMajor: 100, locale: 'en-GB' },
@@ -40,7 +44,7 @@ export function toMajor(minor, currency = DEFAULT_CURRENCY) {
 }
 
 /**
- * Full formatting, e.g. `₹4,50,000`.
+ * Full formatting, e.g. `$45,000`.
  * Decimals are hidden by default - wedding budgets are round numbers and the
  * extra `.00` adds noise to every card.
  */
@@ -65,8 +69,7 @@ export function formatMoney(minor, currency = DEFAULT_CURRENCY, options = {}) {
 }
 
 /**
- * Condensed formatting for tight spaces such as dashboard tiles:
- * `₹4.5L`, `₹1.2Cr` for INR; `$45K`, `$1.2M` elsewhere.
+ * Condensed formatting for tight spaces such as dashboard tiles: `$45K`, `$1.2M`.
  */
 export function formatMoneyCompact(minor, currency = DEFAULT_CURRENCY) {
   const { symbol } = meta(currency);
@@ -76,15 +79,9 @@ export function formatMoneyCompact(minor, currency = DEFAULT_CURRENCY) {
 
   const trim = (n) => String(Number(n.toFixed(1))); // 4.0 -> "4", 4.5 -> "4.5"
 
-  if (currency === 'INR') {
-    if (abs >= 1e7) return `${sign}${symbol}${trim(abs / 1e7)}Cr`;
-    if (abs >= 1e5) return `${sign}${symbol}${trim(abs / 1e5)}L`;
-    if (abs >= 1e3) return `${sign}${symbol}${trim(abs / 1e3)}K`;
-  } else {
-    if (abs >= 1e9) return `${sign}${symbol}${trim(abs / 1e9)}B`;
-    if (abs >= 1e6) return `${sign}${symbol}${trim(abs / 1e6)}M`;
-    if (abs >= 1e3) return `${sign}${symbol}${trim(abs / 1e3)}K`;
-  }
+  if (abs >= 1e9) return `${sign}${symbol}${trim(abs / 1e9)}B`;
+  if (abs >= 1e6) return `${sign}${symbol}${trim(abs / 1e6)}M`;
+  if (abs >= 1e3) return `${sign}${symbol}${trim(abs / 1e3)}K`;
   return formatMoney(minor, currency);
 }
 

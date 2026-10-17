@@ -13,6 +13,11 @@ import Icon from './Icon';
  * Deliberately generic in structure (leading slot / text stack / trailing slot)
  * but opinionated about metrics, so a settings row and a guest row have the
  * same height rhythm and the same 44pt touch target.
+ *
+ * Rows are inset by the card padding by default, because they almost always sit
+ * in a `<Card padding="none">` list - without the inset the text runs right up
+ * against the card edge. Pass `inset={false}` for a row that sits in an
+ * already-padded container, such as a bottom sheet or a form.
  */
 export function ListRow({
   title,
@@ -29,6 +34,10 @@ export function ListRow({
   onLongPress,
   /** Shows a chevron. Defaults on when the row navigates somewhere. */
   showChevron,
+  /** Horizontal padding matching the card padding. Off inside padded containers. */
+  inset = true,
+  /** How many lines the subtitle may wrap to before it truncates. */
+  subtitleLines = 2,
   disabled = false,
   destructive = false,
   haptic = 'light',
@@ -43,10 +52,10 @@ export function ListRow({
   const chevron = showChevron ?? (interactive && !trailing);
 
   const body = (
-    <View style={[styles.row, { gap: spacing.sm, minHeight: minTouchTarget }]}>
+    <View style={[styles.row, { gap: spacing.md, minHeight: minTouchTarget }]}>
       {leading ?? (icon ? <Icon name={icon} color={destructive ? 'danger' : 'inkMuted'} /> : null)}
 
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: spacing.hair }}>
         <View style={styles.titleLine}>
           <Text
             variant="bodyStrong"
@@ -63,7 +72,7 @@ export function ListRow({
           )}
         </View>
         {subtitle && (
-          <Text variant="bodySm" color="muted" numberOfLines={2}>
+          <Text variant="bodySm" color="muted" numberOfLines={subtitleLines}>
             {subtitle}
           </Text>
         )}
@@ -74,7 +83,10 @@ export function ListRow({
     </View>
   );
 
-  const containerStyle = [{ paddingVertical: spacing.sm }, style];
+  const containerStyle = [
+    { paddingVertical: spacing.sm + spacing.hair, paddingHorizontal: inset ? spacing.lg : 0 },
+    style,
+  ];
 
   if (!interactive) {
     return (

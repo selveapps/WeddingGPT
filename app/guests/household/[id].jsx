@@ -158,7 +158,7 @@ export default function HouseholdDetailScreen() {
         </Card>
 
         {/* --- Invitation --------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="The invitation"
             title="Where it has got to"
@@ -182,7 +182,7 @@ export default function HouseholdDetailScreen() {
         </Stack>
 
         {/* --- Members ------------------------------------------------------ */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader eyebrow="Who is in it" title="Members" />
 
           {members.length === 0 ? (
@@ -231,7 +231,7 @@ export default function HouseholdDetailScreen() {
             label="Household name"
             value={draftName}
             onChangeText={setDraftName}
-            placeholder="The Kapoors"
+            placeholder="The Millers"
             autoCapitalize="words"
           />
           <TextField

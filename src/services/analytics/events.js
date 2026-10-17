@@ -10,12 +10,17 @@ export const AnalyticsEvents = {
   APP_OPENED: 'app_opened',
   SCREEN_VIEWED: 'screen_viewed',
 
+  // --- Launch --------------------------------------------------------------
+  INTRO_SKIPPED: 'intro_skipped',
+  LAUNCH_FAILED: 'launch_failed',
+
   // --- Onboarding ----------------------------------------------------------
   ONBOARDING_STARTED: 'onboarding_started',
   ONBOARDING_STEP_COMPLETED: 'onboarding_step_completed',
   ONBOARDING_STEP_SKIPPED: 'onboarding_step_skipped',
   ONBOARDING_RESUMED: 'onboarding_resumed',
   ONBOARDING_COMPLETED: 'onboarding_completed',
+  ONBOARDING_EXITED_EARLY: 'onboarding_exited_early',
   PLAN_GENERATED: 'plan_generated',
 
   // --- Wedding -------------------------------------------------------------
@@ -53,6 +58,9 @@ export const AnalyticsEvents = {
   VENDOR_SAVED: 'vendor_saved',
   VENDOR_STATUS_CHANGED: 'vendor_status_changed',
   VENDOR_BOOKED: 'vendor_booked',
+  LOCAL_SEARCH_OPENED: 'local_search_opened',
+  VENUE_SEARCH_OPENED: 'venue_search_opened',
+  DAILY_CHECKLIST_COMPLETED: 'daily_checklist_completed',
   QUOTE_ADDED: 'quote_added',
 
   // --- Vision --------------------------------------------------------------

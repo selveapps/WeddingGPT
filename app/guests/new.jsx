@@ -11,9 +11,13 @@ import {
   TextField,
   BottomSheet,
   ScreenHeader,
+  ListRow,
+  Card,
   useToast,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
+import { Routes } from '@/navigation/routes';
+import { CONTACTS_SUPPORTED } from '@/services/contacts';
 import {
   useGuestStore,
   useWeddingStore,
@@ -81,6 +85,17 @@ export default function AddGuestScreen() {
             </Text>
           </Row>
 
+          {CONTACTS_SUPPORTED ? (
+            <Card tone="sunken" padding="none">
+              <ListRow
+                icon="userPlus"
+                title="Import from contacts"
+                subtitle="Add several people from your phone at once"
+                onPress={() => router.replace(Routes.guestImport)}
+              />
+            </Card>
+          ) : null}
+
           <GuestForm
             initial={
               params.householdId ? { householdId: String(params.householdId) } : undefined
@@ -110,7 +125,7 @@ export default function AddGuestScreen() {
           label="Household name"
           value={householdName}
           onChangeText={setHouseholdName}
-          placeholder="The Kapoors"
+          placeholder="The Millers"
           autoCapitalize="words"
         />
       </BottomSheet>

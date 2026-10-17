@@ -88,25 +88,27 @@ export function addMonths(iso, months) {
   return toISODate(date);
 }
 
-/** `12 September 2027` */
+// Dates are written the US way (month first), matching the launch audience.
+
+/** `September 12, 2027` */
 export function formatLongDate(iso) {
   const date = fromISODate(iso);
   if (!date) return '';
-  return `${date.getDate()} ${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
-/** `12 Sep 2027` */
+/** `Sep 12, 2027` */
 export function formatMediumDate(iso) {
   const date = fromISODate(iso);
   if (!date) return '';
-  return `${date.getDate()} ${MONTHS_SHORT[date.getMonth()]} ${date.getFullYear()}`;
+  return `${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
-/** `Sat, 12 Sep` - for dense list rows where the year is implied. */
+/** `Sat, Sep 12` - for dense list rows where the year is implied. */
 export function formatShortDate(iso) {
   const date = fromISODate(iso);
   if (!date) return '';
-  return `${WEEKDAYS[date.getDay()].slice(0, 3)}, ${date.getDate()} ${MONTHS_SHORT[date.getMonth()]}`;
+  return `${WEEKDAYS[date.getDay()].slice(0, 3)}, ${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}`;
 }
 
 /** `September 2027` - for approximate timing, where only month precision is known. */

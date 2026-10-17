@@ -1,0 +1,17 @@
+{
+  "name": "weddinggpt-ai-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Holds the Anthropic API key and answers WeddingGPT assistant questions with Claude.",
+  "type": "module",
+  "main": "index.mjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0"
+  }
+}

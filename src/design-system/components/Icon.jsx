@@ -194,7 +194,29 @@ const paths = {
       {...p}
     />
   ),
-  /** Two interlocking rings - our wedding mark. */
+  /**
+   * The WeddingGPT mark: a speech bubble holding a heart - a wedding planner
+   * you can talk to. The heart is always solid so the mark reads at any size.
+   */
+  mark: (p) => (
+    <>
+      <Path d="M7.4 3.8h9.2a4 4 0 0 1 4 4v5.2a4 4 0 0 1-4 4h-5.4l-4 3.2V17a4 4 0 0 1-3.8-4V7.8a4 4 0 0 1 4-4Z" {...p} />
+      <Path
+        d="M12 14.2 8.9 11.2a2 2 0 0 1 2.8-2.9l.3.3.3-.3a2 2 0 0 1 2.8 2.9L12 14.2Z"
+        {...p}
+        fill={p.stroke === 'none' ? p.fill : p.stroke}
+      />
+    </>
+  ),
+  userPlus: (p) => (
+    <>
+      <Circle cx="9.6" cy="8.2" r="3.6" {...p} />
+      <Path d="M3 20.2a6.6 6.6 0 0 1 13.2 0" {...p} />
+      <Line x1="18.6" y1="8.4" x2="18.6" y2="13.6" {...p} />
+      <Line x1="16" y1="11" x2="21.2" y2="11" {...p} />
+    </>
+  ),
+  /** Two interlocking rings. */
   rings: (p) => (
     <>
       <Circle cx="9" cy="14.4" r="5.2" {...p} />
@@ -256,6 +278,27 @@ const paths = {
     <>
       <Rect x="4.8" y="10.4" width="14.4" height="9.8" rx="2.2" {...p} />
       <Path d="M8.2 10.4V7.8a3.8 3.8 0 0 1 7.6 0v2.6" {...p} />
+    </>
+  ),
+  eye: (p) => (
+    <>
+      <Path d="M2.8 12s3.4-6.4 9.2-6.4 9.2 6.4 9.2 6.4-3.4 6.4-9.2 6.4S2.8 12 2.8 12Z" {...p} />
+      <Circle cx="12" cy="12" r="2.8" {...p} />
+    </>
+  ),
+  eyeOff: (p) => (
+    <>
+      <Path d="M9.9 5.9A8.8 8.8 0 0 1 12 5.6c5.8 0 9.2 6.4 9.2 6.4a15.6 15.6 0 0 1-2.4 3.2" {...p} />
+      <Path d="M6.5 7.6A15.4 15.4 0 0 0 2.8 12s3.4 6.4 9.2 6.4a8.6 8.6 0 0 0 4.6-1.3" {...p} />
+      <Path d="M10 10a2.8 2.8 0 0 0 4 4" {...p} />
+      <Line x1="4" y1="4" x2="20" y2="20" {...p} />
+    </>
+  ),
+  signOut: (p) => (
+    <>
+      <Path d="M9.6 20.2H6a1.8 1.8 0 0 1-1.8-1.8V5.6A1.8 1.8 0 0 1 6 3.8h3.6" {...p} />
+      <Path d="m15.4 16.6 4.6-4.6-4.6-4.6" {...p} />
+      <Line x1="20" y1="12" x2="9.6" y2="12" {...p} />
     </>
   ),
   star: (p) => (

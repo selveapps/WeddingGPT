@@ -36,6 +36,9 @@ const MAX_SCALE_BY_VARIANT = {
   numericLg: 1.2,
   h1: 1.3,
   h2: 1.3,
+  // Five labels share one row; past this they would truncate.
+  tab: 1.2,
+  tabActive: 1.2,
 };
 
 const DEFAULT_MAX_SCALE = 1.6;

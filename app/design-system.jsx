@@ -98,7 +98,7 @@ export default function DesignSystemGallery() {
         </Stack>
 
         {/* --- Typography -------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader eyebrow="Tokens" title="Typography" />
           <Text variant="displayMd">128 days</Text>
           <Text variant="h1">A calm place to plan</Text>
@@ -251,7 +251,7 @@ export default function DesignSystemGallery() {
         </Stack>
 
         {/* --- Rows -------------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="Content"
             title="List rows"

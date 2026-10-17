@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import {
@@ -8,14 +9,13 @@ import {
   Text,
   Card,
   Icon,
-  Button,
-  Badge,
-  ListRow,
-  ProgressRing,
-  ProgressBar,
+  Touchable,
   AnimatedNumber,
+  LoadingState,
+  ListRow,
+  Button,
   SectionHeader,
-  EmptyState,
+  useToast,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
@@ -24,51 +24,89 @@ import {
   usePlanningStore,
   useBudgetStore,
   useGuestStore,
+  useNotificationStore,
   selectWedding,
+  selectCouple,
   selectAllTasks,
   selectAllExpenses,
   selectBudgetTotal,
   selectAllGuests,
+  selectNotificationPromptDismissed,
 } from '@/store';
 import {
   calculateProgress,
-  selectNextBestAction,
-  selectUpcomingDeadlines,
   summariseBudget,
   summariseRsvps,
   coupleDisplayName,
   hasExactDate,
-  TaskStatus,
+  recommendLocalPicks,
 } from '@/models';
-import { daysUntil, formatLongDate, formatRelativeDay } from '@/lib/date';
+import { daysUntil, formatLongDate } from '@/lib/date';
 import { formatMoneyCompact } from '@/lib/currency';
+import { buildWorkspace } from '@/features/onboarding/buildWorkspace';
+import { DateSheet } from '@/features/home/DateSheet';
+import { InviteSheet } from '@/features/home/InviteSheet';
+import { Mascot } from '@/features/mascot/Mascot';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { LocalPickRow } from '@/features/local/LocalPickRow';
+import { VenueRecommendations } from '@/features/local/VenueRecommendations';
+import { DailyChecklistCard } from '@/features/daily/DailyChecklistCard';
+import { useNotificationPermission } from '@/features/notifications/useNotificationPermission';
 
 /**
  * Home dashboard.
  *
  * Answers "what should I do next?" above the fold, which PRD s.27 makes the
- * test every screen has to pass. Everything below the Next Best Action card is
- * reassurance: where the money is, who has replied, how far along the plan is.
+ * test every screen has to pass. The screen is kept deliberately quiet: the
+ * countdown, one next step, a single at-a-glance strip (plan, budget, guests),
+ * a way to invite a partner and find local vendors, and a gentle way into the
+ * assistant. Cards are simply there on first paint - nothing staggers, slides
+ * or bounces in. Full lists live on their own tabs - the dashboard points at
+ * them rather than repeating them.
  *
  * All figures are derived from the stores on render - there are no cached
  * counters to go stale, so a task completed on another screen is reflected here
  * the moment you come back.
+ *
+ * There is always a dashboard. A couple who skipped onboarding (or arrived by
+ * deep link before it ran) gets one built from whatever they told us, and
+ * anything missing - the date, the budget, the guests - is a soft invitation to
+ * add it rather than a screen that blocks them until they do.
  */
 export default function HomeScreen() {
   const router = useRouter();
   const { spacing, colors } = useTheme();
+  const toast = useToast();
 
   const wedding = useWeddingStore(selectWedding);
+  const couple = useWeddingStore(selectCouple);
   const tasks = usePlanningStore(selectAllTasks);
   const expenses = useBudgetStore(selectAllExpenses);
   const budgetTotal = useBudgetStore(selectBudgetTotal);
   const guests = useGuestStore(selectAllGuests);
+  const updateWedding = useWeddingStore((state) => state.updateWedding);
+  const updateCouple = useWeddingStore((state) => state.updateCouple);
+  const promptDismissed = useNotificationStore(selectNotificationPromptDismissed);
+  const dismissPrompt = useNotificationStore((state) => state.dismissPrompt);
+  const reminders = useNotificationPermission();
+
+  const [dateSheetOpen, setDateSheetOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+
+  useEffect(() => {
+    if (!wedding) buildWorkspace();
+  }, [wedding]);
 
   const progress = useMemo(() => calculateProgress(tasks), [tasks]);
-  const nextAction = useMemo(() => selectNextBestAction(tasks), [tasks]);
   const budget = useMemo(() => summariseBudget(budgetTotal, expenses), [budgetTotal, expenses]);
   const rsvps = useMemo(() => summariseRsvps(guests), [guests]);
-  const deadlines = useMemo(() => selectUpcomingDeadlines(tasks, 30).slice(0, 4), [tasks]);
+  const localPicks = useMemo(
+    () =>
+      recommendLocalPicks({ weddingDate: wedding?.date ?? null, tasks })
+        .filter((pick) => pick.urgency !== 'booked')
+        .slice(0, 3),
+    [wedding?.date, tasks]
+  );
 
   const days = wedding?.date ? daysUntil(wedding.date) : null;
   const exact = hasExactDate(wedding);
@@ -76,276 +114,280 @@ export default function HomeScreen() {
   if (!wedding) {
     return (
       <Screen bottomInset={spacing.xxl}>
-        <EmptyState
-          icon="rings"
-          title="Let us set up your wedding"
-          message="A few quick questions and we will build your plan, budget and checklist around them."
-          actionLabel="Get started"
-          onAction={() => router.push(Routes.onboarding)}
-        />
+        <Stack style={{ flex: 1, justifyContent: 'center' }}>
+          <LoadingState message="Setting up your dashboard..." />
+        </Stack>
       </Screen>
     );
   }
 
+  const hasBudget = budgetTotal > 0;
+  const hasGuests = rsvps.total > 0;
+
+  const partnerName = wedding.partnerName?.trim() || couple?.partnerName?.trim() || '';
+  const invited = Boolean(couple?.partnerInviteSentAt);
+  const city = wedding.city?.trim() ?? '';
+  const showReminderPrompt = reminders.supported && !reminders.granted && !promptDismissed;
+
+  const turnOnReminders = async () => {
+    const ok = await reminders.enable();
+    if (ok) toast.success("Reminders on. I'll nudge you before things are due.");
+  };
+
   return (
     <Screen bottomInset={spacing.xxl}>
       <Stack gap="xl">
-        {/* --- Greeting and countdown -------------------------------------- */}
-        <Stack gap="xs">
-          <Text variant="eyebrow" color="subtle">
-            {greeting()}
-          </Text>
-          <Text variant="h1" heading>
-            {coupleDisplayName(wedding)}
-          </Text>
-        </Stack>
-
-        <Card tone="raised" onPress={() => router.push(Routes.countdown)}>
-          <Stack gap="xs">
-            <Text variant="eyebrow" color="accent">
-              {exact ? 'Counting down' : 'Your horizon'}
+        {/* --- Greeting ---------------------------------------------------- */}
+        <Row gap="sm">
+          <Mascot size={52} mood={progress >= 1 ? 'celebrate' : 'happy'} />
+          <Stack gap="xxs" style={{ flex: 1 }}>
+            <Text variant="bodySm" color="muted">
+              {greeting()}
             </Text>
+            <Text variant="h1" heading numberOfLines={2}>
+              {capitalise(coupleDisplayName(wedding))}
+            </Text>
+          </Stack>
+          <NotificationBell />
+        </Row>
 
-            {days !== null ? (
+        {/* --- Reminders prompt -------------------------------------------- */}
+        {showReminderPrompt ? (
+          <Card tone="accent">
+            <Stack gap="sm">
+              <Row gap="sm">
+                <Mascot size={44} mood="wave" still />
+                <Stack gap="hair" style={{ flex: 1 }}>
+                  <Text variant="bodyStrong">Want a daily nudge?</Text>
+                  <Text variant="caption" color="muted">
+                    A short checklist each morning, plus deadlines and payments. Never spammy.
+                  </Text>
+                </Stack>
+              </Row>
+              <Row gap="xs">
+                <Button
+                  label="Turn on reminders"
+                  size="sm"
+                  iconLeft="bell"
+                  fullWidth={false}
+                  onPress={turnOnReminders}
+                />
+                <Button label="Not now" size="sm" variant="ghost" fullWidth={false} onPress={dismissPrompt} />
+              </Row>
+            </Stack>
+          </Card>
+        ) : null}
+
+        {/* --- Countdown --------------------------------------------------- */}
+        <Card
+          tone="brand"
+          padding="lg"
+          radius="xl"
+          onPress={() => (wedding.date ? router.push(Routes.countdown) : setDateSheetOpen(true))}
+          accessibilityHint={wedding.date ? 'Opens the countdown' : 'Set your wedding date'}
+        >
+          {days !== null ? (
+            <Stack gap="xxs">
               <Row gap="xs" align="baseline">
-                <AnimatedNumber value={days} variant="displayMd" />
-                <Text variant="h3" color="muted">
+                <AnimatedNumber value={days} variant="displayMd" color="brandSoftInk" />
+                <Text variant="h4" color="brandSoftInk">
                   {days === 1 ? 'day to go' : 'days to go'}
                 </Text>
               </Row>
-            ) : (
-              <Text variant="h2">Date still to come</Text>
-            )}
-
-            <Text variant="bodySm" color="muted">
-              {wedding.date
-                ? formatLongDate(wedding.date)
-                : 'Set a date and we will build your timeline around it.'}
-              {wedding.city ? ` · ${wedding.city}` : ''}
-            </Text>
-          </Stack>
+              <Text variant="bodySm" color="muted">
+                {exact ? formatLongDate(wedding.date) : `Around ${formatLongDate(wedding.date)}`}
+                {wedding.city ? ` · ${wedding.city}` : ''}
+              </Text>
+            </Stack>
+          ) : (
+            <Row gap="sm">
+              <Icon name="heart" size="lg" color="brand" />
+              <Stack gap="hair" style={{ flex: 1 }}>
+                <Text variant="h4">Add your wedding date</Text>
+                <Text variant="bodySm" color="muted">
+                  Even a rough month starts the countdown.
+                </Text>
+              </Stack>
+              <Icon name="chevronRight" color={colors.brandSoftInk} />
+            </Row>
+          )}
         </Card>
 
-        {/* --- Next best action -------------------------------------------- */}
-        <Stack gap="sm">
-          <SectionHeader eyebrow="Do this next" title="Your next step" />
+        {/* --- Today's checklist ------------------------------------------ */}
+        <DailyChecklistCard />
 
-          {nextAction ? (
-            <Card
-              tone="brand"
-              onPress={() => router.push(Routes.taskDetail(nextAction.id))}
-              accessibilityLabel={`Next step: ${nextAction.title}`}
-            >
-              <Row gap="sm">
-                <Icon name="sparkle" size="xl" color={colors.brandSoftInk} />
-                <Stack gap="hair" style={{ flex: 1 }}>
-                  <Text variant="h3">{nextAction.title}</Text>
-                  <Text variant="bodySm" color="muted">
-                    {nextAction.dueDate
-                      ? formatRelativeDay(nextAction.dueDate)
-                      : 'No deadline yet'}
-                  </Text>
-                </Stack>
-                <Icon name="chevronRight" color={colors.brandSoftInk} />
-              </Row>
-            </Card>
-          ) : (
-            <Card tone="muted">
-              <Row gap="sm">
-                <Icon name="check" size="xl" color="success" />
-                <Stack gap="hair" style={{ flex: 1 }}>
-                  <Text variant="h4">Nothing pressing</Text>
-                  <Text variant="bodySm" color="muted">
-                    You are clear for now. Add a task whenever something comes up.
-                  </Text>
-                </Stack>
-              </Row>
-            </Card>
-          )}
+        {/* --- At a glance ------------------------------------------------- */}
+        <Stack gap="sm">
+          <Text variant="labelStrong" color="muted">
+            At a glance
+          </Text>
+          <Card padding="none">
+            <Row gap="none" align="stretch">
+              <Glance
+                icon="checklist"
+                tint="brand"
+                value={`${Math.round(progress * 100)}%`}
+                label="planned"
+                onPress={() => router.push(Routes.planning)}
+              />
+              <GlanceDivider />
+              <Glance
+                icon="budget"
+                tint="accent"
+                value={
+                  hasBudget ? formatMoneyCompact(Math.abs(budget.remaining), wedding.currency) : null
+                }
+                label={hasBudget ? (budget.isOverBudget ? 'over budget' : 'left') : 'Set budget'}
+                labelColor={hasBudget && budget.isOverBudget ? 'danger' : undefined}
+                onPress={() => router.push(Routes.budget)}
+              />
+              <GlanceDivider />
+              <Glance
+                icon="guests"
+                tint="success"
+                value={hasGuests ? String(rsvps.attendingHeadcount) : null}
+                label={hasGuests ? 'coming' : 'Add guests'}
+                onPress={() => router.push(Routes.guests)}
+              />
+            </Row>
+          </Card>
         </Stack>
 
-        {/* --- Upcoming deadlines ------------------------------------------ */}
-        {deadlines.length > 0 ? (
+        {/* --- Famous venues nearby ---------------------------------------- */}
+        {city ? (
+          <VenueRecommendations
+            city={city}
+            variant="carousel"
+            source="home"
+            onSeeAll={() => router.push(Routes.local)}
+          />
+        ) : null}
+
+        {/* --- Local picks ------------------------------------------------- */}
+        {city ? (
           <Stack gap="sm">
             <SectionHeader
-              eyebrow="Coming up"
-              title="Next 30 days"
-              actionLabel="All tasks"
-              onActionPress={() => router.push(Routes.planning)}
+              eyebrow="Vendors to book next"
+              title="Local picks for you"
+              actionLabel="See all"
+              onActionPress={() => router.push(Routes.local)}
             />
-
             <Card padding="none">
-              {deadlines.map((task) => {
-                const late = daysUntil(task.dueDate) < 0;
-                return (
-                  <ListRow
-                    key={task.id}
-                    icon="checklist"
-                    title={task.title}
-                    trailing={
-                      late ? (
-                        <Badge label={formatRelativeDay(task.dueDate)} tone="danger" />
-                      ) : (
-                        <Text variant="caption" color="muted">
-                          {formatRelativeDay(task.dueDate)}
-                        </Text>
-                      )
-                    }
-                    onPress={() => router.push(Routes.taskDetail(task.id))}
-                  />
-                );
-              })}
+              {localPicks.map((pick) => (
+                <LocalPickRow key={pick.key} pick={pick} city={city} source="home" />
+              ))}
             </Card>
           </Stack>
         ) : null}
 
-        {/* --- Planning progress ------------------------------------------- */}
-        <Card onPress={() => router.push(Routes.planning)}>
-          <Row gap="md">
-            <ProgressRing value={progress} size={84}>
-              <Text variant="h3">{Math.round(progress * 100)}%</Text>
-            </ProgressRing>
-            <Stack gap="xxs" style={{ flex: 1 }}>
-              <Text variant="h4">Planning progress</Text>
-              <Text variant="bodySm" color="muted">
-                {tasks.filter((t) => t.status === TaskStatus.DONE).length} of {tasks.length}{' '}
-                tasks done
-              </Text>
-            </Stack>
-            <Icon name="chevronRight" color="inkSubtle" />
-          </Row>
+        {/* --- Together and nearby ----------------------------------------- */}
+        <Card padding="none">
+          <ListRow
+            icon="userPlus"
+            title={invited ? `Invited ${partnerName || 'your partner'}` : 'Invite your partner'}
+            subtitle={invited ? 'Send the invite again' : 'Plan the wedding together'}
+            onPress={() => setInviteOpen(true)}
+          />
+          {city ? null : (
+            <ListRow
+              icon="location"
+              title="Find venues near you"
+              subtitle="Add your city for famous venues and local vendors"
+              onPress={() => router.push(Routes.local)}
+            />
+          )}
         </Card>
 
-        {/* --- Budget snapshot --------------------------------------------- */}
-        <Card onPress={() => router.push(Routes.budget)}>
-          <Stack gap="sm">
-            <Row justify="space-between">
-              <Text variant="h4">Budget</Text>
-              <Icon name="chevronRight" color="inkSubtle" />
-            </Row>
-
-            {budgetTotal > 0 ? (
-              <>
-                <Row justify="space-between" align="baseline">
-                  <AnimatedNumber
-                    value={budget.allocated}
-                    variant="numeric"
-                    format={(n) => formatMoneyCompact(n, wedding.currency)}
-                  />
-                  <Text variant="bodySm" color="muted">
-                    of {formatMoneyCompact(budgetTotal, wedding.currency)}
-                  </Text>
-                </Row>
-                <ProgressBar
-                  segments={[
-                    { key: 'spent', value: budget.spent / budgetTotal, color: 'brand' },
-                    { key: 'committed', value: budget.committed / budgetTotal, color: 'accent' },
-                  ]}
-                />
-                <Text
-                  variant="caption"
-                  color={budget.isOverBudget ? 'danger' : 'subtle'}
-                >
-                  {budget.isOverBudget
-                    ? `${formatMoneyCompact(Math.abs(budget.remaining), wedding.currency)} over budget`
-                    : `${formatMoneyCompact(budget.remaining, wedding.currency)} still free`}
-                </Text>
-              </>
-            ) : (
-              <Text variant="bodySm" color="muted">
-                Set a total and we will suggest a starting split across categories.
-              </Text>
-            )}
-          </Stack>
-        </Card>
-
-        {/* --- RSVP snapshot ----------------------------------------------- */}
-        <Card onPress={() => router.push(Routes.guests)}>
-          <Stack gap="sm">
-            <Row justify="space-between">
-              <Text variant="h4">Guests</Text>
-              <Icon name="chevronRight" color="inkSubtle" />
-            </Row>
-
-            {rsvps.total > 0 ? (
-              <>
-                <Row gap="lg">
-                  <Stack gap="hair">
-                    <AnimatedNumber value={rsvps.attendingHeadcount} variant="numeric" />
-                    <Text variant="caption" color="subtle">
-                      attending
-                    </Text>
-                  </Stack>
-                  <Stack gap="hair">
-                    <AnimatedNumber value={rsvps.awaiting} variant="numeric" />
-                    <Text variant="caption" color="subtle">
-                      awaiting reply
-                    </Text>
-                  </Stack>
-                  <Stack gap="hair">
-                    <AnimatedNumber value={rsvps.declined} variant="numeric" />
-                    <Text variant="caption" color="subtle">
-                      declined
-                    </Text>
-                  </Stack>
-                </Row>
-                <ProgressBar value={rsvps.responseRate} tone="success" />
-              </>
-            ) : (
-              <Text variant="bodySm" color="muted">
-                Add your first households and we will track RSVPs from there.
-              </Text>
-            )}
-          </Stack>
-        </Card>
-
-        {/* --- Assistant entry point --------------------------------------- */}
+        {/* --- Assistant --------------------------------------------------- */}
         <Card tone="accent" onPress={() => router.push(Routes.ai)}>
           <Row gap="sm">
-            <Icon name="sparkle" size="xl" color={colors.accentSoftInk} />
+            <Icon name="sparkle" size="lg" color={colors.accentSoftInk} />
             <Stack gap="hair" style={{ flex: 1 }}>
-              <Text variant="h4">Ask WeddingGPT</Text>
-              <Text variant="bodySm" color="muted">
-                Timelines, etiquette, budgets, awkward messages - all of it.
+              <Text variant="bodyStrong">Need a hand?</Text>
+              <Text variant="caption" color="muted">
+                Ask WeddingGPT anything, big or small.
               </Text>
             </Stack>
             <Icon name="chevronRight" color={colors.accentSoftInk} />
           </Row>
         </Card>
-
-        {/* --- Quick actions ----------------------------------------------- */}
-        <Stack gap="sm">
-          <SectionHeader eyebrow="Quick actions" title="Add something" />
-          <Row gap="xs">
-            <Button
-              label="Task"
-              iconLeft="plus"
-              variant="secondary"
-              size="md"
-              style={{ flex: 1 }}
-              onPress={() => router.push(Routes.taskAdd)}
-            />
-            <Button
-              label="Expense"
-              iconLeft="plus"
-              variant="secondary"
-              size="md"
-              style={{ flex: 1 }}
-              onPress={() => router.push(Routes.expenseAdd)}
-            />
-            <Button
-              label="Guest"
-              iconLeft="plus"
-              variant="secondary"
-              size="md"
-              style={{ flex: 1 }}
-              onPress={() => router.push(Routes.guestAdd)}
-            />
-          </Row>
-        </Stack>
       </Stack>
+
+      <DateSheet
+        visible={dateSheetOpen}
+        onClose={() => setDateSheetOpen(false)}
+        wedding={wedding}
+        onSave={(patch) => {
+          updateWedding(patch);
+          setDateSheetOpen(false);
+          toast.success(patch.date ? 'Countdown started!' : 'Saved. Add it whenever you know.');
+        }}
+      />
+
+      <InviteSheet
+        visible={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        ownerName={wedding.ownerName}
+        partnerName={partnerName}
+        onSent={({ partnerName: name }) => {
+          const sentAt = new Date().toISOString();
+          updateCouple(name ? { partnerName: name, partnerInviteSentAt: sentAt } : { partnerInviteSentAt: sentAt });
+          // The greeting reads "Sam and Alex" once we know the partner's name.
+          if (name) updateWedding({ partnerName: name });
+          setInviteOpen(false);
+          toast.success(name ? `Invite sent to ${name}` : 'Invite sent');
+        }}
+      />
     </Screen>
   );
+}
+
+/**
+ * One column of the at-a-glance strip: a soft tinted icon, one figure, one word.
+ * With no figure yet, the label doubles as the invitation ("Set budget").
+ */
+function Glance({ icon, tint, value, label, labelColor, onPress }) {
+  const { colors, spacing } = useTheme();
+  return (
+    <Touchable
+      onPress={onPress}
+      scaleOnPress={false}
+      accessibilityRole="button"
+      accessibilityLabel={value ? `${value} ${label}` : label}
+      style={{ flex: 1, alignItems: 'center', paddingVertical: spacing.md, gap: spacing.xs }}
+    >
+      <View
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: colors[`${tint}Soft`],
+        }}
+      >
+        <Icon name={icon} size="sm" color={colors[`${tint}SoftInk`]} />
+      </View>
+      {value ? (
+        <Text variant="h4" numberOfLines={1}>
+          {value}
+        </Text>
+      ) : null}
+      <Text variant="caption" color={labelColor ?? (value ? 'muted' : 'brand')} numberOfLines={1}>
+        {label}
+      </Text>
+    </Touchable>
+  );
+}
+
+function GlanceDivider() {
+  const { colors, spacing } = useTheme();
+  return <View style={{ width: 1, marginVertical: spacing.md, backgroundColor: colors.border }} />;
+}
+
+/** "your wedding" -> "Your wedding" for the heading; names are left as typed. */
+function capitalise(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 
 /** Time-of-day greeting. Small touch, but it is what makes it feel personal. */

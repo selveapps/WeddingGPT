@@ -4,11 +4,9 @@ import { Stack } from 'expo-router';
 import { useTheme } from '@/design-system/theme';
 
 /**
- * Onboarding stack.
- *
- * Headers are off: each step draws its own progress indicator and back control,
- * because a stock title bar would sit exactly where the PRD wants the large
- * question to be (s.4.1).
+ * Onboarding stack: the journey itself (one screen that steps internally) and
+ * the plan reveal it hands over to. Headers are off - the journey draws its own
+ * progress, back and skip controls.
  */
 export default function OnboardingLayout() {
   const { colors } = useTheme();
@@ -19,13 +17,11 @@ export default function OnboardingLayout() {
         headerShown: false,
         contentStyle: { backgroundColor: colors.canvas },
         animation: 'slide_from_right',
-        // The generated plan is an arrival, not another question - and there is
-        // nothing to go back to once the wedding has been created.
-        gestureEnabled: true,
       }}
     >
       <Stack.Screen name="index" />
-      <Stack.Screen name="[step]" />
+      {/* The plan is an arrival, not another question - and there is nothing to
+          go back to once the wedding has been created. */}
       <Stack.Screen name="plan" options={{ animation: 'fade', gestureEnabled: false }} />
     </Stack>
   );

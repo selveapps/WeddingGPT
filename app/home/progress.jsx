@@ -129,7 +129,7 @@ export default function ProgressScreen() {
         </Card>
 
         {/* --- By category --------------------------------------------------- */}
-        <Stack gap="xs">
+        <Stack gap="sm">
           <SectionHeader
             eyebrow="Where the work is"
             title="By category"

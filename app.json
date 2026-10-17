@@ -4,20 +4,37 @@
     "slug": "weddinggpt",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "scheme": "weddinggpt",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#FFFBF7",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.weddinggpt.app"
+      "bundleIdentifier": "com.weddinggpt.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.weddinggpt.app"
+      "package": "com.weddinggpt.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "POST_NOTIFICATIONS",
+        "READ_CONTACTS"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "backgroundColor": "#FFE8EF"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -26,13 +43,40 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFBF7",
-          "dark": { "backgroundColor": "#191413" }
+          "dark": {
+            "backgroundColor": "#191413"
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WeddingGPT uses your location once, when you ask, to find wedding vendors near you."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#C93862",
+          "icon": "./assets/notification-icon.png"
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "WeddingGPT reads your contacts only when you choose to import guests, so you can add them to your guest list in a few taps."
         }
       ]
     ],
     "experiments": {
       "tsconfigPaths": true,
       "typedRoutes": false
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cc7f63f1-bb80-420d-be61-275ef4c1a18d"
+      }
     }
   }
 }

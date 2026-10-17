@@ -37,8 +37,8 @@ export function Badge({ label, tone = 'neutral', icon, dot = false, style, testI
         {
           backgroundColor: background,
           borderRadius: radii.pill,
-          paddingVertical: spacing.hair,
-          paddingHorizontal: spacing.xs,
+          paddingVertical: spacing.xxs,
+          paddingHorizontal: spacing.xs + spacing.hair,
           gap: spacing.hair + 2,
         },
         style,

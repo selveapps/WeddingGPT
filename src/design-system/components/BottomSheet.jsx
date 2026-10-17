@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect } from 'react';
-import { Modal, View, StyleSheet, useWindowDimensions } from 'react-native';
+import {
+  Modal,
+  View,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -26,7 +34,13 @@ import Touchable from './Touchable';
  *
  * Drag-to-dismiss is a `Gesture.Pan` that only tracks downward movement and
  * commits on either distance or velocity - so a quick flick closes it even if
- * the finger barely travelled, which is how these are expected to behave.
+ * the finger barely travelled, which is how these are expected to behave. It
+ * is attached to the handle and header only, so it never fights the body's
+ * own scrolling.
+ *
+ * Layout is fixed here rather than per sheet: the same gutter as screens, a
+ * clear gap between header, body and footer, a body that scrolls when content
+ * is taller than the sheet, and lift above the keyboard for sheets with fields.
  */
 export function BottomSheet({
   visible,
@@ -43,7 +57,7 @@ export function BottomSheet({
   showHandle = true,
   testID,
 }) {
-  const { colors, spacing, radii, shadows } = useTheme();
+  const { colors, spacing, radii, shadows, layout } = useTheme();
   const motion = useMotion();
   const insets = useSafeAreaInsets();
   const { height: screenHeight } = useWindowDimensions();
@@ -121,7 +135,11 @@ export function BottomSheet({
           </Touchable>
         </Animated.View>
 
-        <GestureDetector gesture={panGesture}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.keyboard}
+          pointerEvents="box-none"
+        >
           <Animated.View
             accessibilityViewIsModal
             style={[
@@ -132,75 +150,90 @@ export function BottomSheet({
                 backgroundColor: colors.surface,
                 borderTopLeftRadius: radii.xxl,
                 borderTopRightRadius: radii.xxl,
-                paddingBottom: insets.bottom + spacing.md,
+                paddingBottom: insets.bottom + spacing.lg,
               },
               sheetStyle,
             ]}
           >
-            {showHandle && (
-              <View style={[styles.handleArea, { paddingVertical: spacing.sm }]}>
-                <View
-                  style={{
-                    width: 36,
-                    height: 4,
-                    borderRadius: 2,
-                    backgroundColor: colors.borderStrong,
-                  }}
-                />
-              </View>
-            )}
+            <GestureDetector gesture={panGesture}>
+              <View>
+                {showHandle ? (
+                  <View style={[styles.handleArea, { paddingTop: spacing.sm, paddingBottom: spacing.xs }]}>
+                    <View
+                      style={{
+                        width: 36,
+                        height: 4,
+                        borderRadius: 2,
+                        backgroundColor: colors.borderStrong,
+                      }}
+                    />
+                  </View>
+                ) : null}
 
-            {(title || dismissible) && (
-              <View
-                style={[
-                  styles.header,
-                  { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: spacing.md },
-                ]}
-              >
-                <View style={{ flex: 1, gap: 2 }}>
-                  {title && (
-                    <Text variant="h2" heading>
-                      {title}
-                    </Text>
-                  )}
-                  {subtitle && (
-                    <Text variant="bodySm" color="muted">
-                      {subtitle}
-                    </Text>
-                  )}
-                </View>
-
-                {dismissible && (
-                  <Touchable
-                    onPress={close}
-                    haptic="light"
-                    scaleOnPress={false}
-                    hitSlop={12}
-                    accessibilityLabel="Close"
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: radii.pill,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      backgroundColor: colors.surfaceSunken,
-                    }}
+                {title || dismissible ? (
+                  <View
+                    style={[
+                      styles.header,
+                      {
+                        paddingHorizontal: layout.gutter,
+                        paddingTop: showHandle ? spacing.xs : spacing.xl,
+                        paddingBottom: spacing.lg,
+                        gap: spacing.md,
+                      },
+                    ]}
                   >
-                    <Icon name="close" size="sm" color="inkMuted" />
-                  </Touchable>
-                )}
-              </View>
-            )}
+                    <View style={{ flex: 1, gap: spacing.xxs }}>
+                      {title ? (
+                        <Text variant="h2" heading>
+                          {title}
+                        </Text>
+                      ) : null}
+                      {subtitle ? (
+                        <Text variant="bodySm" color="muted">
+                          {subtitle}
+                        </Text>
+                      ) : null}
+                    </View>
 
-            <View style={{ paddingHorizontal: spacing.lg, flexShrink: 1 }}>{children}</View>
-
-            {footer && (
-              <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
-                {footer}
+                    {dismissible ? (
+                      <Touchable
+                        onPress={close}
+                        haptic="light"
+                        scaleOnPress={false}
+                        hitSlop={12}
+                        accessibilityLabel="Close"
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: radii.pill,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: colors.surfaceSunken,
+                        }}
+                      >
+                        <Icon name="close" size="sm" color="inkMuted" />
+                      </Touchable>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
-            )}
+            </GestureDetector>
+
+            <ScrollView
+              style={{ flexShrink: 1 }}
+              contentContainerStyle={{ paddingHorizontal: layout.gutter }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {children}
+            </ScrollView>
+
+            {footer ? (
+              <View style={{ paddingHorizontal: layout.gutter, paddingTop: spacing.lg }}>{footer}</View>
+            ) : null}
           </Animated.View>
-        </GestureDetector>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );
@@ -210,6 +243,9 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  keyboard: {
+    width: '100%',
   },
   sheet: {
     width: '100%',

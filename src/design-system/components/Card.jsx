@@ -1,5 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 import { useTheme } from '../theme';
 import Touchable from './Touchable';
@@ -14,6 +14,10 @@ import Touchable from './Touchable';
  *  brand     - tinted. Used by the Next Best Action and AI entry points.
  *  outline   - border only, no fill. For empty and placeholder states.
  *
+ * Padding defaults to `lg`, so text inside a card never crowds its border.
+ * `padding="none"` is for lists of `ListRow`s, which carry their own inset;
+ * those cards draw a hairline between rows automatically (`divided`).
+ *
  * Passing `onPress` turns it into a pressable card. Scale feedback is disabled
  * for cards by default: a large surface shrinking looks unstable, so the press
  * reads as an opacity dip instead.
@@ -21,7 +25,9 @@ import Touchable from './Touchable';
 export function Card({
   children,
   tone = 'plain',
-  padding = 'md',
+  padding = 'lg',
+  /** Hairline between children. Defaults on for `padding="none"` row lists. */
+  divided,
   radius = 'lg',
   onPress,
   onLongPress,
@@ -69,6 +75,11 @@ export function Card({
       borderColor: 'transparent',
       borderWidth: 0,
     },
+    danger: {
+      backgroundColor: colors.dangerSoft,
+      borderColor: 'transparent',
+      borderWidth: 0,
+    },
     outline: {
       backgroundColor: 'transparent',
       borderColor: colors.border,
@@ -76,6 +87,9 @@ export function Card({
       borderStyle: 'dashed',
     },
   }[tone] ?? {};
+
+  const content =
+    (divided ?? padding === 'none') ? withDividers(children, colors.border, spacing.lg) : children;
 
   const containerStyle = [
     {
@@ -101,16 +115,30 @@ export function Card({
         testID={testID}
         {...rest}
       >
-        {children}
+        {content}
       </Touchable>
     );
   }
 
   return (
     <View style={containerStyle} testID={testID} {...rest}>
-      {children}
+      {content}
     </View>
   );
+}
+
+/** Interleave inset hairlines between non-empty children. */
+function withDividers(children, color, inset) {
+  const items = React.Children.toArray(children);
+  if (items.length < 2) return children;
+  return items.map((child, index) => (
+    <React.Fragment key={child.key ?? index}>
+      {index > 0 ? (
+        <View style={{ height: StyleSheet.hairlineWidth, marginLeft: inset, backgroundColor: color }} />
+      ) : null}
+      {child}
+    </React.Fragment>
+  ));
 }
 
 export default Card;

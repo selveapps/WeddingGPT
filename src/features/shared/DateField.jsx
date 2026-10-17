@@ -8,6 +8,7 @@ import {
   Button,
   BottomSheet,
   ListRow,
+  Card,
   SegmentedControl,
 } from '@/design-system/components';
 import { MONTH_NAMES_SHORT, fromISODate, toISODate, todayISO, addDays, addMonths, formatMediumDate } from '@/lib/date';
@@ -74,18 +75,20 @@ export function DateField({
 
   return (
     <>
-      <ListRow
-        icon={icon}
-        title={label}
-        trailing={
-          <Text variant="body" color={value ? 'default' : 'subtle'}>
-            {value ? formatMediumDate(value) : placeholder}
-          </Text>
-        }
-        onPress={openSheet}
-        showChevron={false}
-        accessibilityLabel={`${label}. ${value ? formatMediumDate(value) : placeholder}`}
-      />
+      <Card padding="none" radius="md">
+        <ListRow
+          icon={icon}
+          title={label}
+          trailing={
+            <Text variant="body" color={value ? 'default' : 'subtle'}>
+              {value ? formatMediumDate(value) : placeholder}
+            </Text>
+          }
+          onPress={openSheet}
+          showChevron={false}
+          accessibilityLabel={`${label}. ${value ? formatMediumDate(value) : placeholder}`}
+        />
+      </Card>
 
       <BottomSheet
         visible={open}

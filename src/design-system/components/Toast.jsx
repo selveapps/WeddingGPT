@@ -8,7 +8,7 @@ import React, {
 } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, FadeOutUp, Layout } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { useTheme, useMotion } from '../theme';
 import Text from './Text';
@@ -134,14 +134,13 @@ function ToastItem({ toast, onDismiss }) {
   const motion = useMotion();
   const config = TONE_CONFIG[toast.tone] ?? TONE_CONFIG.info;
 
-  const entering = motion.reduceMotion ? undefined : FadeInDown.springify().damping(18);
-  const exiting = motion.reduceMotion ? undefined : FadeOutUp.duration(motion.durations.fast);
+  const entering = motion.reduceMotion ? undefined : FadeIn.duration(motion.durations.base);
+  const exiting = motion.reduceMotion ? undefined : FadeOut.duration(motion.durations.fast);
 
   return (
     <Animated.View
       entering={entering}
       exiting={exiting}
-      layout={motion.reduceMotion ? undefined : Layout.springify().damping(20)}
       accessibilityLiveRegion="polite"
       accessible
       accessibilityLabel={toast.message}

@@ -33,6 +33,7 @@ export { default as Divider } from './Divider';
 export { default as ListRow } from './ListRow';
 export { default as SectionHeader } from './SectionHeader';
 export { default as ScreenHeader } from './ScreenHeader';
+export { default as PageHeader } from './PageHeader';
 
 // --- Progress and numbers --------------------------------------------------
 export { default as ProgressBar } from './ProgressBar';

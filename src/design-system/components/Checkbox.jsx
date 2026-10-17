@@ -5,7 +5,6 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -53,13 +52,6 @@ export function Checkbox({
     }
 
     progress.value = withTiming(checked ? 1 : 0, { duration: motion.durations.base });
-
-    if (checked) {
-      // A small overshoot on completion - the moment should feel earned.
-      scale.value = withSpring(1.12, motion.springs.bouncy, () => {
-        scale.value = withSpring(1, motion.springs.bouncy);
-      });
-    }
   }, [checked, progress, scale, motion]);
 
   const boxStyle = useAnimatedStyle(() => ({

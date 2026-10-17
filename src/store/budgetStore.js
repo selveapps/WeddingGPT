@@ -89,6 +89,16 @@ export const useBudgetStore = create()(
         analytics.track(AnalyticsEvents.BUDGET_UPDATED, { total });
       },
 
+      /**
+       * Change the display currency. Amounts are relabelled, not converted -
+       * this is for fixing the currency, not for planning across two.
+       */
+      setCurrency(currency) {
+        const { budget } = get();
+        if (!budget || budget.currency === currency) return;
+        set({ budget: touchEntity(budget, { currency }) });
+      },
+
       // --- Categories -------------------------------------------------------
       addCategory(input) {
         const { budget } = get();

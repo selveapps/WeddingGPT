@@ -170,6 +170,19 @@ export const textVariants = {
     lineHeight: lh(fontSizes.base, lineHeights.snug),
     letterSpacing: letterSpacings.normal,
   },
+  /** Bottom tab labels. Same metrics active or not, so nothing shifts. */
+  tab: {
+    fontFamily: fontFamilies.bodyMedium,
+    fontSize: fontSizes.xs + 1,
+    lineHeight: 16,
+    letterSpacing: letterSpacings.normal,
+  },
+  tabActive: {
+    fontFamily: fontFamilies.bodySemiBold,
+    fontSize: fontSizes.xs + 1,
+    lineHeight: 16,
+    letterSpacing: letterSpacings.normal,
+  },
   actionSm: {
     fontFamily: fontFamilies.bodySemiBold,
     fontSize: fontSizes.sm,

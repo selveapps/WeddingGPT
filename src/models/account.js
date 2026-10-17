@@ -51,6 +51,7 @@ export function isPremiumActive(entitlement, now = new Date()) {
 }
 
 export const NotificationType = {
+  DAILY_CHECKLIST: 'daily_checklist',
   TASK_DUE: 'task_due',
   TASK_OVERDUE: 'task_overdue',
   PAYMENT_DUE: 'payment_due',
@@ -62,6 +63,11 @@ export const NotificationType = {
 };
 
 export const NOTIFICATION_TYPE_META = {
+  [NotificationType.DAILY_CHECKLIST]: {
+    label: 'Daily checklist',
+    description: "Each morning, the few things worth doing today.",
+    defaultEnabled: true,
+  },
   [NotificationType.TASK_DUE]: {
     label: 'Upcoming tasks',
     description: 'A nudge a few days before something is due.',

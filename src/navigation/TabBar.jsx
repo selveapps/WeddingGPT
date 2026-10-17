@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
+  Easing,
+  interpolateColor,
   useAnimatedStyle,
-  useDerivedValue,
-  withSpring,
+  useSharedValue,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { useTheme, useMotion } from '../design-system/theme';
@@ -19,20 +21,37 @@ import { TAB_ITEMS } from './routes';
  * tinted glyph), and the Assistant tab needs to read as a distinct affordance
  * rather than a fifth equal item.
  *
+ * The active-tab pill is one shared indicator that glides from tab to tab,
+ * rather than a pill per tab fading in and out - your eye follows it, which is
+ * what makes switching feel like moving through one app instead of jumping
+ * between five.
+ *
  * Receives the standard React Navigation tab bar props from expo-router.
  */
 export function TabBar({ state, navigation }) {
   const { colors, spacing, layout, borderWidths } = useTheme();
   const insets = useSafeAreaInsets();
+  const [width, setWidth] = useState(0);
+
+  // Phones with a home indicator already get generous room from the inset;
+  // older phones get a real bottom margin so labels do not sit on the edge.
+  const padding = {
+    paddingBottom: Math.max(insets.bottom, spacing.sm),
+    paddingTop: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  };
+  const visible = state.routes.filter((route) => TAB_ITEMS.some((tab) => tab.name === route.name));
+  const activeName = state.routes[state.index]?.name;
+  const activeSlot = Math.max(0, visible.findIndex((route) => route.name === activeName));
+  const itemWidth = width > 0 ? (width - spacing.xs * 2) / Math.max(1, visible.length) : 0;
 
   return (
     <View
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={[
         styles.bar,
+        padding,
         {
-          paddingBottom: insets.bottom || spacing.xs,
-          paddingTop: spacing.xs,
-          paddingHorizontal: spacing.xs,
           minHeight: layout.tabBarHeight + insets.bottom,
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
@@ -40,6 +59,15 @@ export function TabBar({ state, navigation }) {
         },
       ]}
     >
+      {itemWidth > 0 ? (
+        <Indicator
+          slot={activeSlot}
+          itemWidth={itemWidth}
+          isAssistant={activeName === 'ai'}
+          padding={padding}
+        />
+      ) : null}
+
       {state.routes.map((route, index) => {
         const item = TAB_ITEMS.find((tab) => tab.name === route.name);
         if (!item) return null;
@@ -75,24 +103,51 @@ export function TabBar({ state, navigation }) {
   );
 }
 
-function TabItem({ label, icon, focused, onPress, isAssistant }) {
+/**
+ * The gliding pill. It sits in an overlay laid out exactly like a tab item -
+ * same paddings, an icon-sized box above an invisible caption - so it lines
+ * up behind the icon without measuring anything but the bar's width.
+ */
+function Indicator({ slot, itemWidth, isAssistant, padding }) {
   const { colors, spacing, radii } = useTheme();
   const motion = useMotion();
 
-  // Derived rather than an effect: the value follows `focused` without an
-  // extra render pass, so the pill never lags the route change by a frame.
-  const progress = useDerivedValue(
-    () => withSpring(focused ? 1 : 0, motion.springs.gentle),
-    [focused]
-  );
+  const x = useSharedValue(slot * itemWidth);
+  const tone = useSharedValue(isAssistant ? 1 : 0);
 
-  const pillStyle = useAnimatedStyle(() => ({
-    opacity: progress.value,
-    transform: [{ scale: 0.86 + progress.value * 0.14 }],
+  useEffect(() => {
+    const config = { duration: motion.reduceMotion ? 0 : 260, easing: Easing.bezier(0.2, 0, 0, 1) };
+    x.value = withTiming(slot * itemWidth, config);
+    tone.value = withTiming(isAssistant ? 1 : 0, config);
+  }, [slot, itemWidth, isAssistant, motion.reduceMotion, x, tone]);
+
+  const brandSoft = colors.brandSoft;
+  const accentSoft = colors.accentSoft;
+  const slide = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
+  const fill = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(tone.value, [0, 1], [brandSoft, accentSoft]),
   }));
 
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, padding, styles.bar]}>
+      <Animated.View style={[{ width: itemWidth }, styles.itemInner, { gap: spacing.xxs }, slide]}>
+        <View style={styles.iconWrap}>
+          <Animated.View
+            style={[StyleSheet.absoluteFill, { borderRadius: radii.pill, marginHorizontal: -6 }, fill]}
+          />
+        </View>
+        <Text variant="tab" style={{ opacity: 0 }} numberOfLines={1}>
+          {' '}
+        </Text>
+      </Animated.View>
+    </View>
+  );
+}
+
+function TabItem({ label, icon, focused, onPress, isAssistant }) {
+  const { colors, spacing } = useTheme();
+
   const activeColor = isAssistant ? colors.accentSoftInk : colors.brandSoftInk;
-  const pillColor = isAssistant ? colors.accentSoft : colors.brandSoft;
 
   return (
     <Touchable
@@ -105,19 +160,8 @@ function TabItem({ label, icon, focused, onPress, isAssistant }) {
       accessibilityLabel={label}
       style={styles.item}
     >
-      <View style={[styles.itemInner, { gap: 2, paddingVertical: spacing.hair }]}>
+      <View style={[styles.itemInner, { gap: spacing.xxs }]}>
         <View style={styles.iconWrap}>
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: pillColor,
-                borderRadius: radii.pill,
-                marginHorizontal: -6,
-              },
-              pillStyle,
-            ]}
-          />
           <Icon
             name={icon}
             size="lg"
@@ -127,7 +171,7 @@ function TabItem({ label, icon, focused, onPress, isAssistant }) {
         </View>
 
         <Text
-          variant="caption"
+          variant={focused ? 'tabActive' : 'tab'}
           style={{ color: focused ? activeColor : colors.inkSubtle }}
           numberOfLines={1}
         >
@@ -151,8 +195,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrap: {
-    width: 44,
-    height: 28,
+    width: 48,
+    height: 30,
     alignItems: 'center',
     justifyContent: 'center',
   },

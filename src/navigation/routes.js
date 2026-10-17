@@ -13,7 +13,6 @@ export const Routes = {
 
   // --- Onboarding ---------------------------------------------------------
   onboarding: '/onboarding',
-  onboardingStep: (index) => `/onboarding/${index}`,
   plan: '/onboarding/plan',
 
   // --- Tabs ---------------------------------------------------------------
@@ -26,9 +25,20 @@ export const Routes = {
   budget: '/(tabs)/budget',
   ai: '/(tabs)/ai',
 
+  // --- Assistant ----------------------------------------------------------
+  /** `prompt` is sent as the first message when the chat opens. */
+  assistantNew: (prompt) => (prompt ? `/assistant/new?prompt=${encodeURIComponent(prompt)}` : '/assistant/new'),
+  assistantChat: (id) => `/assistant/${id}`,
+
   // --- Home details -------------------------------------------------------
   countdown: '/home/countdown',
   progress: '/home/progress',
+  /** Vendor recommendations near the wedding city. */
+  local: '/home/local',
+
+  // --- Notifications ------------------------------------------------------
+  /** The in-app feed of what is coming up. Settings live at `notifications`. */
+  inbox: '/inbox',
 
   // --- Planning -----------------------------------------------------------
   taskDetail: (id) => `/planning/task/${id}`,
@@ -45,6 +55,8 @@ export const Routes = {
   // --- Guests -------------------------------------------------------------
   guestDetail: (id) => `/guests/${id}`,
   guestAdd: '/guests/new',
+  /** Pick guests from the phone's address book. */
+  guestImport: '/guests/import',
   householdDetail: (id) => `/guests/household/${id}`,
 
   // --- Vendors ------------------------------------------------------------
@@ -67,11 +79,11 @@ export const Routes = {
   privacy: '/account/privacy',
 };
 
-/** The five primary destinations, in bottom-bar order (PRD s.5). */
+/** The five primary destinations, in bottom-bar order (PRD s.5). Assistant leads. */
 export const TAB_ITEMS = [
+  { name: 'ai', label: 'Assistant', icon: 'sparkle', route: Routes.ai },
   { name: 'home', label: 'Home', icon: 'home', route: Routes.home },
   { name: 'planning', label: 'Planning', icon: 'checklist', route: Routes.planning },
   { name: 'guests', label: 'Guests', icon: 'guests', route: Routes.guests },
   { name: 'budget', label: 'Budget', icon: 'budget', route: Routes.budget },
-  { name: 'ai', label: 'Assistant', icon: 'sparkle', route: Routes.ai },
 ];

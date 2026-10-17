@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Stack, Row, Text, Chip, SegmentedControl } from '@/design-system/components';
 import { DateType, DATE_TYPE_OPTIONS, SEASON_OPTIONS } from '@/models';
@@ -36,7 +37,11 @@ function daysInMonth(year, monthIndex) {
   return new Date(year, monthIndex + 1, 0).getDate();
 }
 
-export function DateAnswer({ value, dateType, onChange }) {
+/**
+ * `onComplete` fires when the answer needs nothing more - today that is only
+ * "Not decided yet" - so the journey can move on without a Continue tap.
+ */
+export function DateAnswer({ value, dateType, onChange, onComplete }) {
   const years = useMemo(() => yearOptions(), []);
 
   const parsed = useMemo(() => fromISODate(value), [value]);
@@ -54,6 +59,7 @@ export function DateAnswer({ value, dateType, onChange }) {
 
     if (nextType === DateType.UNDECIDED) {
       onChange({ date: null, dateType: DateType.UNDECIDED });
+      onComplete?.();
       return;
     }
 
@@ -80,21 +86,23 @@ export function DateAnswer({ value, dateType, onChange }) {
     <Stack gap="lg">
       <ChoiceAnswer
         options={DATE_TYPE_OPTIONS}
-        value={dateType ?? null}
+        value={dateType ?? undefined}
         onChange={(nextType) => emit({ dateType: nextType })}
       />
 
       {showYear ? (
-        <Stack gap="xs">
-          <Text variant="eyebrow" color="subtle">
-            Year
-          </Text>
-          <SegmentedControl
-            options={years}
-            value={year}
-            onChange={(nextYear) => emit({ year: nextYear })}
-          />
-        </Stack>
+        <Animated.View entering={FadeIn.duration(240)}>
+          <Stack gap="xs">
+            <Text variant="eyebrow" color="subtle">
+              Year
+            </Text>
+            <SegmentedControl
+              options={years}
+              value={year}
+              onChange={(nextYear) => emit({ year: nextYear })}
+            />
+          </Stack>
+        </Animated.View>
       ) : null}
 
       {showSeasons ? (
@@ -104,7 +112,7 @@ export function DateAnswer({ value, dateType, onChange }) {
           </Text>
           <ChoiceAnswer
             options={SEASON_OPTIONS}
-            value={monthIndex === null ? null : monthIndex}
+            value={monthIndex === null ? undefined : monthIndex}
             onChange={(seasonMonth) => emit({ monthIndex: seasonMonth })}
           />
         </Stack>

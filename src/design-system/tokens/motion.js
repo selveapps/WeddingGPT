@@ -19,19 +19,27 @@ export const durations = {
   celebrate: 900,
 };
 
+/**
+ * Every spring is over-damped and clamped, so nothing in the app bounces or
+ * overshoots - motion simply eases into place.
+ */
 export const springs = {
-  /** Default for cards, layout shifts, value changes. Settles with no visible bounce. */
-  gentle: { damping: 20, stiffness: 180, mass: 1 },
+  /** Default for cards, layout shifts, value changes. */
+  gentle: { damping: 30, stiffness: 180, mass: 1, overshootClamping: true },
   /** Press feedback - quick and tight. */
-  snappy: { damping: 18, stiffness: 320, mass: 0.7 },
+  snappy: { damping: 32, stiffness: 320, mass: 0.7, overshootClamping: true },
   /** Bottom sheets and modals entering. */
-  sheet: { damping: 26, stiffness: 240, mass: 1.1 },
-  /** Completion checkmarks and celebration pops. A little life, never cartoonish. */
-  bouncy: { damping: 12, stiffness: 260, mass: 0.9 },
+  sheet: { damping: 34, stiffness: 240, mass: 1.1, overshootClamping: true },
+  /** Kept for existing callers; now settles flat like the rest. */
+  bouncy: { damping: 32, stiffness: 260, mass: 0.9, overshootClamping: true },
 };
 
-/** Scale applied to a pressable while it is held down. */
-export const pressScale = 0.97;
+/**
+ * Scale applied to a pressable while it is held down. Kept at 1: shrinking
+ * every card and button on touch read as jittery, so press feedback is an
+ * opacity dip only.
+ */
+export const pressScale = 1;
 
 /** Opacity applied to a pressable while it is held down. */
 export const pressOpacity = 0.9;

@@ -36,6 +36,11 @@ const initialState = {
   categories: emptyCollection(),
   /** Set when the default checklist has been seeded, so we never double-seed. */
   seededAt: null,
+  /**
+   * Today's checklist: the task ids picked this morning, held for the day so
+   * a ticked task stays on the list (checked) instead of being replaced.
+   */
+  today: { date: null, taskIds: [] },
 };
 
 export const usePlanningStore = create()(
@@ -171,8 +176,26 @@ export const usePlanningStore = create()(
         return updated;
       },
 
+      // --- Daily checklist ----------------------------------------------------
+      /** Replace today's list. `date` is a local `YYYY-MM-DD`. */
+      setTodayList(date, taskIds = []) {
+        set({ today: { date, taskIds } });
+      },
+
+      /** Add one more task to today's list, e.g. after finishing the rest. */
+      addToToday(taskId) {
+        const { today } = get();
+        if (!taskId || today.taskIds.includes(taskId)) return;
+        set({ today: { date: today.date ?? todayISO(), taskIds: [...today.taskIds, taskId] } });
+      },
+
       reset() {
-        set({ ...initialState, tasks: emptyCollection(), categories: emptyCollection() });
+        set({
+          ...initialState,
+          tasks: emptyCollection(),
+          categories: emptyCollection(),
+          today: { date: null, taskIds: [] },
+        });
       },
     }),
     {
@@ -183,6 +206,7 @@ export const usePlanningStore = create()(
         tasks: state.tasks,
         categories: state.categories,
         seededAt: state.seededAt,
+        today: state.today,
       }),
     }
   )
@@ -204,3 +228,4 @@ export const selectTaskById = (id) => (state) => state.tasks.byId[id] ?? null;
 export const selectCategoryById = (id) => (state) => state.categories.byId[id] ?? null;
 
 export const selectTaskCount = (state) => state.tasks.allIds.length;
+export const selectToday = (state) => state.today;

@@ -3,7 +3,7 @@ import { Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { useMotion } from '../theme';
@@ -15,8 +15,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  * The press primitive every tappable surface in the app is built on.
  *
  * It exists so three things are impossible to get wrong or forget:
- *  1. Consistent press feedback (a spring scale, or an opacity dip when Reduce
- *     Motion is on) instead of each screen inventing its own.
+ *  1. Consistent press feedback (a quick opacity dip, no scaling) instead of
+ *     each screen inventing its own.
  *  2. Haptics declared by intent - `haptic="selection"` - rather than scattered
  *     `impactAsync` calls with inconsistent weights.
  *  3. A 44pt minimum touch target via `hitSlop`, even when the visual is smaller.
@@ -48,11 +48,11 @@ export function Touchable({
   const blocked = disabled || loading;
 
   const handlePressIn = useCallback(() => {
-    pressed.value = withSpring(1, motion.springs.snappy);
+    pressed.value = withTiming(1, { duration: motion.durations.fast });
   }, [pressed, motion]);
 
   const handlePressOut = useCallback(() => {
-    pressed.value = withSpring(0, motion.springs.snappy);
+    pressed.value = withTiming(0, { duration: motion.durations.fast });
   }, [pressed, motion]);
 
   const handlePress = useCallback(

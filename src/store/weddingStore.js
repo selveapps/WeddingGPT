@@ -65,7 +65,11 @@ export const useWeddingStore = create()(
         set({ onboardingStep: Math.max(0, step) });
       },
 
-      /** Build the real entities from the draft and mark onboarding done. */
+      /**
+       * Build the real entities from the draft and mark onboarding done.
+       * Every answer is optional: an empty draft still produces a valid wedding,
+       * which is what lets "skip" land on a working dashboard.
+       */
       completeOnboarding() {
         const { draft } = get();
 

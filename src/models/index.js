@@ -63,12 +63,12 @@ export {
   ONBOARDING_STEP_COUNT,
   GUEST_COUNT_OPTIONS,
   BUDGET_OPTIONS,
+  budgetOptionsFor,
   STRESSOR_OPTIONS,
   DATE_TYPE_OPTIONS,
   SEASON_OPTIONS,
   clampStepIndex,
   stepAt,
-  isStepAnswered,
 } from './onboarding';
 
 // --- Budget ----------------------------------------------------------------
@@ -103,7 +103,22 @@ export {
   createVendorNote,
   isVendorBooked,
   summariseVendors,
+  localSearchQuery,
+  recommendLocalPicks,
 } from './vendors';
+export {
+  DAILY_CHECKLIST_SIZE,
+  pickDailyTasks,
+  planDailyChecklists,
+  summariseDailyTasks,
+} from './daily';
+export {
+  VENUE_STYLES,
+  findMetro,
+  recommendVenues,
+  venueSearchQuery,
+  venueStyleQuery,
+} from './venues';
 
 // --- Vision ----------------------------------------------------------------
 export {
@@ -116,6 +131,7 @@ export {
 } from './vision';
 
 // --- AI --------------------------------------------------------------------
+export { buildWeddingContext, contextChips } from './aiContext';
 export {
   createConversation,
   createMessage,

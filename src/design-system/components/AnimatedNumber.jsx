@@ -9,7 +9,7 @@ import Text from './Text';
  * The PRD asks for budget figures to animate rather than snap (s.17). This runs
  * the tween on the JS thread with rAF rather than in a Reanimated worklet, on
  * purpose: the displayed string needs the real currency formatter (grouping,
- * lakh/crore, symbols), and that is not worklet-safe. At the handful of numbers
+ * symbols), and that is not worklet-safe. At the handful of numbers
  * a screen shows at once, a JS tween is imperceptible - and it keeps formatting
  * logic in one place instead of duplicating a simplified version for the UI
  * thread.
@@ -22,6 +22,8 @@ export function AnimatedNumber({
   format = (n) => String(Math.round(n)),
   duration,
   variant = 'numeric',
+  /** Tween up from zero on first paint - for reveal moments, not for dashboards. */
+  countUp = false,
   color,
   style,
   ...rest
@@ -29,14 +31,16 @@ export function AnimatedNumber({
   const motion = useMotion();
   const tweenDuration = duration ?? motion.durations.slow;
 
-  const [display, setDisplay] = useState(value);
-  const fromRef = useRef(value);
+  const startsAtZero = countUp && tweenDuration > 0;
+  const [display, setDisplay] = useState(startsAtZero ? 0 : value);
+  const fromRef = useRef(startsAtZero ? 0 : value);
   const frameRef = useRef(null);
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    // Never animate the very first paint - the opening value is not a "change".
-    if (!mountedRef.current) {
+    // Never animate the very first paint - the opening value is not a "change" -
+    // unless the caller asked for a count-up.
+    if (!mountedRef.current && !startsAtZero) {
       mountedRef.current = true;
       fromRef.current = value;
       setDisplay(value);
@@ -49,9 +53,14 @@ export function AnimatedNumber({
       return undefined;
     }
 
+    mountedRef.current = true;
     const from = fromRef.current;
     const delta = value - from;
-    if (delta === 0) return undefined;
+    if (delta === 0) {
+      // A re-run after an interrupted tween: make sure we are showing the target.
+      setDisplay(value);
+      return undefined;
+    }
 
     const start = Date.now();
 

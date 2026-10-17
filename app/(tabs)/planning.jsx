@@ -16,6 +16,7 @@ import {
   BottomSheet,
   ListRow,
   useToast,
+  PageHeader,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
@@ -36,6 +37,7 @@ import {
 } from '@/models';
 import { daysUntil } from '@/lib/date';
 import { TaskRow } from '@/features/planning/TaskRow';
+import { NotificationBell } from '@/features/notifications/NotificationBell';
 
 /**
  * Planning tab - the checklist (PRD s.7).
@@ -178,7 +180,7 @@ export default function PlanningScreen() {
   if (tasks.length === 0) {
     return (
       <Screen bottomInset={spacing.xxl}>
-        <Stack gap="lg">
+        <Stack gap="xl">
           <Header overdueCount={0} />
           <EmptyState
             icon="checklist"
@@ -203,7 +205,7 @@ export default function PlanningScreen() {
         <Button label="Add a task" iconLeft="plus" onPress={() => router.push(Routes.taskAdd)} />
       }
     >
-      <Stack gap="lg">
+      <Stack gap="xl">
         <Header overdueCount={overdueCount} onSortPress={() => setSortOpen(true)} />
 
         {/* --- Progress ---------------------------------------------------- */}
@@ -298,6 +300,7 @@ export default function PlanningScreen() {
           {SORTS.map((entry) => (
             <ListRow
               key={entry.key}
+              inset={false}
               icon={entry.icon}
               title={entry.label}
               trailing={sort === entry.key ? <Icon name="check" size="md" color="brand" /> : null}
@@ -321,31 +324,19 @@ export default function PlanningScreen() {
  */
 function Header({ overdueCount, onSortPress }) {
   return (
-    <Row justify="space-between" align="flex-end">
-      <Stack gap="xxs" style={{ flex: 1 }}>
-        <Text variant="eyebrow" color="subtle">
-          Planning
-        </Text>
-        <Text variant="h1" heading>
-          Your checklist
-        </Text>
-        {overdueCount > 0 ? (
-          <Text variant="bodySm" color="danger">
-            {overdueCount} {overdueCount === 1 ? 'task is' : 'tasks are'} overdue
-          </Text>
-        ) : null}
-      </Stack>
-
-      {onSortPress ? (
-        <Touchable onPress={onSortPress} accessibilityLabel="Sort tasks" hitSlop={12}>
-          <Row gap="xxs">
-            <Icon name="sort" size="md" color="inkMuted" />
-            <Text variant="actionSm" color="muted">
-              Sort
-            </Text>
-          </Row>
-        </Touchable>
-      ) : null}
-    </Row>
+    <PageHeader
+      eyebrow="Planning"
+      title="Your checklist"
+      subtitle={
+        overdueCount > 0
+          ? `${overdueCount} ${overdueCount === 1 ? 'task is' : 'tasks are'} overdue`
+          : undefined
+      }
+      subtitleColor="danger"
+      trailing={<NotificationBell />}
+      actionLabel={onSortPress ? 'Sort' : undefined}
+      actionIcon="sort"
+      onActionPress={onSortPress}
+    />
   );
 }
