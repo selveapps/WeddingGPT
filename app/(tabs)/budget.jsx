@@ -145,6 +145,7 @@ export default function BudgetScreen() {
               </Text>
             </Stack>
 
+            {/* Use a nonzero divisor when the budget is not set yet. */}
             <ProgressBar
               segments={[
                 { key: 'spent', value: summary.spent / (total || 1), color: 'brand' },

@@ -4,7 +4,7 @@
  * Screens never pass a raw string to `track()` - they pass one of these
  * constants, so the event taxonomy stays auditable and a rename is a single
  * edit rather than a grep-and-pray.
- */
+ */ 
 export const AnalyticsEvents = {
   // --- Lifecycle -----------------------------------------------------------
   APP_OPENED: 'app_opened',

@@ -75,6 +75,7 @@ export default function ExpenseDetailScreen() {
 
   const category = categories.find((entry) => entry.id === expense.budgetCategoryId);
   const meta = PAYMENT_STATUS_META[expense.paymentStatus] ?? {};
+  // Never display a negative balance if imported or older data is overpaid.
   const outstanding = Math.max(0, (expense.amount ?? 0) - (expense.paidAmount ?? 0));
 
   const handleSave = (values) => {

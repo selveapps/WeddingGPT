@@ -115,3 +115,4 @@ function createAnalytics(initialProvider) {
 export const analytics = createAnalytics(createConsoleAnalyticsProvider());
 
 export default analytics;
+

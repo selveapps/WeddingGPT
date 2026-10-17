@@ -53,6 +53,7 @@ export function ExpenseForm({
   );
 
   const submit = () => {
+    // Collect errors together so an expense is saved only when its amounts agree.
     const nextErrors = {};
 
     const titleError = validate(title, titleRules);
@@ -151,6 +152,7 @@ export function ExpenseForm({
         />
       </Stack>
 
+      {/* Categories are optional until budget setup provides choices. */}
       {categories.length > 0 ? (
         <Stack gap="sm">
           <SectionHeader eyebrow="Where it belongs" title="Category" />
