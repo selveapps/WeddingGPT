@@ -3,7 +3,9 @@ import React, { useState } from 'react';
 import { Button, Stack, Text, TextField } from '@/design-system/components';
 import { validateWeddingInquiry } from './weddingInquiryValidation';
 
+/** Sample inquiry form demonstrating controlled fields and submit-time validation. */
 export function Proto() {
+	// Keep values together so validation and the submit result use one form snapshot.
 	const [form, setForm] = useState({
 		coupleNames: '',
 		email: '',
@@ -15,12 +17,14 @@ export function Proto() {
 
 	const updateField = (field, value) => {
 		setForm((current) => ({ ...current, [field]: value }));
+		// A previous success message no longer describes the edited form.
 		setSubmitted(false);
 	};
 
 	const submit = () => {
 		const nextErrors = validateWeddingInquiry(form);
 		setErrors(nextErrors);
+		// This prototype confirms locally; it does not send data to a server.
 		if (Object.keys(nextErrors).length === 0) setSubmitted(true);
 	};
 

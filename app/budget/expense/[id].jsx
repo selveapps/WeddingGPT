@@ -130,6 +130,7 @@ export default function ExpenseDetailScreen() {
               label={`Mark as fully paid (${formatMoney(outstanding, currency)} left)`}
               iconLeft="check"
               onPress={() => {
+                // Reuse the store action so the paid amount and status stay in sync.
                 useBudgetStore.getState().recordPayment(expense.id, expense.amount);
                 toast.success('Marked as paid');
               }}

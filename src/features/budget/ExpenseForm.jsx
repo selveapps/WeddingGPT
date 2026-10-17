@@ -110,6 +110,7 @@ export function ExpenseForm({
           value={title}
           onChangeText={(next) => {
             setTitle(next);
+            // Clear this field's message as soon as the user starts correcting it.
             if (errors.title) setErrors((e) => ({ ...e, title: undefined }));
           }}
           placeholder="Venue deposit"
@@ -132,6 +133,7 @@ export function ExpenseForm({
           value={amount}
           onChange={(next) => {
             setAmount(next);
+            // Remove stale validation feedback when the amount changes.
             if (errors.amount) setErrors((e) => ({ ...e, amount: undefined }));
           }}
           currency={currency}

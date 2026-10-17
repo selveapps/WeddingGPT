@@ -61,6 +61,7 @@ export default function BudgetScreen() {
     [categories, expenses]
   );
 
+  // Show the five newest expenses without mutating the store's array.
   const recent = useMemo(
     () =>
       [...expenses]
