@@ -29,6 +29,7 @@ export function Proto() {
 	};
 
 	return (
+		// Stack component with a gap between its children
 		<Stack gap="lg">
 			<Stack gap="xs">
 				<Text variant="title">Wedding inquiry</Text>
@@ -36,6 +37,7 @@ export function Proto() {
 					Share a few details to get your planning started.
 				</Text>
 			</Stack>
+
 
 			<Stack gap="md">
 				<TextField

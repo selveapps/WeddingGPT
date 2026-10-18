@@ -39,6 +39,7 @@ export function Login({ onSignIn, onForgotPassword, onCreateAccount }) {
     },
   });
 
+//  function to validate the form and call onSignIn if valid
   const submit = () => {
     const result = validateForm(
       { email, password },
@@ -65,6 +66,7 @@ export function Login({ onSignIn, onForgotPassword, onCreateAccount }) {
   };
 
   return (
+    // Screen component with a content container style that includes padding and gap
     <Screen
       contentContainerStyle={[
         styles.content,
