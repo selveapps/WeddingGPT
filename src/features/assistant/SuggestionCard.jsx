@@ -23,7 +23,9 @@ export function SuggestionCard({ suggestionId }) {
   if (suggestion.status === SuggestionStatus.CONFIRMED) {
     return (
       <Row gap="xs">
+        {/* Confirmed suggestion */}
         <Icon name="check" size="sm" color="success" />
+        {/* Confirmed suggestion text */}
         <Text variant="bodySm" color="success">
           {isTasks ? `Added ${payload.tasks?.length ?? 0} tasks to your plan` : 'Message shared'}
         </Text>
@@ -42,6 +44,7 @@ export function SuggestionCard({ suggestionId }) {
   return (
     <>
       <Card tone="accent" padding="sm" radius="md">
+        {/* Suggestion card */}
         <Stack gap="sm">
           <Row gap="xs" align="flex-start">
             <Icon name={isTasks ? 'checklist' : 'mail'} size="md" color={colors.accentSoftInk} />

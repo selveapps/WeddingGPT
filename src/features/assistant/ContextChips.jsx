@@ -16,13 +16,6 @@ import {
 } from '@/store';
 import { buildWeddingContext, contextChips } from '@/models';
 
-/**
- * "WeddingGPT can see" - the context chips from PRD s.12.
- *
- * Shows exactly which facts about the wedding travel with each question, so
- * the couple knows why an answer mentions their budget - and, by omission,
- * that guest names and contact details do not.
- */
 export function ContextChips() {
   const { colors, spacing, radii } = useTheme();
   const wedding = useWeddingStore(selectWedding);
@@ -31,6 +24,7 @@ export function ContextChips() {
   const budgetTotal = useBudgetStore(selectBudgetTotal);
   const guests = useGuestStore(selectAllGuests);
 
+  // Compute the context chips based on the wedding data, tasks, expenses, budget total, and guests.
   const chips = useMemo(
     () => contextChips(buildWeddingContext({ wedding, tasks, expenses, budgetTotal, guests })),
     [wedding, tasks, expenses, budgetTotal, guests]
@@ -43,6 +37,7 @@ export function ContextChips() {
       <Text variant="eyebrow" color="subtle">
         WeddingGPT can see
       </Text>
+      {/* Context chips showing the information available to WeddingGPT */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
         {chips.map((chip) => (
           <Row

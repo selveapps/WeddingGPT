@@ -6,17 +6,10 @@ import { useTheme } from '@/design-system/theme';
 
 const MAX_LENGTH = 2000;
 
-/**
- * The message box. Grows with the text up to a few lines, sends on the arrow,
- * and is disabled (with the reason in its placeholder) while a reply is still
- * arriving - one question at a time keeps the conversation readable.
- */
 export function Composer({ onSend, busy = false, autoFocus = false, placeholder = 'Ask anything about your wedding' }) {
   const { colors, spacing, radii, text: textStyles } = useTheme();
   const [value, setValue] = useState('');
-
   const canSend = value.trim().length > 0 && !busy;
-
   const send = () => {
     if (!canSend) return;
     onSend(value.trim());
@@ -39,6 +32,7 @@ export function Composer({ onSend, busy = false, autoFocus = false, placeholder 
           backgroundColor: colors.surface,
         }}
       >
+        {/* Message input */}
         <TextInput
           value={value}
           onChangeText={setValue}
@@ -55,7 +49,7 @@ export function Composer({ onSend, busy = false, autoFocus = false, placeholder 
           submitBehavior="submit"
         />
       </View>
-
+{/* Send button */}
       <Touchable
         onPress={send}
         disabled={!canSend}
@@ -70,6 +64,7 @@ export function Composer({ onSend, busy = false, autoFocus = false, placeholder 
           backgroundColor: canSend ? colors.brand : colors.surfaceSunken,
         }}
       >
+        {/* Send icon */}
         <Icon name="send" size="md" color={canSend ? 'inkOnBrand' : 'inkSubtle'} />
       </Touchable>
     </Row>

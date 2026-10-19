@@ -30,6 +30,7 @@ function MessageBubbleInner({ message, onRetry }) {
   if (isUser) {
     return (
       <Animated.View entering={entering} style={{ alignItems: 'flex-end' }}>
+        {/* User message bubble */}
         <View
           style={{
             maxWidth: '84%',
