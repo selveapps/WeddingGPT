@@ -141,7 +141,7 @@ export default function HomeScreen() {
         <Row gap="sm">
           <Mascot size={52} mood={progress >= 1 ? 'celebrate' : 'happy'} />
           <Stack gap="xxs" style={{ flex: 1 }}>
-            <Text variant="bodySm" color="muted">
+            <Text variant="accent" color="muted">
               {greeting()}
             </Text>
             <Text variant="h1" heading numberOfLines={2}>
@@ -190,7 +190,7 @@ export default function HomeScreen() {
             <Stack gap="xxs">
               <Row gap="xs" align="baseline">
                 <AnimatedNumber value={days} variant="displayMd" color="brandSoftInk" />
-                <Text variant="h4" color="brandSoftInk">
+                <Text variant="accentLg" color="brandSoftInk">
                   {days === 1 ? 'day to go' : 'days to go'}
                 </Text>
               </Row>

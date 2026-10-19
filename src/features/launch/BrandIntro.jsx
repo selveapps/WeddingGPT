@@ -136,7 +136,7 @@ export function BrandIntro({ onFinish, footer }) {
           <View style={{ alignItems: 'center', gap: spacing.xs }}>
             <Row gap="none" align="baseline">
               <Rise value={words}>
-                <Text variant="displayMd" color="ink">
+                <Text variant="displayAccent" color="ink">
                   Wedding
                 </Text>
               </Rise>

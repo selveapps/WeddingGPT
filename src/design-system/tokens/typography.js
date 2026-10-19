@@ -5,6 +5,9 @@
  *  - Fraunces (serif)  -> display + headings. Editorial, warm, a little characterful.
  *  - DM Sans (grotesk) -> body, labels, numerals. Quiet and highly legible at small sizes.
  *
+ * Fraunces italic is the flourish - the stationery touch, used sparingly for
+ * the wordmark, greetings and little asides like "days to go". Never for body.
+ *
  * `fontFamily` values must match the keys registered in `loadAppFonts()`.
  * Screens never hardcode a size - they use `<Text variant="..." />`.
  */
@@ -14,6 +17,8 @@ export const fontFamilies = {
   displayMedium: 'Fraunces-Medium',
   displaySemiBold: 'Fraunces-SemiBold',
   displayBold: 'Fraunces-Bold',
+  displayItalic: 'Fraunces-MediumItalic',
+  displaySemiBoldItalic: 'Fraunces-SemiBoldItalic',
 
   bodyRegular: 'DMSans-Regular',
   bodyMedium: 'DMSans-Medium',
@@ -84,6 +89,14 @@ export const textVariants = {
     letterSpacing: letterSpacings.tight,
   },
 
+  /** displayMd in italic - the "Wedding" half of the wordmark. */
+  displayAccent: {
+    fontFamily: fontFamilies.displaySemiBoldItalic,
+    fontSize: fontSizes.huge,
+    lineHeight: lh(fontSizes.huge, lineHeights.snug),
+    letterSpacing: letterSpacings.tight,
+  },
+
   // --- Headings ------------------------------------------------------------
   h1: {
     fontFamily: fontFamilies.displaySemiBold,
@@ -107,6 +120,20 @@ export const textVariants = {
     fontFamily: fontFamilies.bodySemiBold,
     fontSize: fontSizes.md,
     lineHeight: lh(fontSizes.md, lineHeights.normal),
+    letterSpacing: letterSpacings.normal,
+  },
+
+  /** Italic serif aside: greetings, "days to go". A flourish, not a heading. */
+  accent: {
+    fontFamily: fontFamilies.displayItalic,
+    fontSize: fontSizes.md,
+    lineHeight: lh(fontSizes.md, lineHeights.snug),
+    letterSpacing: letterSpacings.normal,
+  },
+  accentLg: {
+    fontFamily: fontFamilies.displayItalic,
+    fontSize: fontSizes.lg,
+    lineHeight: lh(fontSizes.lg, lineHeights.snug),
     letterSpacing: letterSpacings.normal,
   },
 

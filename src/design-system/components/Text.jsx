@@ -32,6 +32,7 @@ const MAX_SCALE_BY_VARIANT = {
   displayXl: 1.15,
   displayLg: 1.15,
   displayMd: 1.2,
+  displayAccent: 1.2,
   displaySm: 1.25,
   numericLg: 1.2,
   h1: 1.3,
