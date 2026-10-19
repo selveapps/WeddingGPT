@@ -40,6 +40,9 @@ function Dot({ index, reduceMotion }) {
   );
 }
 
+/**
+ * Announces the assistant's pending response with motion-aware visual feedback.
+ */
 export function TypingIndicator() {
   const { reduceMotion } = useMotion();
 

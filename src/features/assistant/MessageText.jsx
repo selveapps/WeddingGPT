@@ -70,6 +70,13 @@ function Inline({ text, color, variant }) {
   );
 }
 
+/**
+ * Formats an assistant reply using the supported markdown-lite subset.
+ *
+ * @param {object} props
+ * @param {string} props.text Reply text to display.
+ * @param {string} [props.color='default'] Design-system text color for the reply.
+ */
 export function MessageText({ text, color = 'default' }) {
   const { spacing } = useTheme();
   const blocks = useMemo(() => parseBlocks(text), [text]);

@@ -49,7 +49,7 @@ export function Composer({ onSend, busy = false, autoFocus = false, placeholder 
           submitBehavior="submit"
         />
       </View>
-{/* Send button */}
+      {/* Send button */}
       <Touchable
         onPress={send}
         disabled={!canSend}

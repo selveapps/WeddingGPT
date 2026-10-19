@@ -10,6 +10,9 @@ import { SuggestionReviewSheet } from './SuggestionReviewSheet';
  * The proposal attached to a reply: "5 tasks ready to add", "A draft RSVP
  * reminder". It opens the review sheet; it never applies anything itself.
  * Once handled it settles into a quiet record of what was decided.
+ *
+ * @param {object} props
+ * @param {string} props.suggestionId ID used to look up the proposal in the AI store.
  */
 export function SuggestionCard({ suggestionId }) {
   const { colors } = useTheme();

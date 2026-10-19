@@ -17,6 +17,16 @@ import {
  * is scanning for. Meal and plus-one appear underneath only when they carry
  * information, so a list of two hundred people stays readable rather than
  * becoming a spreadsheet - which PRD s.27 explicitly warns against.
+ *
+ * When `onToggleSelect` is supplied, both a tap and a long press toggle
+ * selection instead of opening the guest. Without it, a tap calls `onPress`.
+ *
+ * @param {object} props
+ * @param {object} props.guest Guest record to display and pass to callbacks.
+ * @param {string} [props.householdName] Optional household label shown with the guest.
+ * @param {(guest: object) => void} [props.onPress] Opens the guest when selection is disabled.
+ * @param {boolean} [props.selected=false] Whether the row is currently selected.
+ * @param {(guest: object) => void} [props.onToggleSelect] Enables tap/long-press selection.
  */
 export function GuestRow({ guest, householdName, onPress, selected, onToggleSelect }) {
   const { colors, spacing, borderWidths } = useTheme();

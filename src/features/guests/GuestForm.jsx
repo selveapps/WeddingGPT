@@ -28,6 +28,17 @@ import { rules, validate } from '@/lib/validation';
  * Only the first name is required. A guest list starts as a list of names and
  * fills in over months - demanding an email before someone can be written down
  * is how half a guest list ends up in a notes app instead.
+ *
+ * Optional contact details are validated when provided. On a valid submit,
+ * the callback receives trimmed text, empty contact details as `null`, and
+ * tags split into a list.
+ *
+ * @param {object} props
+ * @param {object} [props.initial] Existing guest values to prefill for editing.
+ * @param {Array<{id: string, name: string}>} [props.households=[]] Households available for assignment.
+ * @param {string} [props.submitLabel='Save'] Label for the primary action.
+ * @param {(guest: object) => void} props.onSubmit Called with the normalized guest form values.
+ * @param {() => void} [props.onCancel] Optional cancel action.
  */
 export function GuestForm({
   initial,

@@ -16,6 +16,10 @@ import {
 } from '@/store';
 import { buildWeddingContext, contextChips } from '@/models';
 
+/**
+ * Summarizes the wedding information currently available to WeddingGPT.
+ * Renders nothing when there is no context to show.
+ */
 export function ContextChips() {
   const { colors, spacing, radii } = useTheme();
   const wedding = useWeddingStore(selectWedding);
