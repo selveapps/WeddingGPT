@@ -8,6 +8,7 @@ import {
   Screen,
   SectionHeader,
   Stack,
+  Text,
   TextField,
   useToast,
 } from '@/design-system/components';
@@ -67,7 +68,7 @@ export function Contact() {
           title={CONTACT_COPY.title}
           subtitle={CONTACT_COPY.subtitle}
         />
-        // Show a summary of the number of contacts and available contact methods.
+        {/* Show a summary of the number of contacts and available contact methods. */}
         <ContactSummary contactCount={contacts.length} methods={methods} />
 
         <Stack gap="sm">
@@ -86,7 +87,7 @@ export function Contact() {
           />
           <ContactFilters value={filter} onChange={setFilter} />
         </Stack>
-// Show the list of contacts if there are any, otherwise show an empty state with appropriate messaging based on the current search query and filter.
+        {/* Show the list of contacts if there are any, otherwise an empty state based on the current search and filter. */}
         {contacts.length > 0 ? (
           <Stack gap="sm">
             {contacts.map((contact) => (

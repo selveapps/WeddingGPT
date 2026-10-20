@@ -28,6 +28,11 @@ module.exports = defineConfig([
     languageOptions: { globals: globals.node },
   },
   {
+    // The proxy has its own package.json; CI installs only the app's deps.
+    files: ['server/ai-proxy/**/*.mjs'],
+    rules: { 'import/no-unresolved': ['error', { ignore: ['^@anthropic-ai/'] }] },
+  },
+  {
     files: ['**/__tests__/**', '**/*.test.js'],
     languageOptions: { globals: globals.jest },
   },
