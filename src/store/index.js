@@ -6,6 +6,7 @@ import { useBudgetStore } from './budgetStore';
 import { useGuestStore } from './guestStore';
 import { useAIStore } from './aiStore';
 import { useNotificationStore } from './notificationStore';
+import { useVendorStore } from './vendorStore';
 
 export * from './weddingStore';
 export * from './planningStore';
@@ -13,6 +14,7 @@ export * from './budgetStore';
 export * from './guestStore';
 export * from './aiStore';
 export * from './notificationStore';
+export * from './vendorStore';
 
 const STORES = [
   useWeddingStore,
@@ -21,6 +23,7 @@ const STORES = [
   useGuestStore,
   useAIStore,
   useNotificationStore,
+  useVendorStore,
 ];
 
 /**
@@ -92,4 +95,5 @@ export function resetAllStores() {
   useGuestStore.getState().reset();
   useAIStore.getState().reset();
   useNotificationStore.getState().reset();
+  useVendorStore.getState().reset();
 }
