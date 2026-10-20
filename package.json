@@ -1,6 +1,27 @@
 {
   "name": "weddinggpt",
   "version": "0.1.0",
+  "description": "WeddingGPT - an AI wedding-planning companion for iOS and Android: checklist, budget, guest list and a planning assistant, built with Expo and React Native.",
+  "keywords": [
+    "wedding",
+    "wedding-planner",
+    "expo",
+    "react-native",
+    "ai-assistant",
+    "budget",
+    "guest-list",
+    "mobile-app"
+  ],
+  "homepage": "https://github.com/selveapps/WeddingGPT#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/selveapps/WeddingGPT.git"
+  },
+  "bugs": {
+    "url": "https://github.com/selveapps/WeddingGPT/issues"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Selve Apps",
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
@@ -15,7 +36,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\"",
     "format:check": "prettier --check \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\"",
-    "test": "jest"
+    "test": "jest",
+    "build": "expo export"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",

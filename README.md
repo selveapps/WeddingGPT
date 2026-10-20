@@ -1,6 +1,28 @@
-# WeddingGPT
+<p align="center">
+  <img src="assets/icon.png" alt="WeddingGPT logo" width="120" height="120" />
+</p>
 
-A wedding-planning workspace built with Expo and React Native (JavaScript).
+<h1 align="center">WeddingGPT</h1>
+
+<p align="center">
+  <em>Your wedding, thoughtfully planned.</em><br />
+  A wedding-planning workspace built with Expo and React Native (JavaScript).
+</p>
+
+<p align="center">
+  <a href="https://github.com/selveapps/WeddingGPT/actions/workflows/ci.yml"><img src="https://github.com/selveapps/WeddingGPT/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <img src="https://img.shields.io/badge/Expo-SDK%2057-000020?logo=expo&logoColor=white" alt="Expo SDK 57" />
+  <img src="https://img.shields.io/badge/React%20Native-0.86-61DAFB?logo=react&logoColor=black" alt="React Native 0.86" />
+  <img src="https://img.shields.io/badge/node-24-339933?logo=node.js&logoColor=white" alt="Node 24" />
+  <img src="https://img.shields.io/badge/platforms-iOS%20%7C%20Android-lightgrey" alt="iOS and Android" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-proprietary-C93862" alt="License: proprietary" /></a>
+</p>
+
+<p align="center">
+  <a href="#running-it">Run it</a> &middot;
+  <a href="CONTRIBUTING.md">Contribute</a> &middot;
+  <a href="SECURITY.md">Security</a>
+</p>
 
 Built against the Product & Technical Requirements Document. The PRD defines
 seven delivery phases; this repo currently has **Phases 1-3 complete**:
@@ -26,6 +48,10 @@ computer), or enter the `exp://<your-lan-ip>:8081` URL manually.
 | `npm run ios` | Open on an iOS simulator (macOS only) |
 | `npm run web` | Browser preview |
 | `npm run doctor` | Check dependency/version health |
+| `npm test` | Run the Jest test suite |
+| `npm run lint` | Lint with ESLint (Expo config) |
+| `npm run format` | Format with Prettier |
+| `npm run build` | Export production bundles with `expo export` |
 
 ### Node version
 
