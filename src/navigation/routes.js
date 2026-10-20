@@ -64,12 +64,6 @@ export const Routes = {
   vendorCategory: (key) => `/vendors/category/${key}`,
   vendorDetail: (id) => `/vendors/${id}`,
 
-  // --- Profile bookings ---------------------------------------------------
-  bookingTracker: '/account/bookings',
-  bookingAdd: '/account/bookings/new',
-  bookingDetail: (id) => `/account/bookings/${encodeURIComponent(id)}`,
-  bookingEdit: (id) => `/account/bookings/${encodeURIComponent(id)}/edit`,
-
   // --- Vision -------------------------------------------------------------
   vision: '/vision',
   styleQuiz: '/vision/quiz',
@@ -79,7 +73,6 @@ export const Routes = {
   // --- Monetisation and account -------------------------------------------
   paywall: '/paywall',
   account: '/account',
-  bookings: '/account/bookings',
   weddingDetails: '/account/wedding',
   notifications: '/account/notifications',
   subscription: '/account/subscription',
