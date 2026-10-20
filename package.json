@@ -10,7 +10,11 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "doctor": "npx expo-doctor",
-    "icons": "node scripts/build-icons.mjs"
+    "icons": "node scripts/build-icons.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\"",
+    "format:check": "prettier --check \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\""
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
@@ -39,5 +43,11 @@
     "react-native-web": "^0.21.2",
     "react-native-worklets": "0.10.1",
     "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~57.0.2",
+    "jest-expo": "~57.0.6",
+    "prettier": "^3.9.10"
   }
 }

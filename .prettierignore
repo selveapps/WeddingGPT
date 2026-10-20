@@ -1,0 +1,6 @@
+node_modules
+dist
+.expo
+package-lock.json
+server/ai-proxy/node_modules
+WeddingGPT
