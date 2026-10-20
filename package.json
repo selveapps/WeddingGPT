@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\"",
-    "format:check": "prettier --check \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\""
+    "format:check": "prettier --check \"app/**/*.{js,jsx}\" \"src/**/*.{js,jsx}\"",
+    "test": "jest"
   },
   "dependencies": {
     "@expo-google-fonts/dm-sans": "^0.4.2",
@@ -49,5 +50,16 @@
     "eslint-config-expo": "~57.0.2",
     "jest-expo": "~57.0.6",
     "prettier": "^3.9.10"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "<rootDir>/server/",
+      "<rootDir>/WeddingGPT/"
+    ]
   }
 }
