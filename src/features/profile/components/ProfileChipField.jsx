@@ -11,10 +11,9 @@ import {
 /**
  * A labelled chip group for single- or multi-select profile fields.
  *
- * Options are `{ value, label, description? }`. Multi-select toggles membership;
- * single-select replaces the current value. Descriptions render as a quiet hint
- * under the chips when the selected option has one - useful for planning stage
- * and ceremony type, where the label alone is not always enough.
+ * Options are `{ value, label, description?, disabled? }`. Multi-select toggles
+ * membership; single-select replaces the current value. Descriptions render as
+ * a quiet hint under the chips when the selected option has one.
  */
 export function ProfileChipField({
   eyebrow,
@@ -57,9 +56,7 @@ export function ProfileChipField({
 
   return (
     <Stack gap="sm" testID={testID}>
-      {title || eyebrow ? (
-        <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
-      ) : null}
+      {title || eyebrow ? <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} /> : null}
 
       <Row
         gap="xs"

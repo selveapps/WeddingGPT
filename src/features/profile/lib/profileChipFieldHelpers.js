@@ -3,9 +3,7 @@ export function normalizeChipValues(value) {
 }
 
 export function isChipOptionSelected(value, optionValue, multiple) {
-  return multiple
-    ? normalizeChipValues(value).includes(optionValue)
-    : value === optionValue;
+  return multiple ? normalizeChipValues(value).includes(optionValue) : value === optionValue;
 }
 
 export function isChipSelectionLimitReached(value, optionValue, maxSelections) {
@@ -23,11 +21,7 @@ export function toggleChipOption(value, optionValue, maxSelections) {
   if (current.includes(optionValue)) {
     return current.filter((item) => item !== optionValue);
   }
-  if (
-    Number.isInteger(maxSelections) &&
-    maxSelections >= 0 &&
-    current.length >= maxSelections
-  ) {
+  if (Number.isInteger(maxSelections) && maxSelections >= 0 && current.length >= maxSelections) {
     return current;
   }
   return [...current, optionValue];

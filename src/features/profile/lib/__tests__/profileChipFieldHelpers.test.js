@@ -8,10 +8,7 @@ import {
 
 describe('profile chip field helpers', () => {
   it('normalizes invalid and duplicate multi-select values', () => {
-    expect(normalizeChipValues(['garden', 'classic', 'garden'])).toEqual([
-      'garden',
-      'classic',
-    ]);
+    expect(normalizeChipValues(['garden', 'classic', 'garden'])).toEqual(['garden', 'classic']);
     expect(normalizeChipValues(null)).toEqual([]);
     expect(normalizeChipValues('garden')).toEqual([]);
   });
@@ -30,19 +27,12 @@ describe('profile chip field helpers', () => {
   });
 
   it('removes all duplicate copies of a deselected value', () => {
-    expect(toggleChipOption(['garden', 'modern', 'garden'], 'garden')).toEqual([
-      'modern',
-    ]);
+    expect(toggleChipOption(['garden', 'modern', 'garden'], 'garden')).toEqual(['modern']);
   });
 
   it('enforces a maximum without blocking deselection', () => {
-    expect(toggleChipOption(['garden', 'modern'], 'classic', 2)).toEqual([
-      'garden',
-      'modern',
-    ]);
-    expect(toggleChipOption(['garden', 'modern'], 'garden', 2)).toEqual([
-      'modern',
-    ]);
+    expect(toggleChipOption(['garden', 'modern'], 'classic', 2)).toEqual(['garden', 'modern']);
+    expect(toggleChipOption(['garden', 'modern'], 'garden', 2)).toEqual(['modern']);
   });
 
   it('only reports the limit for a new selection beyond capacity', () => {

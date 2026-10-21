@@ -30,11 +30,7 @@ export {
   labelsForStyles,
 } from './profileHelpers';
 
-export {
-  validateProfileValues,
-  validateProfileField,
-  sectionForProfileField,
-} from './profileValidation';
+export { validateProfileValues, validateProfileField, sectionForProfileField } from './profileValidation';
 
 export {
   normalizeChipValues,
