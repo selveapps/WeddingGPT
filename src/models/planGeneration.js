@@ -1,6 +1,6 @@
 import { createTask } from './planning';
 import { TaskPriority, DateType, PlanningStage } from './enums';
-import { addDays, addMonths, daysUntil, todayISO } from '../lib/date';
+import { addDays, addMonths, daysUntil, toISODate } from '../lib/date';
 
 /**
  * Personalised plan generation (PRD s.4.4).
@@ -446,7 +446,7 @@ export function generatePersonalisedPlan({ wedding, categories = [], from = new 
   // the task that was most overdue in template terms gets the earliest slot.
   const ordered = [...applicable].sort((a, b) => b.monthsBefore - a.monthsBefore);
 
-  const today = todayISO();
+  const today = toISODate(from);
   // The earliest a pulled-forward task may land. Never today - a checklist due
   // the moment it is created reads as a failure you have already made.
   const floorDate = addDays(today, 3);
