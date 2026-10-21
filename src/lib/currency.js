@@ -77,13 +77,25 @@ export function formatMoneyCompact(minor, currency = DEFAULT_CURRENCY) {
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
 
-  const trim = (n) => String(Number(n.toFixed(1))); // 4.0 -> "4", 4.5 -> "4.5"
+  if (abs < 1e3) return formatMoney(minor, currency);
 
-  if (abs >= 1e9) return `${sign}${symbol}${trim(abs / 1e9)}B`;
-  if (abs >= 1e6) return `${sign}${symbol}${trim(abs / 1e6)}M`;
-  if (abs >= 1e3) return `${sign}${symbol}${trim(abs / 1e3)}K`;
-  return formatMoney(minor, currency);
+  // Round first, then pick the unit: 999,960 rounds to 1000.0K, which should
+  // read as "$1M" rather than "$1000K".
+  let scaled = 0;
+  let suffix = '';
+  for (const [unit, size] of COMPACT_UNITS) {
+    scaled = Number((abs / size).toFixed(1)); // 4.0 -> 4, 4.5 -> 4.5
+    suffix = unit;
+    if (scaled < 1000) break;
+  }
+  return `${sign}${symbol}${scaled}${suffix}`;
 }
+
+const COMPACT_UNITS = [
+  ['K', 1e3],
+  ['M', 1e6],
+  ['B', 1e9],
+];
 
 /** Currency symbol on its own, for text field affixes. */
 export function currencySymbol(currency = DEFAULT_CURRENCY) {
