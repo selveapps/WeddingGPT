@@ -39,6 +39,7 @@ export {
 export {
   normalizeChipValues,
   isChipOptionSelected,
+  isChipSelectionLimitReached,
   toggleChipOption,
   selectedChipDescriptions,
 } from './profileChipFieldHelpers';

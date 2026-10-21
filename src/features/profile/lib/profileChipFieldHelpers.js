@@ -8,6 +8,16 @@ export function isChipOptionSelected(value, optionValue, multiple) {
     : value === optionValue;
 }
 
+export function isChipSelectionLimitReached(value, optionValue, maxSelections) {
+  const current = normalizeChipValues(value);
+  return (
+    !current.includes(optionValue) &&
+    Number.isInteger(maxSelections) &&
+    maxSelections >= 0 &&
+    current.length >= maxSelections
+  );
+}
+
 export function toggleChipOption(value, optionValue, maxSelections) {
   const current = normalizeChipValues(value);
   if (current.includes(optionValue)) {

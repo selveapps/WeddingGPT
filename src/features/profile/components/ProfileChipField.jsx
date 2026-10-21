@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 
 import { Stack, Row, Chip, Text, SectionHeader } from '@/design-system/components';
 import {
+  isChipSelectionLimitReached,
   isChipOptionSelected,
   toggleChipOption,
 } from '../lib/profileChipFieldHelpers';
@@ -24,6 +25,7 @@ export function ProfileChipField({
   /** When true, `value` is an array and chips toggle membership. */
   multiple = false,
   maxSelections,
+  onSelectionLimitReached,
   size = 'sm',
   helper,
   error,
@@ -37,6 +39,10 @@ export function ProfileChipField({
 
   const handlePress = (optionValue) => {
     if (multiple) {
+      if (isChipSelectionLimitReached(value, optionValue, maxSelections)) {
+        onSelectionLimitReached?.(maxSelections);
+        return;
+      }
       onChange?.(toggleChipOption(value, optionValue, maxSelections));
       return;
     }

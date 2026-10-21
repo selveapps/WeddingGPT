@@ -1,4 +1,5 @@
 import {
+  isChipSelectionLimitReached,
   isChipOptionSelected,
   normalizeChipValues,
   selectedChipDescriptions,
@@ -42,6 +43,12 @@ describe('profile chip field helpers', () => {
     expect(toggleChipOption(['garden', 'modern'], 'garden', 2)).toEqual([
       'modern',
     ]);
+  });
+
+  it('only reports the limit for a new selection beyond capacity', () => {
+    expect(isChipSelectionLimitReached(['garden'], 'modern', 1)).toBe(true);
+    expect(isChipSelectionLimitReached(['garden'], 'garden', 1)).toBe(false);
+    expect(isChipSelectionLimitReached(['garden'], 'modern', undefined)).toBe(false);
   });
 
   it('returns descriptions for selected options in option order', () => {
