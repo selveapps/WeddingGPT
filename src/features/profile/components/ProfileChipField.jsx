@@ -26,6 +26,7 @@ export function ProfileChipField({
   size = 'sm',
   helper,
   error,
+  disabled = false,
   testID,
 }) {
   const selectedMeta = useMemo(() => {
@@ -54,7 +55,7 @@ export function ProfileChipField({
             label={option.label}
             size={size}
             selected={isChipOptionSelected(value, option.value, multiple)}
-            disabled={Boolean(option.disabled)}
+            disabled={disabled || Boolean(option.disabled)}
             onPress={() => handlePress(option.value)}
           />
         ))}
