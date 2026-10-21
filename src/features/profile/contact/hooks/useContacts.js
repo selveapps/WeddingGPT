@@ -14,10 +14,11 @@ import { ContactFilter } from '../lib/contactConstants';
 export function useContacts({ filter = ContactFilter.ALL, query = '' } = {}) {
   const vendors = useVendorStore(selectAllVendors);
   const wedding = useWeddingStore(selectWedding);
+  const weddingId = wedding?.id;
 
   const contacts = useMemo(() => {
-    const weddingVendors = wedding?.id
-      ? vendors.filter((vendor) => vendor.weddingId === wedding.id)
+    const weddingVendors = weddingId
+      ? vendors.filter((vendor) => vendor.weddingId === weddingId)
       : vendors;
     const withContactDetails = weddingVendors.filter(hasContactDetails);
     return sortContacts(
@@ -26,7 +27,7 @@ export function useContacts({ filter = ContactFilter.ALL, query = '' } = {}) {
         query
       )
     );
-  }, [filter, query, vendors, wedding?.id]);
+  }, [filter, query, vendors, weddingId]);
 
   return { contacts, wedding };
 }
