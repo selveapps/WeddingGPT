@@ -23,6 +23,7 @@ export function ProfileChipField({
   onChange,
   /** When true, `value` is an array and chips toggle membership. */
   multiple = false,
+  maxSelections,
   size = 'sm',
   helper,
   error,
@@ -36,7 +37,7 @@ export function ProfileChipField({
 
   const handlePress = (optionValue) => {
     if (multiple) {
-      onChange?.(toggleChipOption(value, optionValue));
+      onChange?.(toggleChipOption(value, optionValue, maxSelections));
       return;
     }
     onChange?.(optionValue);

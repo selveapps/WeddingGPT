@@ -8,11 +8,19 @@ export function isChipOptionSelected(value, optionValue, multiple) {
     : value === optionValue;
 }
 
-export function toggleChipOption(value, optionValue) {
+export function toggleChipOption(value, optionValue, maxSelections) {
   const current = normalizeChipValues(value);
-  return current.includes(optionValue)
-    ? current.filter((item) => item !== optionValue)
-    : [...current, optionValue];
+  if (current.includes(optionValue)) {
+    return current.filter((item) => item !== optionValue);
+  }
+  if (
+    Number.isInteger(maxSelections) &&
+    maxSelections >= 0 &&
+    current.length >= maxSelections
+  ) {
+    return current;
+  }
+  return [...current, optionValue];
 }
 
 export function selectedChipDescriptions(options, value) {

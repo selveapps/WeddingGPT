@@ -34,6 +34,16 @@ describe('profile chip field helpers', () => {
     ]);
   });
 
+  it('enforces a maximum without blocking deselection', () => {
+    expect(toggleChipOption(['garden', 'modern'], 'classic', 2)).toEqual([
+      'garden',
+      'modern',
+    ]);
+    expect(toggleChipOption(['garden', 'modern'], 'garden', 2)).toEqual([
+      'modern',
+    ]);
+  });
+
   it('returns descriptions for selected options in option order', () => {
     const options = [
       { value: 'garden', description: 'Soft and natural' },
