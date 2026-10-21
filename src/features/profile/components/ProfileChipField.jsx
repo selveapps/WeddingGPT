@@ -1,6 +1,10 @@
 import React, { useMemo } from 'react';
 
 import { Stack, Row, Chip, Text, SectionHeader } from '@/design-system/components';
+import {
+  isChipOptionSelected,
+  toggleChipOption,
+} from '../lib/profileChipFieldHelpers';
 
 /**
  * A labelled chip group for single- or multi-select profile fields.
@@ -29,20 +33,9 @@ export function ProfileChipField({
     return options.find((option) => option.value === value) ?? null;
   }, [multiple, options, value]);
 
-  const isSelected = (optionValue) => {
-    if (multiple) {
-      return Array.isArray(value) && value.includes(optionValue);
-    }
-    return value === optionValue;
-  };
-
   const handlePress = (optionValue) => {
     if (multiple) {
-      const current = Array.isArray(value) ? value : [];
-      const next = current.includes(optionValue)
-        ? current.filter((item) => item !== optionValue)
-        : [...current, optionValue];
-      onChange?.(next);
+      onChange?.(toggleChipOption(value, optionValue));
       return;
     }
     onChange?.(optionValue);
@@ -60,7 +53,7 @@ export function ProfileChipField({
             key={String(option.value)}
             label={option.label}
             size={size}
-            selected={isSelected(option.value)}
+            selected={isChipOptionSelected(value, option.value, multiple)}
             onPress={() => handlePress(option.value)}
           />
         ))}
