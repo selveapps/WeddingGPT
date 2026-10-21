@@ -28,6 +28,12 @@ describe('profile chip field helpers', () => {
     expect(value).toEqual(['garden']);
   });
 
+  it('removes all duplicate copies of a deselected value', () => {
+    expect(toggleChipOption(['garden', 'modern', 'garden'], 'garden')).toEqual([
+      'modern',
+    ]);
+  });
+
   it('returns descriptions for selected options in option order', () => {
     const options = [
       { value: 'garden', description: 'Soft and natural' },
