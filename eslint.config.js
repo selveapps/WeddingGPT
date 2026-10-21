@@ -33,7 +33,7 @@ module.exports = defineConfig([
     rules: { 'import/no-unresolved': ['error', { ignore: ['^@anthropic-ai/'] }] },
   },
   {
-    files: ['**/__tests__/**', '**/*.test.js'],
+    files: ['**/__tests__/**', '**/*.test.js', 'jest.setup.js'],
     languageOptions: { globals: globals.jest },
   },
 ]);
