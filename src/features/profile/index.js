@@ -16,6 +16,7 @@ export { default } from './Profile';
 export {
   ProfileForm,
   ProfileHero,
+  ProfileHeroStats,
   ProfileCompleteness,
   ProfileSummaryCard,
   ProfileSettingsLinks,

@@ -19,13 +19,20 @@ import {
   ProfileForm,
   ProfileSettingsLinks,
   ProfileDangerZone,
-  ProfileTips,
   ProfileStickyActions,
 } from './components';
-import { PROFILE_COPY } from './lib/profileConstants';
+import { PROFILE_COPY, PROFILE_SECTIONS } from './lib/profileConstants';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
+ *
+ * Layout, top to bottom:
+ *  1. Hero        - couple avatars, names, date/place, key stats
+ *  2. Strength    - completeness ring and the single best "Next up" prompt
+ *  3. Snapshot    - two-column tiles; empty ones jump to the right section
+ *  4. Edit        - segmented switcher showing one form section at a time
+ *  5. Settings    - links to other account screens
+ *  6. Danger zone - device reset
  *
  * Feature files live in `components/`, `fields/`, `hooks/`, `lib/` and
  * `booking/`. This file is the screen shell only.
@@ -66,13 +73,20 @@ export function Profile() {
     if (message) toast.success(message);
   }, [form, toast]);
 
-  const handleMissingPress = useCallback(
+  /** Open a form section from a prompt (hero, Next up, snapshot tile). */
+  const openSection = useCallback(
     (sectionId) => {
+      if (!sectionId) return;
       form.setFocusedSection(sectionId);
       form.setEditing(true);
     },
     [form]
   );
+
+  /** Manual tab switches clear the highlight so the same prompt can re-trigger it. */
+  const handleSectionChange = useCallback(() => {
+    form.setFocusedSection(null);
+  }, [form]);
 
   const handleSetup = useCallback(() => {
     buildWorkspace();
@@ -115,28 +129,18 @@ export function Profile() {
       }
     >
       <Stack gap="xl">
-        <PageHeader
-          eyebrow={PROFILE_COPY.screenEyebrow}
-          title={PROFILE_COPY.screenTitle}
-          subtitle={PROFILE_COPY.screenSubtitle}
-        />
+        <PageHeader eyebrow={PROFILE_COPY.screenEyebrow} title={PROFILE_COPY.screenTitle} />
 
-        <ProfileHero
-          values={form.values}
-          completenessPercent={form.completeness.percent}
-        />
+        <Stack gap="md">
+          <ProfileHero
+            values={form.values}
+            completenessPercent={form.completeness.percent}
+            onPartnerPress={() => openSection(PROFILE_SECTIONS.PARTNER)}
+          />
+          <ProfileCompleteness completeness={form.completeness} onMissingPress={openSection} />
+        </Stack>
 
-        <ProfileCompleteness
-          completeness={form.completeness}
-          onMissingPress={handleMissingPress}
-        />
-
-        <ProfileTips
-          missing={form.completeness.missing}
-          onTipPress={handleMissingPress}
-        />
-
-        <ProfileSummaryCard values={form.values} />
+        <ProfileSummaryCard values={form.values} onTilePress={openSection} />
 
         <ProfileForm
           values={form.values}
@@ -150,6 +154,7 @@ export function Profile() {
           onGuestCountOption={form.setGuestCountOption}
           onSave={handleSave}
           onDiscard={handleDiscardRequest}
+          onSectionChange={handleSectionChange}
           showActions={false}
         />
 

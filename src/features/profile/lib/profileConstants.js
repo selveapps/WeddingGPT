@@ -233,3 +233,84 @@ export const EMPTY_PROFILE_VALUES = {
 };
 
 export { CeremonyType, PlanningStage, DateType };
+
+/**
+ * Short labels for the section switcher above the form. Kept to one or two
+ * words so four segments fit on a phone without truncating.
+ */
+export const PROFILE_SECTION_TABS = [
+  { value: PROFILE_SECTIONS.PERSONAL, label: 'You' },
+  { value: PROFILE_SECTIONS.PARTNER, label: 'Partner' },
+  { value: PROFILE_SECTIONS.WEDDING, label: 'The day' },
+  { value: PROFILE_SECTIONS.VISION, label: 'Style' },
+];
+
+/**
+ * Friendly prompts for each missing completeness field. Shared by the
+ * completeness card and the tips list so the wording never drifts apart.
+ */
+export const PROFILE_TIP_COPY = {
+  ownerName: {
+    title: 'Add your name',
+    subtitle: 'So greetings and the dashboard feel like yours.',
+  },
+  email: {
+    title: 'Add an email',
+    subtitle: 'Optional, and kept on this device for now.',
+  },
+  phone: {
+    title: 'Add a phone number',
+    subtitle: 'Handy later for vendors and day-of contacts.',
+  },
+  partnerName: {
+    title: 'Name your partner',
+    subtitle: 'The home screen will greet you both.',
+  },
+  date: {
+    title: 'Set the wedding date',
+    subtitle: 'Even a rough month unlocks the countdown and pacing.',
+  },
+  city: {
+    title: 'Add your city',
+    subtitle: 'Local venue and vendor picks need a place to search near.',
+  },
+  guestCountEstimate: {
+    title: 'Estimate your guest count',
+    subtitle: 'A band is enough - it shapes budget and seating later.',
+  },
+  budgetTotal: {
+    title: 'Set a starting budget',
+    subtitle: 'A number you can change. The Budget tab will refine it.',
+  },
+  ceremonyType: {
+    title: 'Choose the kind of celebration',
+    subtitle: 'Ceremony, reception, multi-day - it tunes the checklist.',
+  },
+  planningStage: {
+    title: 'Say where you are in planning',
+    subtitle: 'Early or final stretch changes what I nudge you about.',
+  },
+  styleTags: {
+    title: 'Pick a style or two',
+    subtitle: 'Helps inspiration and how the assistant talks about your day.',
+  },
+};
+
+/** Extra copy used by the redesigned profile layout. */
+export const PROFILE_LAYOUT_COPY = {
+  editEyebrow: 'Edit',
+  editTitle: 'Your profile',
+  editSubtitle: 'Pick a section to update. Changes save together.',
+  snapshotEyebrow: 'At a glance',
+  snapshotTitle: 'Wedding snapshot',
+  snapshotSubtitle: 'Tap anything that still needs a detail.',
+  nextUpLabel: 'Next up',
+  completeTitle: 'Your profile is all set',
+  completeSubtitle: 'You can still refine names, style and focus any time.',
+  soonLabel: 'Soon',
+  statDays: 'Days to go',
+  statGuests: 'Guests',
+  statBudget: 'Budget',
+  statEmpty: '—',
+};
+

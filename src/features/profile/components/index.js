@@ -1,4 +1,5 @@
 export { ProfileHero } from './ProfileHero';
+export { ProfileHeroStats } from './ProfileHeroStats';
 export { ProfileCompleteness } from './ProfileCompleteness';
 export { ProfileSummaryCard } from './ProfileSummaryCard';
 export { ProfileTips } from './ProfileTips';

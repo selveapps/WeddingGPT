@@ -11,6 +11,9 @@ export {
   STYLE_OPTIONS,
   STRESSOR_FIELD_OPTIONS,
   GUEST_COUNT_FIELD_OPTIONS,
+  PROFILE_SECTION_TABS,
+  PROFILE_TIP_COPY,
+  PROFILE_LAYOUT_COPY,
 } from './profileConstants';
 
 export {
@@ -20,6 +23,7 @@ export {
   buildWorkspacePatches,
   displayCoupleName,
   buildSummaryRows,
+  buildSnapshotTiles,
   formatWeddingDateLine,
   formatLocationLine,
   completenessTone,

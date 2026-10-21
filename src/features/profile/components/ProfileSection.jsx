@@ -1,15 +1,16 @@
 import React from 'react';
 import { View } from 'react-native';
 
-import { Stack, Card, SectionHeader, Icon, Text, Row } from '@/design-system/components';
+import { Stack, Card, Icon, Text, Row, Divider } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 
 /**
- * A labelled card block inside the Profile form.
+ * A titled card holding one group of Profile fields.
  *
- * Keeps every section on the same rhythm: eyebrow + title + optional subtitle,
- * then the fields. When `highlighted` is true (after a failed save that pointed
- * at this section), a soft brand tint draws the eye without shouting error.
+ * The header (icon, eyebrow, title, subtitle) lives inside the card so a
+ * section reads as one object under the section switcher. When `highlighted`
+ * is true (a failed save or a "Next up" tap pointed here), a brand border and
+ * a small badge draw the eye without shouting error.
  */
 export function ProfileSection({
   eyebrow,
@@ -22,53 +23,62 @@ export function ProfileSection({
   style,
   testID,
 }) {
-  const { colors, spacing, radii } = useTheme();
+  const { colors, spacing, radii, borderWidths } = useTheme();
 
   return (
-    <Stack gap="sm" style={style} testID={testID}>
-      <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
-
-      <Card
-        tone={highlighted ? 'brand' : 'plain'}
-        padding="lg"
-        style={
-          highlighted
-            ? {
-                borderWidth: 1,
-                borderColor: colors.brand,
-              }
-            : undefined
-        }
-      >
-        <Stack gap="md">
+    <Card
+      tone="plain"
+      padding="lg"
+      radius="xl"
+      style={[
+        highlighted ? { borderWidth: borderWidths.thick, borderColor: colors.brand } : null,
+        style,
+      ]}
+      testID={testID}
+    >
+      <Stack gap="lg">
+        <Row gap="sm" align="flex-start">
           {icon ? (
-            <Row gap="sm" align="center">
-              <View
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: radii.pill,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: highlighted ? colors.surface : colors.brandSoft,
-                }}
-              >
-                <Icon name={icon} size="sm" color={highlighted ? 'brand' : 'brandSoftInk'} />
-              </View>
-              <Text variant="labelStrong" color="muted">
-                {title}
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: radii.md,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: highlighted ? colors.brand : colors.brandSoft,
+              }}
+            >
+              <Icon name={icon} size="md" color={highlighted ? 'inkOnBrand' : 'brandSoftInk'} />
+            </View>
+          ) : null}
+          <Stack gap="hair" style={{ flex: 1 }}>
+            {eyebrow ? (
+              <Text variant="eyebrow" color={highlighted ? 'brand' : 'subtle'}>
+                {highlighted ? 'Needs a look' : eyebrow}
               </Text>
-            </Row>
-          ) : null}
+            ) : null}
+            <Text variant="h3" heading>
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text variant="bodySm" color="muted">
+                {subtitle}
+              </Text>
+            ) : null}
+          </Stack>
+        </Row>
 
-          {children}
+        {children}
 
-          {footer ? (
-            <View style={{ marginTop: spacing.xs }}>{footer}</View>
-          ) : null}
-        </Stack>
-      </Card>
-    </Stack>
+        {footer ? (
+          <Stack gap="none">
+            <Divider spacing="none" />
+            <View style={{ paddingTop: spacing.sm }}>{footer}</View>
+          </Stack>
+        ) : null}
+      </Stack>
+    </Card>
   );
 }
 

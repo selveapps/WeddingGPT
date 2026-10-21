@@ -375,3 +375,33 @@ export function parseGuestCountInput(text) {
   const n = Number(digits);
   return Number.isFinite(n) ? n : null;
 }
+
+/** Which completeness field / form section each snapshot row maps to. */
+const SNAPSHOT_ROW_LINKS = {
+  date: { field: 'date', section: 'wedding' },
+  location: { field: 'city', section: 'wedding' },
+  guests: { field: 'guestCountEstimate', section: 'wedding' },
+  budget: { field: 'budgetTotal', section: 'wedding' },
+  stage: { field: 'planningStage', section: 'wedding' },
+  ceremony: { field: 'ceremonyType', section: 'wedding' },
+  style: { field: 'styleTags', section: 'vision' },
+};
+
+/**
+ * Snapshot tiles for the at-a-glance grid.
+ * Same data as `buildSummaryRows`, minus the couple row (the hero already shows
+ * the names), plus an `empty` flag and the section to open when tapped.
+ */
+export function buildSnapshotTiles(values) {
+  return buildSummaryRows(values)
+    .filter((row) => row.id !== 'names')
+    .map((row) => {
+      const link = SNAPSHOT_ROW_LINKS[row.id];
+      return {
+        ...row,
+        section: link?.section ?? null,
+        empty: link ? !isProfileFieldFilled(values, link.field) : false,
+      };
+    });
+}
+

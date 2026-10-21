@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Stack, Row, TextField, Checkbox, Text } from '@/design-system/components';
+import { Stack, Row, Card, TextField, Checkbox, Text } from '@/design-system/components';
 
 import { ProfileSection } from '../components/ProfileSection';
 import {
@@ -67,8 +67,8 @@ export function PartnerFields({
           testID="profile-field-partnerEmail"
         />
 
-        <Stack gap="xs">
-          <Row gap="sm" align="center">
+        <Card tone={values.collaborationEnabled ? 'brand' : 'sunken'} padding="md" radius="md">
+          <Row gap="sm" align="flex-start">
             <Checkbox
               checked={Boolean(values.collaborationEnabled)}
               onChange={(next) => onChange('collaborationEnabled', next)}
@@ -76,14 +76,14 @@ export function PartnerFields({
               label={PROFILE_COPY.collaborationLabel}
               testID="profile-field-collaboration"
             />
-            <Text variant="body" style={{ flex: 1 }}>
-              {PROFILE_COPY.collaborationLabel}
-            </Text>
+            <Stack gap="hair" style={{ flex: 1 }}>
+              <Text variant="bodyStrong">{PROFILE_COPY.collaborationLabel}</Text>
+              <Text variant="caption" color="muted">
+                {PROFILE_COPY.collaborationHelper}
+              </Text>
+            </Stack>
           </Row>
-          <Text variant="caption" color="subtle">
-            {PROFILE_COPY.collaborationHelper}
-          </Text>
-        </Stack>
+        </Card>
       </Stack>
     </ProfileSection>
   );
