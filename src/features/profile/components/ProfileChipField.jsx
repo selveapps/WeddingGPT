@@ -54,6 +54,7 @@ export function ProfileChipField({
             label={option.label}
             size={size}
             selected={isChipOptionSelected(value, option.value, multiple)}
+            disabled={Boolean(option.disabled)}
             onPress={() => handlePress(option.value)}
           />
         ))}
