@@ -61,7 +61,13 @@ export function ProfileChipField({
         <SectionHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
       ) : null}
 
-      <Row gap="xs" wrap align="flex-start">
+      <Row
+        gap="xs"
+        wrap
+        align="flex-start"
+        accessibilityRole="group"
+        accessibilityLabel={title ?? eyebrow ?? 'Options'}
+      >
         {options.map((option) => (
           <Chip
             key={String(option.value)}
@@ -70,6 +76,7 @@ export function ProfileChipField({
             selected={isChipOptionSelected(value, option.value, multiple)}
             disabled={disabled || Boolean(option.disabled)}
             onPress={() => handlePress(option.value)}
+            testID={testID ? `${testID}-option-${String(option.value)}` : undefined}
           />
         ))}
       </Row>
@@ -87,7 +94,7 @@ export function ProfileChipField({
       ) : null}
 
       {error ? (
-        <Text variant="caption" color="danger">
+        <Text variant="caption" color="danger" accessibilityRole="alert">
           {error}
         </Text>
       ) : null}
