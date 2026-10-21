@@ -271,7 +271,7 @@ export function formatGuestLine(values) {
   if (values?.guestCountEstimate == null) return 'Guest count not set yet';
   const n = Number(values.guestCountEstimate);
   if (!Number.isFinite(n)) return 'Guest count not set yet';
-  return `About ${n} guests`;
+  return `About ${n} ${n === 1 ? 'guest' : 'guests'}`;
 }
 
 export function displayCoupleName(values) {
