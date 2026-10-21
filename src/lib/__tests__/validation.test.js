@@ -33,6 +33,12 @@ describe('rules', () => {
     expect(rules.isoDate()('2027-06-12')).toBeNull();
     expect(rules.isoDate()('12/06/2027')).toBe('Pick a valid date.');
   });
+
+  it('isoDate rejects days that do not exist', () => {
+    expect(rules.isoDate()('2027-02-31')).toBe('Pick a valid date.');
+    expect(rules.isoDate()('2027-13-01')).toBe('Pick a valid date.');
+    expect(rules.isoDate()('2028-02-29')).toBeNull();
+  });
 });
 
 describe('validate / validateForm', () => {

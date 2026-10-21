@@ -7,6 +7,8 @@
  * "Invalid input".
  */
 
+import { isValidISODate, todayISO } from './date';
+
 export const rules = {
   required: (label = 'This') => (value) => {
     if (value === null || value === undefined) return `${label} is required.`;
@@ -45,15 +47,14 @@ export const rules = {
 
   isoDate: () => (value) => {
     if (!value) return null;
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(value)) ? null : 'Pick a valid date.';
+    // Checks the calendar too, so 2027-02-31 is caught rather than rolling into March.
+    return isValidISODate(String(value)) ? null : 'Pick a valid date.';
   },
 
   /** Rejects dates in the past - used for due dates and wedding dates. */
   notPast: (label = 'That date') => (value) => {
     if (!value) return null;
-    const today = new Date();
-    const todayISO = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    return String(value) < todayISO ? `${label} is in the past.` : null;
+    return String(value) < todayISO() ? `${label} is in the past.` : null;
   },
 
   min: (minimum, label = 'This') => (value) => {
