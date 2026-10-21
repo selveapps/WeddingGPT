@@ -35,3 +35,10 @@ export {
   validateProfileField,
   sectionForProfileField,
 } from './profileValidation';
+
+export {
+  normalizeChipValues,
+  isChipOptionSelected,
+  toggleChipOption,
+  selectedChipDescriptions,
+} from './profileChipFieldHelpers';
