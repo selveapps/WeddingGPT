@@ -4,6 +4,7 @@ import { Stack, Row, Chip, Text, SectionHeader } from '@/design-system/component
 import {
   isChipSelectionLimitReached,
   isChipOptionSelected,
+  selectedChipDescriptions,
   toggleChipOption,
 } from '../lib/profileChipFieldHelpers';
 
@@ -36,6 +37,11 @@ export function ProfileChipField({
     if (multiple) return null;
     return options.find((option) => option.value === value) ?? null;
   }, [multiple, options, value]);
+  const descriptions = multiple
+    ? selectedChipDescriptions(options, value)
+    : selectedMeta?.description
+      ? [selectedMeta.description]
+      : [];
 
   const handlePress = (optionValue) => {
     if (multiple) {
@@ -68,9 +74,9 @@ export function ProfileChipField({
         ))}
       </Row>
 
-      {selectedMeta?.description && !error ? (
+      {descriptions.length > 0 && !error ? (
         <Text variant="bodySm" color="muted">
-          {selectedMeta.description}
+          {descriptions.join(' ')}
         </Text>
       ) : null}
 
