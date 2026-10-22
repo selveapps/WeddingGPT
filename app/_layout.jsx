@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider, useTheme, appFonts } from '@/design-system/theme';
 import { ToastProvider } from '@/design-system/components';
 import { analytics, AnalyticsEvents } from '@/services/analytics';
+import { useAuthStore } from '@/store/authStore';
 
 // Hold the native splash until fonts are ready, so the first frame the user
 // sees is already branded rather than a flash of fallback type.
@@ -54,6 +55,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) analytics.track(AnalyticsEvents.APP_OPENED);
   }, [ready]);
+
+  // Restore a saved sign-in in the background. Nothing waits on it: the app
+  // works signed out, and the Account button updates when this lands.
+  useEffect(() => {
+    useAuthStore.getState().restore().catch(() => {});
+  }, []);
 
   const onLayoutRootView = useCallback(async () => {
     if (ready && !splashHidden) {

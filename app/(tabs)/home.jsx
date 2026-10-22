@@ -48,6 +48,7 @@ import { DateSheet } from '@/features/home/DateSheet';
 import { InviteSheet } from '@/features/home/InviteSheet';
 import { Mascot } from '@/features/mascot/Mascot';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
+import { AccountButton } from '@/features/auth/AccountButton';
 import { LocalPickRow } from '@/features/local/LocalPickRow';
 import { VenueRecommendations } from '@/features/local/VenueRecommendations';
 import { DailyChecklistCard } from '@/features/daily/DailyChecklistCard';
@@ -148,6 +149,7 @@ export default function HomeScreen() {
               {capitalise(coupleDisplayName(wedding))}
             </Text>
           </Stack>
+          <AccountButton />
           <NotificationBell />
         </Row>
 

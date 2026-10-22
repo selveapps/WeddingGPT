@@ -73,6 +73,7 @@ export const Routes = {
   // --- Monetisation and account -------------------------------------------
   paywall: '/paywall',
   account: '/account',
+  signIn: '/account/sign-in',
   weddingDetails: '/account/wedding',
   notifications: '/account/notifications',
   subscription: '/account/subscription',

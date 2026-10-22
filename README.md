@@ -108,6 +108,7 @@ app/                       Routes. File-based, via expo-router.
   planning/                task/new, task/[id], task/[id]/edit, category/[id]
   budget/                  setup, category/[id], expense/new, expense/[id]
   guests/                  new, [id], household/[id]
+  account/                 Account (sign-in status), sign-in, reminders
 
 src/
   design-system/
@@ -119,6 +120,7 @@ src/
     home/                  DateSheet (add or change the date from the dashboard)
     assistant/             MessageBubble, MessageText, Composer, SuggestionCard, review sheet
     onboarding/            Companion, ChoiceAnswer, DateAnswer, buildWorkspace
+    auth/                  AccountButton, sign-in form validation
     planning/              TaskRow, TaskForm
     budget/                ExpenseForm
     guests/                GuestRow, GuestForm
@@ -130,6 +132,7 @@ src/
   services/
     storage/               StorageService contract + AsyncStorage/memory impls
     ai/                    AIService, on-device provider (local/), Claude proxy client
+    auth/                  Account server client, secure session storage
     analytics/             Provider-agnostic event tracking
   navigation/              Route table + custom tab bar
   lib/                     id, date, currency, validation, haptics
@@ -250,8 +253,10 @@ Two deliberate choices in the generator:
 - **Launch error state.** If storage fails to rehydrate, zustand never reports
   the store as ready and the app used to wait forever. After 8s the gate now
   shows an error with Retry (`rehydrateAllStores`).
-- **No sign-in.** The workspace lives on the device; there is no account gate.
-  Routing is simply: no wedding yet -> onboarding, otherwise -> Home.
+- **Sign-in is optional.** The workspace lives on the device; there is no
+  account gate. Routing is simply: no wedding yet -> onboarding, otherwise ->
+  Home. The person button beside the bell opens Account, where people can sign
+  in or create an account (see "Accounts").
 - **Onboarding is one screen.** A companion (the rings mark) breathes, hops when
   an answer lands, and says each question in a speech bubble. Four steps -
   names, date, guests, budget - and the choice steps advance on tap. Skip is on
@@ -349,15 +354,52 @@ The proxy uses `claude-opus-5` with server-side refusal fallbacks enabled
 (default `medium`) trades answer depth against chat speed. To deploy, run it
 anywhere Node 20+ runs and put it behind HTTPS.
 
+### Accounts
+
+Sign-in is optional and runs through `server/auth`, a small Node server that
+keeps accounts in SQLite using Node's built-in `node:sqlite` - no npm
+dependencies.
+
+```bash
+cd server/auth
+cp .env.example .env      # set an APP_TOKEN
+npm start                 # http://localhost:8788
+npm test                  # node --test
+```
+
+Then set `EXPO_PUBLIC_AUTH_URL` (LAN IP on a phone) and
+`EXPO_PUBLIC_AUTH_APP_TOKEN` in the app's `.env` and restart with
+`npm run start:clear`. Without `EXPO_PUBLIC_AUTH_URL`, the Account screen says
+accounts are not switched on and everything else works as before.
+
+What is stored, and how:
+
+- **Passwords** only as salted scrypt hashes. The plain password never touches
+  the database or the logs.
+- **Sessions** as random 256-bit tokens, stored only as SHA-256 hashes, valid
+  for 30 days. A copy of the database is therefore not a set of working logins.
+- **On the phone**, the token sits in the Keychain or Keystore via
+  `expo-secure-store`, not in AsyncStorage. The web build uses browser storage.
+- Sign-in answers the same way for an unknown email and a wrong password, and
+  sign-in and sign-up are limited to 10 attempts a minute per address.
+
+The database defaults to `server/auth/data/auth.db`, which is git-ignored. Back
+it up: it holds every account. To deploy, run the server anywhere Node 24+ runs
+and put it behind HTTPS - tokens and passwords must never cross plain HTTP.
+
+`expo-secure-store` is a native module, so a store build needs a new native
+build (`eas build`), not just an over-the-air update. Expo Go already includes
+it.
+
 ---
 
 ## Not yet wired
 
-- **Hosted accounts.** Accounts are device-local: they do not sync, do not
-  survive a reinstall, and there is no password reset. The workspace belongs to
-  the device, not the account - a second account signed in on the same phone
-  sees the same wedding. Both go away when `services/auth/index.js` points at a
-  real provider and storage is partitioned per account.
+- **Account features beyond sign-in.** There is no password reset, email
+  verification or account deletion yet. The wedding workspace still belongs to
+  the device, not the account: it does not sync, and a second account signed in
+  on the same phone sees the same wedding. Syncing needs the stores to be
+  partitioned per account and a sync endpoint on the server.
 
 - **Claude, live.** The proxy is built and its request handling is tested, but
   it has not yet been run against the real API from this repo - that needs your
