@@ -91,4 +91,11 @@ export const LAB_FEATURES = [
     icon: 'note',
     route: '/labs/quotes',
   },
+  {
+    key: 'subscriptions',
+    title: 'Plus subscription',
+    blurb: 'Paywall, plans, a 7-day trial and feature gating - in test mode.',
+    icon: 'lock',
+    route: '/labs/subscriptions',
+  },
 ];
