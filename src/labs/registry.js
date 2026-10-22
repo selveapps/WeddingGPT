@@ -77,4 +77,11 @@ export const LAB_FEATURES = [
     icon: 'checklist',
     route: '/labs/packing',
   },
+  {
+    key: 'actions',
+    title: 'Assistant actions',
+    blurb: 'Say "add a $2,000 florist expense" and confirm the change before it happens.',
+    icon: 'sparkle',
+    route: '/labs/actions',
+  },
 ];
