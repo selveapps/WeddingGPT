@@ -22,6 +22,7 @@ import {
   ProfileStickyActions,
 } from './components';
 import { PROFILE_COPY, PROFILE_SECTIONS } from './lib/profileConstants';
+import { WeddingTimeline } from './timeline';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
@@ -141,6 +142,8 @@ export function Profile() {
         </Stack>
 
         <ProfileSummaryCard values={form.values} onTilePress={openSection} />
+
+        <WeddingTimeline />
 
         <ProfileForm
           values={form.values}

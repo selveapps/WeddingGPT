@@ -36,6 +36,8 @@ export {
 
 export { useProfileForm } from './hooks';
 
+export { WeddingTimeline } from './timeline';
+
 export {
   PROFILE_SECTIONS,
   PROFILE_SECTION_META,
