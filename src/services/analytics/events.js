@@ -89,6 +89,9 @@ export const AnalyticsEvents = {
   ENTITLEMENT_EXPIRED: 'entitlement_expired',
 
   // --- Account -------------------------------------------------------------
+  SIGNED_UP: 'signed_up',
+  SIGNED_IN: 'signed_in',
+  SIGNED_OUT: 'signed_out',
   ACCOUNT_DATA_EXPORTED: 'account_data_exported',
   ACCOUNT_DELETED: 'account_deleted',
   PARTNER_INVITED: 'partner_invited',

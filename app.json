@@ -66,7 +66,8 @@
         {
           "contactsPermission": "WeddingGPT reads your contacts only when you choose to import guests, so you can add them to your guest list in a few taps."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "tsconfigPaths": true,

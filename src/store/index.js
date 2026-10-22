@@ -13,6 +13,8 @@ export * from './budgetStore';
 export * from './guestStore';
 export * from './aiStore';
 export * from './notificationStore';
+// Not in STORES below: sign-in is optional, so launch never waits on it.
+export * from './authStore';
 
 const STORES = [
   useWeddingStore,
