@@ -63,4 +63,11 @@ export const LAB_FEATURES = [
     icon: 'clock',
     route: '/labs/timeline',
   },
+  {
+    key: 'party',
+    title: 'Wedding party',
+    blurb: 'Roles, starter jobs, outfits and a list to send each person.',
+    icon: 'star',
+    route: '/labs/party',
+  },
 ];
