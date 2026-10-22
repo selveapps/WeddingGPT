@@ -56,4 +56,11 @@ export const LAB_FEATURES = [
     icon: 'heart',
     route: '/labs/gifts',
   },
+  {
+    key: 'timeline',
+    title: 'Day-of timeline',
+    blurb: 'A minute-by-minute run of show with overlap checks and a running-late button.',
+    icon: 'clock',
+    route: '/labs/timeline',
+  },
 ];
