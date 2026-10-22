@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 
 import { TabBar } from '@/navigation/TabBar';
+import { TabScene } from '@/navigation/TabScene';
 import { useTheme } from '@/design-system/theme';
 import { useReminderSync } from '@/features/notifications/useReminderSync';
 import { InboxPeek } from '@/features/notifications/InboxPeek';
@@ -21,17 +22,20 @@ import { InboxPeek } from '@/features/notifications/InboxPeek';
  *
  *  - Every tab is mounted up front (`lazy: false`), so even the first visit
  *    to a tab shows its content immediately rather than building it then.
- *  - There is no scene animation. An earlier cross-fade kept the incoming tab
- *    transparent for the first half of the switch (it looked like data loading
- *    slowly), and on the new architecture a re-attached tab could keep a stale
- *    opacity of 0 from an interrupted fade and show up blank. The tab bar's
- *    gliding pill is the motion now.
+ *  - There is no navigator scene animation. An earlier cross-fade kept the
+ *    incoming tab transparent for the first half of the switch (it looked like
+ *    data loading slowly), and on the new architecture a re-attached tab could
+ *    keep a stale opacity of 0 from an interrupted fade and show up blank.
+ *    Instead the tab bar's pill glides, and each tab's content plays a short
+ *    drift-in (TabScene) that starts already mostly visible.
  *  - Hidden tabs are frozen (`freezeOnBlur`), so ticking a task off on one tab
  *    does not re-render the other four in the background. A frozen tab catches
  *    up with any changes the moment it is shown again.
  */
 export default function TabsLayout() {
   const { colors } = useTheme();
+  // Index of the last focused tab, so the next one knows which side to enter from.
+  const lastIndexRef = useRef(null);
 
   useReminderSync();
 
@@ -39,6 +43,11 @@ export default function TabsLayout() {
     <View style={{ flex: 1 }}>
       <Tabs
         tabBar={(props) => <TabBar {...props} />}
+        screenLayout={({ route, navigation, children }) => (
+          <TabScene route={route} navigation={navigation} lastIndexRef={lastIndexRef}>
+            {children}
+          </TabScene>
+        )}
         initialRouteName="home"
         screenOptions={{
           headerShown: false,
