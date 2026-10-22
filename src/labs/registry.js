@@ -1,0 +1,17 @@
+/**
+ * Every Labs prototype, in the order the Labs hub lists them.
+ *
+ * Labs live outside the finished app: nothing in the tabs links here. Open
+ * the hub at `/labs` (on a phone, `weddinggpt://labs`) to try them. A feature
+ * graduates by moving its folder out of `src/labs` and wiring its screen into
+ * a real route.
+ */
+export const LAB_FEATURES = [
+  {
+    key: 'vendors',
+    title: 'Vendor manager',
+    blurb: 'Track each vendor from saved to booked, with deposits and balances.',
+    icon: 'vendors',
+    route: '/labs/vendors',
+  },
+];
