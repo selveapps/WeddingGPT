@@ -14,4 +14,11 @@ export const LAB_FEATURES = [
     icon: 'vendors',
     route: '/labs/vendors',
   },
+  {
+    key: 'style',
+    title: 'Style studio',
+    blurb: 'A five-question style quiz, palette picks and a shareable moodboard.',
+    icon: 'vision',
+    route: '/labs/style',
+  },
 ];
