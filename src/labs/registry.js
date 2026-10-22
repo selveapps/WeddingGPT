@@ -42,4 +42,11 @@ export const LAB_FEATURES = [
     icon: 'note',
     route: '/labs/meals',
   },
+  {
+    key: 'rsvp',
+    title: 'RSVP codes',
+    blurb: 'A short code per household, shareable invites, and paste-in replies.',
+    icon: 'mail',
+    route: '/labs/rsvp',
+  },
 ];
