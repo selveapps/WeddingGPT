@@ -70,4 +70,11 @@ export const LAB_FEATURES = [
     icon: 'star',
     route: '/labs/party',
   },
+  {
+    key: 'packing',
+    title: 'Packing lists',
+    blurb: 'Emergency kit, getting-ready bag, venue box and honeymoon checklists.',
+    icon: 'checklist',
+    route: '/labs/packing',
+  },
 ];
