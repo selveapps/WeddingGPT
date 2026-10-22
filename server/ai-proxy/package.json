@@ -12,6 +12,6 @@
     "start": "node --env-file-if-exists=.env index.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.129.0"
+    "@anthropic-ai/sdk": "^0.135.0"
   }
 }
