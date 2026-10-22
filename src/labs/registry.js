@@ -98,4 +98,11 @@ export const LAB_FEATURES = [
     icon: 'lock',
     route: '/labs/subscriptions',
   },
+  {
+    key: 'backup',
+    title: 'Export and backup',
+    blurb: 'Guest and budget spreadsheets, a plan summary, and a checked full backup.',
+    icon: 'lock',
+    route: '/labs/backup',
+  },
 ];
