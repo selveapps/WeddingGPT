@@ -12,6 +12,7 @@ import Animated, {
 import { useTheme, useMotion } from '../design-system/theme';
 import { Text, Icon, Touchable } from '../design-system/components';
 import { TAB_ITEMS } from './routes';
+import { TAB_SWITCH_DURATION } from './TabScene';
 
 /**
  * The bottom navigation bar.
@@ -116,7 +117,7 @@ function Indicator({ slot, itemWidth, isAssistant, padding }) {
   const tone = useSharedValue(isAssistant ? 1 : 0);
 
   useEffect(() => {
-    const config = { duration: motion.reduceMotion ? 0 : 260, easing: Easing.bezier(0.2, 0, 0, 1) };
+    const config = tabTiming(motion);
     x.value = withTiming(slot * itemWidth, config);
     tone.value = withTiming(isAssistant ? 1 : 0, config);
   }, [slot, itemWidth, isAssistant, motion.reduceMotion, x, tone]);
@@ -144,10 +145,26 @@ function Indicator({ slot, itemWidth, isAssistant, padding }) {
   );
 }
 
+/**
+ * One tab. The inactive and active looks are stacked and cross-faded on the
+ * same timing as the pill, so the colour change travels with it instead of
+ * snapping the instant you tap - which is what made switching feel jumpy.
+ * Stacking also keeps the semibold active label from nudging its neighbours.
+ */
 function TabItem({ label, icon, focused, onPress, isAssistant }) {
   const { colors, spacing } = useTheme();
+  const motion = useMotion();
 
   const activeColor = isAssistant ? colors.accentSoftInk : colors.brandSoftInk;
+
+  const progress = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(focused ? 1 : 0, tabTiming(motion));
+  }, [focused, motion, progress]);
+
+  const activeLayer = useAnimatedStyle(() => ({ opacity: progress.value }));
+  const inactiveLayer = useAnimatedStyle(() => ({ opacity: 1 - progress.value }));
 
   return (
     <Touchable
@@ -162,24 +179,46 @@ function TabItem({ label, icon, focused, onPress, isAssistant }) {
     >
       <View style={[styles.itemInner, { gap: spacing.xxs }]}>
         <View style={styles.iconWrap}>
-          <Icon
-            name={icon}
-            size="lg"
-            color={focused ? activeColor : colors.inkSubtle}
-            filled={false}
-          />
+          <Animated.View style={inactiveLayer}>
+            <Icon name={icon} size="lg" color={colors.inkSubtle} filled={false} />
+          </Animated.View>
+          <Animated.View
+            importantForAccessibility="no-hide-descendants"
+            style={[StyleSheet.absoluteFill, styles.centered, activeLayer]}
+          >
+            <Icon name={icon} size="lg" color={activeColor} filled={false} />
+          </Animated.View>
         </View>
 
-        <Text
-          variant={focused ? 'tabActive' : 'tab'}
-          style={{ color: focused ? activeColor : colors.inkSubtle }}
-          numberOfLines={1}
-        >
-          {label}
-        </Text>
+        <View style={styles.labelWrap}>
+          <Animated.View style={inactiveLayer}>
+            <Text variant="tab" style={{ color: colors.inkSubtle }} numberOfLines={1}>
+              {label}
+            </Text>
+          </Animated.View>
+          <Animated.View
+            importantForAccessibility="no-hide-descendants"
+            style={[StyleSheet.absoluteFill, styles.centered, activeLayer]}
+          >
+            <Text variant="tabActive" style={{ color: activeColor }} numberOfLines={1}>
+              {label}
+            </Text>
+          </Animated.View>
+        </View>
       </View>
     </Touchable>
   );
+}
+
+/**
+ * The one timing every part of a tab switch shares - pill, colours and the
+ * incoming scene - so they start and land together.
+ */
+function tabTiming(motion) {
+  return {
+    duration: motion.reduceMotion ? 0 : TAB_SWITCH_DURATION,
+    easing: Easing.bezier(...motion.easings.standard),
+  };
 }
 
 const styles = StyleSheet.create({
@@ -197,6 +236,14 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 48,
     height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  labelWrap: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  centered: {
     alignItems: 'center',
     justifyContent: 'center',
   },
