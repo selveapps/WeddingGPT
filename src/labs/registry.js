@@ -35,4 +35,11 @@ export const LAB_FEATURES = [
     icon: 'guests',
     route: '/labs/seating',
   },
+  {
+    key: 'meals',
+    title: 'Meals and dietary',
+    blurb: 'Caterer numbers, allergy flags and a CSV export from your guest list.',
+    icon: 'note',
+    route: '/labs/meals',
+  },
 ];
