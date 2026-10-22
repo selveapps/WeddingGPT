@@ -49,4 +49,11 @@ export const LAB_FEATURES = [
     icon: 'mail',
     route: '/labs/rsvp',
   },
+  {
+    key: 'gifts',
+    title: 'Gifts and thank-yous',
+    blurb: 'Log gifts, see when each thank-you is due, and draft the note.',
+    icon: 'heart',
+    route: '/labs/gifts',
+  },
 ];
