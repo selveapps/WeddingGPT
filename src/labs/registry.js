@@ -21,4 +21,11 @@ export const LAB_FEATURES = [
     icon: 'vision',
     route: '/labs/style',
   },
+  {
+    key: 'sync',
+    title: 'Partner sync',
+    blurb: 'Share your plan with your partner and merge theirs - latest edit wins.',
+    icon: 'refresh',
+    route: '/labs/sync',
+  },
 ];
