@@ -28,4 +28,11 @@ export const LAB_FEATURES = [
     icon: 'refresh',
     route: '/labs/sync',
   },
+  {
+    key: 'seating',
+    title: 'Seating chart',
+    blurb: 'Tables, auto-seating that keeps households together, and keep-apart pairs.',
+    icon: 'guests',
+    route: '/labs/seating',
+  },
 ];
