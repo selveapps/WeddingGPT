@@ -1,25 +1,45 @@
 version: 2
+
+# One pull request per ecosystem per month, not one per package per week.
+# Each group below collects every update for its directory into a single PR
+# (and a single branch), so the repository stays close to just `main`.
 updates:
-  # Expo pins native packages to the SDK, so only take patch/minor updates
-  # automatically; SDK upgrades go through `npx expo install --fix`.
+  # Expo pins React, React Native and the native modules to the SDK.
+  # Dependabot does not know those pins and proposes versions the SDK does not
+  # support, so they are ignored here: update them with `npx expo install --fix`.
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: monthly
+    open-pull-requests-limit: 1
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+      - dependency-name: 'react'
+      - dependency-name: 'react-dom'
+      - dependency-name: 'react-native'
+      - dependency-name: 'react-native-*'
+      - dependency-name: '@react-native-async-storage/*'
     groups:
-      expo:
-        patterns: ['expo', 'expo-*', '@expo/*', 'jest-expo', 'eslint-config-expo']
+      app:
+        patterns: ['*']
 
   - package-ecosystem: npm
     directory: /server/ai-proxy
     schedule:
-      interval: weekly
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      ai-proxy:
+        patterns: ['*']
+
+  # server/auth has no dependencies, so it has no entry here.
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns: ['*']
