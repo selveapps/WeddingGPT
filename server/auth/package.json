@@ -1,0 +1,15 @@
+{
+  "name": "weddinggpt-auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Stores WeddingGPT accounts in SQLite and signs users in.",
+  "type": "module",
+  "main": "index.mjs",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.mjs",
+    "test": "node --test"
+  }
+}

@@ -12,3 +12,5 @@ venv/
 .DS_Store
 android/
 ios/
+# Account database - real users' logins. Never commit it.
+server/auth/data/

@@ -1,0 +1,44 @@
+import { fileURLToPath } from 'node:url';
+
+import { createAuthServer } from './app.mjs';
+import { openDatabase } from './db.mjs';
+
+/**
+ * Starts the WeddingGPT account server. See app.mjs for the API.
+ *
+ * Environment:
+ *   AUTH_DB_PATH    SQLite file (default ./data/auth.db). Back this file up.
+ *   APP_TOKEN       optional shared token the app sends as X-App-Token
+ *   PORT            default 8788
+ *   ALLOWED_ORIGIN  CORS origin for the web build (default *)
+ */
+
+const PORT = Number(process.env.PORT ?? 8788);
+const DB_PATH = process.env.AUTH_DB_PATH || fileURLToPath(new URL('./data/auth.db', import.meta.url));
+const APP_TOKEN = process.env.APP_TOKEN || null;
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
+
+const db = openDatabase(DB_PATH);
+const server = createAuthServer({ db, appToken: APP_TOKEN, allowedOrigin: ALLOWED_ORIGIN });
+
+// Expired sessions are already ignored on read; this just keeps the table small.
+const prune = () => {
+  const removed = db.pruneExpiredSessions();
+  if (removed) console.log(`[auth] pruned ${removed} expired sessions`);
+};
+prune();
+setInterval(prune, 60 * 60 * 1000).unref();
+
+server.listen(PORT, () => {
+  console.log(`WeddingGPT auth server on http://localhost:${PORT} (db ${DB_PATH})`);
+  if (!APP_TOKEN) console.warn('APP_TOKEN is not set - any client that finds this URL can create accounts.');
+});
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.on(signal, () => {
+    server.close(() => {
+      db.close();
+      process.exit(0);
+    });
+  });
+}
