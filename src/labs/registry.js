@@ -84,4 +84,11 @@ export const LAB_FEATURES = [
     icon: 'sparkle',
     route: '/labs/actions',
   },
+  {
+    key: 'quotes',
+    title: 'Quote reader',
+    blurb: 'Paste a vendor quote to pull out totals, deposits, due dates and fine print.',
+    icon: 'note',
+    route: '/labs/quotes',
+  },
 ];
