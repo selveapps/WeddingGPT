@@ -63,6 +63,10 @@ noted as a follow-up.
 - Events sync between partners; a deleted guest leaves every event's list.
 - Tests for the model, store, sync slice and screens; a live sync test.
 
+Status: done on `feature/events`. Deleted guests leave event lists when the
+guest store deletes them (`forgetGuests`), not by comparing lists, so a store
+that is briefly empty during a workspace switch never clears invitations.
+
 **C2 Task dependencies** — a task can wait for others; completing is allowed
 but the task shows what it waits for; cycles are refused; the daily checklist
 skips tasks still waiting; plan generation adds the obvious dependencies.
