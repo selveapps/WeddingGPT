@@ -20,6 +20,26 @@ import { recordKey } from '../services/sync/changes';
  */
 
 const MAX_CONFLICTS = 50;
+
+/** Fields every entity carries that change on each local write, whatever the content. */
+const ENVELOPE = new Set(['updatedAt', 'version', 'syncStatus']);
+
+function content(value) {
+  if (!value || typeof value !== 'object') return JSON.stringify(value ?? null);
+  const keys = Object.keys(value)
+    .filter((key) => !ENVELOPE.has(key))
+    .sort();
+  return JSON.stringify(keys.map((key) => [key, value[key]]));
+}
+
+/**
+ * True when two versions of a record say the same thing. Both partners'
+ * phones apply the same RSVP reply to the same guest; the second push
+ * "overwrites" an identical edit, which is not worth a conflict notice.
+ */
+export function sameContent(a, b) {
+  return content(a) === content(b);
+}
 const MAX_REJECTED = 50;
 
 const initialState = {
@@ -101,6 +121,12 @@ export function createSyncStore({ persisted = true, storage = zustandStorage } =
       for (const result of conflicts) {
         const entry = byMutation.get(result.mutationId);
         if (!entry) continue;
+        // Nothing was lost when the overwritten copy said the same thing.
+        const overwritten = result.overwritten ?? {};
+        const bothDeleted = entry.op === 'delete' && overwritten.deletedAt;
+        const bothSame =
+          entry.op === 'upsert' && !overwritten.deletedAt && sameContent(entry.data, overwritten.data);
+        if (bothDeleted || bothSame) continue;
         notices.push({
           id: createId('conflict'),
           collection: entry.collection,

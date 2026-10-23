@@ -296,6 +296,11 @@ Two deliberate choices in the generator:
   neighbourhood or suburb). They show on Home, on the plan reveal and on the
   local screen; every venue opens a map search for the real listing. Every
   city also gets style searches (gardens, barns, rooftops...).
+- **RSVP website.** *RSVP website* on the Guests tab (once the wedding is
+  synced) sets up a public page and gives every household a link and a code;
+  guests reply in the browser, without the app, and their answers update the
+  guest list when the app syncs. Server: `server/auth/rsvp`; app:
+  `features/rsvp`.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

@@ -8,6 +8,7 @@ import { createSyncClient } from '../syncClient';
 import { createSyncEngine } from '../syncEngine';
 import { SliceKind } from '../changes';
 import { createSyncStore } from '../../../store/syncStore';
+import { applyPendingResponses } from '../../../features/rsvp/applyResponses';
 
 /**
  * The real client and engine against a running server/auth - the check that
@@ -206,5 +207,91 @@ run('sync against the real server', () => {
     // Removed, Sam's next sync finds the wedding gone.
     await client.removeMember(priya.token, shared.id, sam.user.id);
     expect(await samPhone.engine.syncNow()).toMatchObject({ error: 'gone' });
+  });
+
+  it('a guest replies on the RSVP site and the couple’s guest list updates (E1)', async () => {
+    const response = await nodeFetch(`${URL_}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.7.${Date.now() % 250}.1` },
+      body: JSON.stringify({
+        name: 'couple',
+        email: `couple-${Date.now()}@example.com`,
+        password: 'integration-pass',
+      }),
+    });
+    const couple = await response.json();
+    const wedding = await client.createWorkspace(couple.token, 'RSVP wedding');
+
+    // The couple's phone: guests plus the read-only replies slice.
+    const guests = create((set, get) => ({
+      guests: {
+        byId: { g_meera: { id: 'g_meera', firstName: 'Meera', householdId: 'h1', rsvpStatus: 'pending' } },
+        allIds: ['g_meera'],
+      },
+      updateGuest: (id, patch) =>
+        set({
+          guests: {
+            ...get().guests,
+            byId: { ...get().guests.byId, [id]: { ...get().guests.byId[id], ...patch } },
+          },
+        }),
+    }));
+    const replies = create((set, get) => ({
+      responses: { byId: {}, allIds: [] },
+      applied: {},
+      markApplied: (entries) =>
+        set({
+          applied: { ...get().applied, ...Object.fromEntries(entries.map((e) => [e.id, e.submittedAt])) },
+        }),
+    }));
+    const syncStore = createSyncStore({ persisted: false });
+    const engine = createSyncEngine({
+      client,
+      syncStore,
+      slices: [
+        { collection: 'guests', store: guests, key: 'guests', kind: SliceKind.MANY },
+        {
+          collection: 'rsvpResponses',
+          store: replies,
+          key: 'responses',
+          kind: SliceKind.MANY,
+          readOnly: true,
+        },
+      ],
+      getSession: () => ({ token: couple.token, workspaceId: wedding.id }),
+      setTimer: () => 0,
+      clearTimer: () => {},
+    });
+    engine.attach();
+    engine.seedAll();
+    await engine.syncNow();
+
+    const [invite] = await client.createRsvpInvites(couple.token, wedding.id, [
+      { type: 'household', id: 'h1' },
+    ]);
+    const path = new URL(invite.url).pathname;
+
+    // The guest opens the link and replies - a plain form post, no app.
+    const page = await nodeFetch(`${URL_}${path}`);
+    expect(page.status).toBe(200);
+    const sent = await nodeFetch(`${URL_}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ submit: '1', attending_g_meera: 'yes', meal_g_meera: 'vegan' }).toString(),
+    });
+    expect(sent.status).toBe(200);
+
+    await engine.syncNow();
+    expect(replies.getState().responses.allIds).toHaveLength(1);
+    expect(applyPendingResponses({ rsvpStore: replies, guestStore: guests })).toBe(1);
+    expect(guests.getState().guests.byId.g_meera).toMatchObject({
+      rsvpStatus: 'attending',
+      mealPreference: 'vegan',
+    });
+
+    // The guest edit syncs back; the reply itself is never pushed.
+    await engine.syncNow();
+    expect(syncStore.getState().outbox).toEqual([]);
+    expect(syncStore.getState().rejected).toEqual([]);
   });
 });

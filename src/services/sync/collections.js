@@ -3,6 +3,7 @@ import { usePlanningStore } from '../../store/planningStore';
 import { useBudgetStore } from '../../store/budgetStore';
 import { useGuestStore } from '../../store/guestStore';
 import { useVendorStore } from '../../store/vendorStore';
+import { useRsvpStore } from '../../store/rsvpStore';
 import { SliceKind } from './changes';
 
 /**
@@ -14,6 +15,9 @@ import { SliceKind } from './changes';
  *  - the user record (email, phone) and onboarding progress: per person
  *  - assistant conversations: private to whoever had them
  *  - today's checklist and seeding flags: per device
+ *
+ * `readOnly` slices are pulled but never pushed: guests' RSVP replies can only
+ * be written by the server, from the guest's own link.
  */
 export const SYNCED_SLICES = [
   { collection: 'wedding', store: useWeddingStore, key: 'wedding', kind: SliceKind.ONE },
@@ -25,4 +29,11 @@ export const SYNCED_SLICES = [
   { collection: 'guests', store: useGuestStore, key: 'guests', kind: SliceKind.MANY },
   { collection: 'households', store: useGuestStore, key: 'households', kind: SliceKind.MANY },
   { collection: 'vendors', store: useVendorStore, key: 'vendors', kind: SliceKind.MANY },
+  {
+    collection: 'rsvpResponses',
+    store: useRsvpStore,
+    key: 'responses',
+    kind: SliceKind.MANY,
+    readOnly: true,
+  },
 ];

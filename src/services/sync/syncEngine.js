@@ -53,6 +53,10 @@ export function createSyncEngine({
     for (const slice of slices) {
       if (slice.store !== store) continue;
       const next = sliceValue(slice);
+      if (slice.readOnly) {
+        snapshots.set(slice, next);
+        continue;
+      }
       for (const change of diffSlice(slice.kind, snapshots.get(slice), next)) {
         changes.push({ ...change, collection: slice.collection });
       }
@@ -183,12 +187,14 @@ export function createSyncEngine({
 
     /** Queue every synced entity, for the first upload of a new workspace. */
     seedAll() {
-      const changes = slices.flatMap((slice) =>
-        allAsUpserts(slice.kind, sliceValue(slice)).map((change) => ({
-          ...change,
-          collection: slice.collection,
-        }))
-      );
+      const changes = slices
+        .filter((slice) => !slice.readOnly)
+        .flatMap((slice) =>
+          allAsUpserts(slice.kind, sliceValue(slice)).map((change) => ({
+            ...change,
+            collection: slice.collection,
+          }))
+        );
       syncStore.getState().enqueue(changes);
       return changes.length;
     },

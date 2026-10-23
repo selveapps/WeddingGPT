@@ -4,6 +4,9 @@ import { AppState } from 'react-native';
 import { useStoreHydration } from '@/store';
 import { useAuthStore, selectAuthStatus, AuthStatus } from '@/store/authStore';
 import { isSyncConfigured, syncEngine, workspaceLink } from '@/services/sync';
+import { useRsvpStore } from '@/store/rsvpStore';
+import { useGuestStore } from '@/store/guestStore';
+import { watchRsvpResponses } from '@/features/rsvp/applyResponses';
 
 const INTERVAL_MS = 5 * 60 * 1000;
 
@@ -14,6 +17,7 @@ const INTERVAL_MS = 5 * 60 * 1000;
  *    wedding read from disk is never mistaken for new edits.
  *  - Syncs on sign-in, every five minutes, and when the app comes back to
  *    the foreground. Local edits also sync two seconds after they happen.
+ *  - Copies guests' RSVP replies into the guest list as they arrive.
  *  - Whenever the person ends up signed out - the Sign out button, a revoked
  *    session, an expired one - the synced copy leaves the phone (D6). Doing it
  *    here covers every route to signed out in one place.
@@ -27,6 +31,11 @@ export function useSyncLifecycle() {
     if (!enabled) return undefined;
     syncEngine.attach();
     return () => syncEngine.detach();
+  }, [enabled]);
+
+  useEffect(() => {
+    if (!enabled) return undefined;
+    return watchRsvpResponses({ rsvpStore: useRsvpStore, guestStore: useGuestStore });
   }, [enabled]);
 
   useEffect(() => {
