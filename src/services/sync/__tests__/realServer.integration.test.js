@@ -763,4 +763,69 @@ run('sync against the real server', () => {
     expect(syncStore.getState().rejected).toEqual([]);
     expect(syncStore.getState().outbox).toEqual([]);
   });
+
+  it('a vendor opens a day-of sheet, and it stops working when turned off (F3)', async () => {
+    const response = await nodeFetch(`${URL_}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.5.${Date.now() % 250}.3` },
+      body: JSON.stringify({
+        name: 'sheets',
+        email: `sheets-${Date.now()}@example.com`,
+        password: 'integration-pass',
+      }),
+    });
+    const couple = await response.json();
+    // Its own address, so earlier scenarios do not use up the per-address rate limits.
+    const own = createSyncClient({
+      url: URL_,
+      fetchImpl: (target, init = {}) =>
+        nodeFetch(target, {
+          ...init,
+          headers: { ...init.headers, 'X-Forwarded-For': `10.5.${Date.now() % 250}.9` },
+        }),
+    });
+    const wedding = await own.createWorkspace(couple.token, 'Day sheets');
+    await own.push(couple.token, wedding.id, [
+      {
+        mutationId: `mut_f3a_${Date.now()}`,
+        collection: 'events',
+        id: 'ev_1',
+        op: 'upsert',
+        baseVersion: 0,
+        data: { id: 'ev_1', name: 'Reception', venueName: 'The Hall' },
+      },
+      {
+        mutationId: `mut_f3b_${Date.now()}`,
+        collection: 'runOfShow',
+        id: 'ros_1',
+        op: 'upsert',
+        baseVersion: 0,
+        data: { id: 'ros_1', eventId: 'ev_1', title: 'First dance', start: 1200, durationMin: 10 },
+      },
+      {
+        mutationId: `mut_f3c_${Date.now()}`,
+        collection: 'guests',
+        id: 'g_1',
+        op: 'upsert',
+        baseVersion: 0,
+        data: { id: 'g_1', firstName: 'Secret guest' },
+      },
+    ]);
+
+    const { sheet, url } = await own.createDaySheet(couple.token, wedding.id, {
+      eventId: 'ev_1',
+      label: 'DJ Sam',
+    });
+    const page = await nodeFetch(`${URL_}${new URL(url).pathname}`);
+    expect(page.status).toBe(200);
+    const body = await page.text();
+    expect(body).toContain('Day-of sheet for DJ Sam');
+    expect(body).toContain('First dance');
+    expect(body).not.toContain('Secret guest');
+
+    const [listed] = await own.listDaySheets(couple.token, wedding.id);
+    expect(listed.lastOpenedAt).toBeTruthy();
+    await own.revokeDaySheet(couple.token, wedding.id, sheet.id);
+    expect((await nodeFetch(`${URL_}${new URL(url).pathname}`)).status).toBe(404);
+  });
 });
