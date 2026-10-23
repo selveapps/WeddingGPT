@@ -312,8 +312,9 @@ Two deliberate choices in the generator:
 - **RSVP website.** *RSVP website* on the Guests tab (once the wedding is
   synced) sets up a public page and gives every household a link and a code;
   guests reply in the browser, without the app, and their answers update the
-  guest list when the app syncs. Server: `server/auth/rsvp`; app:
-  `features/rsvp`.
+  guest list when the app syncs. A guest invited to several events answers
+  each one, and each event's counts use those answers (slice F1, switchable
+  under the RSVP questions). Server: `server/auth/rsvp`; app: `features/rsvp`.
 - **Wedding party.** *Wedding party* (Guests tab): add people from the guest
   list (keeping their contact details) or by name, each role arriving with the
   jobs it usually covers; tick jobs off, add your own, note outfits and sizes,

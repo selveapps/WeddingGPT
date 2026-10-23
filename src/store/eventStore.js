@@ -90,10 +90,37 @@ export const useEventStore = create()(
         const gone = new Set(guestIds);
         if (!gone.size) return 0;
         const changed = denormalise(get().events)
-          .filter((event) => (event.invitedGuestIds ?? []).some((id) => gone.has(id)))
+          .filter(
+            (event) =>
+              (event.invitedGuestIds ?? []).some((id) => gone.has(id)) ||
+              Object.keys(event.attendance ?? {}).some((id) => gone.has(id))
+          )
           .map((event) =>
-            touchEntity(event, { invitedGuestIds: event.invitedGuestIds.filter((id) => !gone.has(id)) })
+            touchEntity(event, {
+              invitedGuestIds: (event.invitedGuestIds ?? []).filter((id) => !gone.has(id)),
+              attendance: Object.fromEntries(
+                Object.entries(event.attendance ?? {}).filter(([id]) => !gone.has(id))
+              ),
+            })
           );
+        if (changed.length) set((state) => ({ events: upsertMany(state.events, changed) }));
+        return changed.length;
+      },
+
+      /**
+       * Record guests' per-event answers, e.g. `{ ev_1: { g_1: 'attending' } }`.
+       * Events that no longer exist are skipped. Returns how many events changed.
+       */
+      applyAttendance(byEvent = {}) {
+        const changed = Object.entries(byEvent)
+          .map(([eventId, answers]) => {
+            const event = get().events.byId[eventId];
+            if (!event) return null;
+            const attendance = { ...(event.attendance ?? {}), ...answers };
+            const same = Object.entries(answers).every(([id, value]) => (event.attendance ?? {})[id] === value);
+            return same ? null : touchEntity(event, { attendance });
+          })
+          .filter(Boolean);
         if (changed.length) set((state) => ({ events: upsertMany(state.events, changed) }));
         return changed.length;
       },

@@ -1,6 +1,6 @@
-import { planResponseUpdates, watchRsvpResponses } from '../applyResponses';
-import { MealPreference, PlusOneStatus, RsvpStatus, createGuest } from '@/models';
-import { useGuestStore, useRsvpStore, createSyncStore } from '@/store';
+import { applyPendingResponses, planResponseUpdates, watchRsvpResponses } from '../applyResponses';
+import { MealPreference, PlusOneStatus, RsvpStatus, createGuest, eventGuestSummary } from '@/models';
+import { useEventStore, useGuestStore, useRsvpStore, createSyncStore } from '@/store';
 import { createSyncEngine } from '@/services/sync/syncEngine';
 import { SliceKind } from '@/services/sync/changes';
 import { createFakeSyncServer } from '@/test/fakeSyncServer';
@@ -171,5 +171,64 @@ describe('watchRsvpResponses with the sync engine', () => {
     expect(useGuestStore.getState().guests.byId[guest.id].rsvpStatus).toBe(RsvpStatus.DECLINED);
     expect(useRsvpStore.getState().applied).toEqual({ r1: '2027-03-01T10:00:00.000Z' });
     unwatch();
+  });
+});
+
+describe('per-event replies (F1)', () => {
+  const reply = (submittedAt, guests) => ({ id: 'rsvp_inv_1', inviteId: 'inv_1', submittedAt, guests });
+
+  it('plans attendance for each event answered', () => {
+    const guestsById = { g_nina: { id: 'g_nina' }, g_omar: { id: 'g_omar' } };
+    const plan = planResponseUpdates({
+      responses: [
+        reply('2027-02-01T10:00:00Z', [
+          { guestId: 'g_nina', attending: true, events: { ev_mehndi: true, ev_reception: false } },
+          { guestId: 'g_omar', attending: false },
+          { guestId: 'g_gone', attending: true, events: { ev_mehndi: true } },
+        ]),
+      ],
+      guestsById,
+    });
+    expect(plan.attendance).toEqual({
+      ev_mehndi: { g_nina: 'attending' },
+      ev_reception: { g_nina: 'declined' },
+    });
+    expect(plan.updates.find((u) => u.guestId === 'g_nina').patch.rsvpStatus).toBe(RsvpStatus.ATTENDING);
+  });
+
+  it('updates each event’s counts, and only events that still exist', () => {
+    useGuestStore.getState().reset();
+    useEventStore.getState().reset();
+    useRsvpStore.getState().reset();
+    const nina = useGuestStore.getState().addGuest(createGuest({ firstName: 'Nina' }));
+    const mehndi = useEventStore.getState().addEvent({ kind: 'mehndi' });
+    const reception = useEventStore.getState().addEvent({ kind: 'reception' });
+    useRsvpStore.setState({
+      responses: {
+        byId: {
+          rsvp_inv_1: reply('2027-02-01T10:00:00Z', [
+            {
+              guestId: nina.id,
+              attending: true,
+              events: { [mehndi.id]: true, [reception.id]: false, ev_deleted: true },
+            },
+          ]),
+        },
+        allIds: ['rsvp_inv_1'],
+      },
+    });
+
+    applyPendingResponses({ rsvpStore: useRsvpStore, guestStore: useGuestStore, eventStore: useEventStore });
+    const events = useEventStore.getState().events.byId;
+    const guests = Object.values(useGuestStore.getState().guests.byId);
+    // Wedding-wide she is attending; the reception count still says declined.
+    expect(eventGuestSummary(events[mehndi.id], guests)).toMatchObject({ attending: 1, declined: 0 });
+    expect(eventGuestSummary(events[reception.id], guests)).toMatchObject({ attending: 0, declined: 1 });
+    expect(events.ev_deleted).toBeUndefined();
+
+    // Applied once: a second run changes nothing.
+    const before = useEventStore.getState().events;
+    applyPendingResponses({ rsvpStore: useRsvpStore, guestStore: useGuestStore, eventStore: useEventStore });
+    expect(useEventStore.getState().events).toBe(before);
   });
 });

@@ -52,6 +52,7 @@ const QUESTIONS = [
   { key: 'dietary', label: 'Allergies and dietary needs' },
   { key: 'plusOnes', label: 'Plus-one names', subtitle: 'For guests you allowed a plus one' },
   { key: 'message', label: 'A note to the two of you' },
+  { key: 'events', label: 'Each event separately', subtitle: 'For guests invited to more than one event' },
 ];
 
 const STATUS_BADGE = {
@@ -129,7 +130,13 @@ function RsvpManager() {
             current ?? {
               slug: settings?.slug ?? suggestSlug(wedding),
               deadline: settings?.deadline ?? null,
-              questions: settings?.questions ?? { meals: true, dietary: true, plusOnes: true, message: true },
+              questions: settings?.questions ?? {
+                meals: true,
+                dietary: true,
+                plusOnes: true,
+                message: true,
+                events: true,
+              },
             }
         );
       },
