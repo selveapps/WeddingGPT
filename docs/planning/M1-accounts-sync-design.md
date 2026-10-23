@@ -274,3 +274,12 @@ Details settled while building, which refine sections 4 and 5.
   `quota_exceeded`; edits and deletes still apply. Idempotency entries are
   dropped after 30 days. Pull cursors are stored per member, which is what
   the tombstone purge waits on.
+- **A3 (storage partitioning).** The `local` workspace keeps the original
+  unprefixed keys, so existing data needs no migration; other workspaces use
+  `ws:<workspaceId>:<store>`. The active workspace id is saved under
+  `workspace:active` and read before any store hydrates. A switch pauses
+  writes and empties every registered store before reloading, because
+  zustand's `persist` keeps in-memory state when the new key is empty and
+  would otherwise copy one wedding into another. A test fails the build if a
+  persisted store is not registered. Nothing switches workspaces yet; sign-in
+  will, in A4.
