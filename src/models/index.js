@@ -217,3 +217,11 @@ export {
   eventsToWebsiteSchedule,
   mergeWebsiteSchedule,
 } from './events';
+export {
+  EVENT_CHECKLISTS,
+  eventChecklist,
+  eventChecklistFor,
+  templateKeyFor,
+  checklistDueDate,
+  buildEventTasks,
+} from './eventTemplates';

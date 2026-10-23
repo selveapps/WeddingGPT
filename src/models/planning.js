@@ -50,6 +50,8 @@ export function createTask({
   eventId = null,
   /** Ids of the tasks this one waits for (slice C2). */
   waitsFor = [],
+  /** The event checklist entry this task came from, e.g. "mehndi:artist" (slice C3). */
+  templateKey = null,
 } = {}) {
   return createEntity('task', {
     weddingId,
@@ -64,6 +66,7 @@ export function createTask({
     isSystemGenerated,
     eventId,
     waitsFor,
+    templateKey,
     monthsBefore,
     completedAt: null,
     snoozedUntil: null,
