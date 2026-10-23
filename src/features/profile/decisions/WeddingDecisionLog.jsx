@@ -13,8 +13,13 @@ import {
 } from '@/design-system/components';
 import { DecisionCard, DecisionForm } from './components';
 import { useDecisionLog } from './hooks/useDecisionLog';
-import { filterDecisions, searchDecisions, summariseDecisions } from './lib/decisionHelpers';
-import { DECISION_STATUSES } from './lib/decisionConstants';
+import {
+  filterDecisions,
+  filterDecisionsByCategory,
+  searchDecisions,
+  summariseDecisions,
+} from './lib/decisionHelpers';
+import { DECISION_CATEGORIES, DECISION_STATUSES } from './lib/decisionConstants';
 
 const DECISION_FILTERS = [
   { value: 'all', label: 'All decisions' },
@@ -25,10 +30,14 @@ const DECISION_FILTERS = [
 export function WeddingDecisionLog() {
   const toast = useToast();
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [categoryFilter, setCategoryFilter] = React.useState('all');
   const [query, setQuery] = React.useState('');
   const { decisions, addRecord, decide, reopen, removeDecision } = useDecisionLog();
   const summary = summariseDecisions(decisions);
-  const visibleDecisions = searchDecisions(filterDecisions(decisions, statusFilter), query);
+  const visibleDecisions = searchDecisions(
+    filterDecisionsByCategory(filterDecisions(decisions, statusFilter), categoryFilter),
+    query
+  );
 
   const save = (values) => {
     if (!addRecord(values)) {
@@ -83,6 +92,23 @@ export function WeddingDecisionLog() {
         </Row>
       ) : null}
       {decisions.length ? (
+        <Row gap="xs" wrap>
+          <Chip
+            label="All areas"
+            selected={categoryFilter === 'all'}
+            onPress={() => setCategoryFilter('all')}
+          />
+          {DECISION_CATEGORIES.map((category) => (
+            <Chip
+              key={category.value}
+              label={category.label}
+              selected={categoryFilter === category.value}
+              onPress={() => setCategoryFilter(category.value)}
+            />
+          ))}
+        </Row>
+      ) : null}
+      {decisions.length ? (
         <Stack gap="sm">
           {visibleDecisions.map((decision) => (
             <DecisionCard
@@ -111,6 +137,7 @@ export function WeddingDecisionLog() {
           actionLabel="Show all"
           onAction={() => {
             setStatusFilter('all');
+            setCategoryFilter('all');
             setQuery('');
           }}
         />

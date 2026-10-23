@@ -69,6 +69,10 @@ export function searchDecisions(items = [], query = '') {
   );
 }
 
+export function filterDecisionsByCategory(items = [], category = 'all') {
+  return category === 'all' ? [...items] : items.filter((item) => item.category === category);
+}
+
 export function summariseDecisions(items = []) {
   const decided = items.filter((item) => item.status === DECISION_STATUSES.DECIDED).length;
   return { total: items.length, decided, open: items.length - decided };

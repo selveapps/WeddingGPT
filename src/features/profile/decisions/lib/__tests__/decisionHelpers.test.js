@@ -1,6 +1,7 @@
 import {
   decisionCategoryLabel,
   filterDecisions,
+  filterDecisionsByCategory,
   searchDecisions,
   parseDecisionOptions,
   sortDecisions,
@@ -58,6 +59,12 @@ describe('wedding decision helpers', () => {
     expect(searchDecisions(items, 'FAMILY')).toEqual([items[0]]);
     expect(searchDecisions(items, 'vanilla')).toEqual([items[1]]);
     expect(searchDecisions(items, '  ')).toEqual(items);
+  });
+
+  it('filters decisions by category without changing their order', () => {
+    const items = [{ category: 'ceremony' }, { category: 'style' }, { category: 'ceremony' }];
+    expect(filterDecisionsByCategory(items, 'ceremony')).toEqual([items[0], items[2]]);
+    expect(filterDecisionsByCategory(items)).toEqual(items);
   });
 
   it('returns a readable category fallback', () => {
