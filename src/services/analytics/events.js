@@ -35,6 +35,7 @@ export const AnalyticsEvents = {
   TASK_DELETED: 'task_deleted',
   TASK_SNOOZED: 'task_snoozed',
   TASK_REASSIGNED: 'task_reassigned',
+  TASK_DEPENDENCY_ADDED: 'task_dependency_added',
   TASKS_FILTERED: 'tasks_filtered',
 
   // --- Budget --------------------------------------------------------------
