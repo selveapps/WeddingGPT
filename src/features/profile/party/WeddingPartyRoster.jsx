@@ -68,7 +68,8 @@ export function WeddingPartyRoster() {
       {members.length ? (
         <Stack gap="sm">
           <Text variant="caption" color="muted">
-            {summary.withContact} people have contact details
+            Contact coverage: {summary.contactCoverage}% · {summary.withEmail} email · {summary.withPhone}{' '}
+            phone
           </Text>
           <TextField
             label="Find someone"

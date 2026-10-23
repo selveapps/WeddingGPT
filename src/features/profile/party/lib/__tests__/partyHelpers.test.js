@@ -50,8 +50,12 @@ describe('wedding party helpers', () => {
     expect(summariseParty([valid, { ...valid, role: 'reader', email: 'reader@example.com' }])).toEqual({
       total: 2,
       withContact: 1,
+      withEmail: 1,
+      withPhone: 0,
+      contactCoverage: 50,
       roles: 2,
     });
+    expect(summariseParty([]).contactCoverage).toBe(0);
   });
 
   it('searches names and contact details without changing the source list', () => {

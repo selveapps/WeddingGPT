@@ -81,9 +81,15 @@ export function filterPartyByContact(members = [], contactFilter = 'all') {
 }
 
 export function summariseParty(members = []) {
+  const hasEmail = (member) => Boolean(String(member.email ?? '').trim());
+  const hasPhone = (member) => Boolean(String(member.phone ?? '').trim());
+  const withContact = members.filter((member) => hasEmail(member) || hasPhone(member)).length;
   return {
     total: members.length,
-    withContact: members.filter((member) => Boolean(member.email || member.phone)).length,
+    withContact,
+    withEmail: members.filter(hasEmail).length,
+    withPhone: members.filter(hasPhone).length,
+    contactCoverage: members.length ? Math.round((withContact / members.length) * 100) : 0,
     roles: new Set(members.map((member) => member.role).filter(Boolean)).size,
   };
 }
