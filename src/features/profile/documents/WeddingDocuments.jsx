@@ -27,6 +27,7 @@ const DOCUMENT_FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'open', label: 'To do' },
   { value: 'complete', label: 'Ready' },
+  { value: 'due-soon', label: 'Due soon' },
   { value: 'overdue', label: 'Overdue' },
 ];
 
@@ -85,7 +86,13 @@ export function WeddingDocuments() {
           {DOCUMENT_FILTERS.map((filter) => (
             <Chip
               key={filter.value}
-              label={filter.value === 'overdue' ? `${filter.label} (${summary.overdue})` : filter.label}
+              label={
+                filter.value === 'overdue'
+                  ? `${filter.label} (${summary.overdue})`
+                  : filter.value === 'due-soon'
+                    ? `${filter.label} (${summary.dueSoon})`
+                    : filter.label
+              }
               selected={statusFilter === filter.value}
               onPress={() => setStatusFilter(filter.value)}
             />

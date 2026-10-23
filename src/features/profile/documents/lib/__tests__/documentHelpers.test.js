@@ -1,6 +1,7 @@
 import {
   filterDocuments,
   filterDocumentsByType,
+  isDocumentReviewDueSoon,
   isDocumentReviewOverdue,
   searchDocuments,
   sortDocuments,
@@ -31,6 +32,7 @@ describe('wedding document checklist helpers', () => {
       remaining: 0,
       ratio: 0,
       overdue: 0,
+      dueSoon: 0,
     });
   });
 
@@ -49,6 +51,21 @@ describe('wedding document checklist helpers', () => {
       { completed: true, reviewDate: '2026-10-01' },
     ];
     expect(filterDocuments(rows, 'overdue', now)).toEqual([rows[0]]);
+  });
+
+  it('finds incomplete reviews due today through the next seven days', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const today = { completed: false, reviewDate: '2026-10-23' };
+    const withinWeek = { completed: false, reviewDate: '2026-10-30' };
+    const later = { completed: false, reviewDate: '2026-10-31' };
+    const completed = { completed: true, reviewDate: '2026-10-24' };
+    expect(isDocumentReviewDueSoon(today, now)).toBe(true);
+    expect(isDocumentReviewDueSoon(withinWeek, now)).toBe(true);
+    expect(filterDocuments([today, withinWeek, later, completed], 'due-soon', now)).toEqual([
+      today,
+      withinWeek,
+    ]);
+    expect(summariseDocuments([today, withinWeek, later, completed], now).dueSoon).toBe(2);
   });
 
   it('filters checklist entries by document type', () => {

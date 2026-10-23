@@ -28,6 +28,9 @@ export function filterDocuments(documents = [], status = 'all', now = new Date()
   if (status === 'overdue') {
     return documents.filter((document) => isDocumentReviewOverdue(document, now));
   }
+  if (status === 'due-soon') {
+    return documents.filter((document) => isDocumentReviewDueSoon(document, now));
+  }
   if (status === 'complete') return documents.filter((document) => Boolean(document.completed));
   if (status === 'open') return documents.filter((document) => !document.completed);
   return [...documents];
@@ -54,6 +57,13 @@ export function isDocumentReviewOverdue(document, now = new Date()) {
   return document.reviewDate < toISODate(now);
 }
 
+export function isDocumentReviewDueSoon(document, now = new Date(), daysAhead = 7) {
+  if (document?.completed || !isCalendarDate(document?.reviewDate)) return false;
+  const lastDay = new Date(now);
+  lastDay.setDate(lastDay.getDate() + daysAhead);
+  return document.reviewDate >= toISODate(now) && document.reviewDate <= toISODate(lastDay);
+}
+
 export function summariseDocuments(documents = [], now = new Date()) {
   const completed = documents.filter((document) => document.completed).length;
   return {
@@ -62,6 +72,7 @@ export function summariseDocuments(documents = [], now = new Date()) {
     remaining: documents.length - completed,
     ratio: documents.length ? completed / documents.length : 0,
     overdue: documents.filter((document) => isDocumentReviewOverdue(document, now)).length,
+    dueSoon: documents.filter((document) => isDocumentReviewDueSoon(document, now)).length,
   };
 }
 
