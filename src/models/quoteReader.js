@@ -1,12 +1,12 @@
-import { VendorStatus, paymentsFromMilestones } from '@/models';
-import { formatMoney } from '@/lib/currency';
-import { formatMediumDate } from '@/lib/date';
-
-import { findDates } from '../shared/dates';
-import { findAmounts, findPercents } from '../shared/money';
+import { VendorStatus } from './enums';
+import { paymentsFromMilestones } from './vendors';
+import { formatMoney } from '../lib/currency';
+import { formatMediumDate } from '../lib/date';
+import { findDates } from '../lib/textDates';
+import { findAmounts, findPercents } from '../lib/textMoney';
 
 /**
- * Quote and contract reader (Labs).
+ * Quote and contract reader (graduated from Labs, part of Vendors).
  *
  * Pull the numbers that matter out of a pasted quote: total, deposit,
  * balance, what each line costs, when money is due, and the fine print worth
@@ -173,10 +173,19 @@ export function quoteSummary(result) {
   return lines.join('\n');
 }
 
-/** Fields for a Labs vendor-manager entry, with the quote's own payment dates. */
+/** What the quote covers, as one line for the vendor's `quoteScope`. */
+export function quoteScopeText(result) {
+  return result.lineItems
+    .filter((item) => !item.isFee)
+    .map((item) => item.label)
+    .join(', ')
+    .slice(0, 500);
+}
+
 /**
- * The fields the real vendor store's `addVendor` takes, for this quote. The
- * deposit and balance become the vendor's payment plan.
+ * The fields the vendor store's `addVendor` takes, for this quote. The
+ * deposit and balance become the vendor's payment plan; the line items become
+ * what the quote covers; the quote's expiry is kept.
  */
 export function toVendorDraft(result, categoryKey) {
   const total = result.total ?? 0;
@@ -187,6 +196,8 @@ export function toVendorDraft(result, categoryKey) {
     categoryKey,
     status: VendorStatus.QUOTED,
     quotedAmount: total > 0 ? total : null,
+    quoteScope: quoteScopeText(result),
+    quoteValidUntil: result.expiresOn ?? null,
     payments: paymentsFromMilestones({
       quotedAmount: total,
       depositAmount: deposit || null,
@@ -194,5 +205,27 @@ export function toVendorDraft(result, categoryKey) {
       finalAmount: total - deposit > 0 ? total - deposit : null,
       finalDueAt: due('Balance due'),
     }),
+  };
+}
+
+/**
+ * The patch for an existing vendor: the new quote, its payment plan and
+ * scope. Payments already marked paid are kept, so re-reading a quote never
+ * forgets money that has changed hands.
+ */
+export function quotePatchForVendor(result, vendor) {
+  const draft = toVendorDraft(result, vendor.categoryKey);
+  const paid = (vendor.payments ?? []).filter((payment) => payment.paidAt);
+  const status = [VendorStatus.SAVED, VendorStatus.CONTACTED].includes(vendor.status)
+    ? VendorStatus.QUOTED
+    : vendor.status;
+  return {
+    quotedAmount: draft.quotedAmount,
+    quoteScope: draft.quoteScope || vendor.quoteScope || '',
+    quoteValidUntil: draft.quoteValidUntil ?? vendor.quoteValidUntil ?? null,
+    payments: paid.length
+      ? [...paid, ...draft.payments.filter((p) => !paid.some((q) => q.label === p.label))]
+      : draft.payments,
+    status,
   };
 }

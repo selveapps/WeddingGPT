@@ -1,6 +1,14 @@
-import { VendorStatus } from '@/models';
+import { VendorStatus } from '../enums';
 
-import { SAMPLE_QUOTE, extractQuote, hasFindings, quoteSummary, toVendorDraft } from '../model';
+import {
+  SAMPLE_QUOTE,
+  extractQuote,
+  hasFindings,
+  quotePatchForVendor,
+  quoteScopeText,
+  quoteSummary,
+  toVendorDraft,
+} from '../quoteReader';
 
 const FROM = new Date(2027, 0, 10);
 
@@ -76,4 +84,46 @@ it('summarises and converts to a vendor with the quoted dates', () => {
     ['Deposit', 111000, '2027-02-15'],
     ['Final balance', 259000, '2027-06-05'],
   ]);
+});
+
+it('keeps what the quote covers and when it expires', () => {
+  const result = extractQuote(SAMPLE_QUOTE, { from: FROM });
+  expect(quoteScopeText(result)).toBe(
+    'Bridal bouquet, Bridesmaid bouquets (4 x $85), Ceremony arch flowers, Centerpieces (12), Delivery and setup'
+  );
+  expect(toVendorDraft(result, 'florals')).toMatchObject({ quoteValidUntil: '2027-01-31' });
+});
+
+describe('quotePatchForVendor', () => {
+  const result = extractQuote(SAMPLE_QUOTE, { from: FROM });
+
+  it('moves a vendor that had not quoted yet to quoted', () => {
+    const patch = quotePatchForVendor(result, {
+      categoryKey: 'florals',
+      status: VendorStatus.CONTACTED,
+      payments: [],
+    });
+    expect(patch).toMatchObject({ quotedAmount: 370000, status: VendorStatus.QUOTED });
+    expect(patch.payments).toHaveLength(2);
+  });
+
+  it('leaves a booked vendor booked and keeps payments already made', () => {
+    const paidDeposit = {
+      id: 'p1',
+      label: 'Deposit',
+      amount: 100000,
+      dueDate: '2027-01-01',
+      paidAt: '2027-01-02',
+    };
+    const unpaid = { id: 'p2', label: 'Final balance', amount: 50000, dueDate: '2027-05-01', paidAt: null };
+    const patch = quotePatchForVendor(result, {
+      categoryKey: 'florals',
+      status: VendorStatus.BOOKED,
+      payments: [paidDeposit, unpaid],
+    });
+    expect(patch.status).toBe(VendorStatus.BOOKED);
+    expect(patch.payments[0]).toBe(paidDeposit);
+    expect(patch.payments.map((p) => p.label)).toEqual(['Deposit', 'Final balance']);
+    expect(patch.payments[1]).toMatchObject({ amount: 259000, dueDate: '2027-06-05' });
+  });
 });
