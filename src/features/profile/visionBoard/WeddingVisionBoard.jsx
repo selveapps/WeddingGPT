@@ -11,7 +11,7 @@ import {
 } from '@/design-system/components';
 import { useWeddingVision } from './hooks/useWeddingVision';
 import { VisionFilters, VisionIdeaCard, VisionIdeaForm } from './components';
-import { filterVisionIdeas, searchVisionIdeas, summariseVision } from './lib/visionHelpers';
+import { filterVisionIdeas, searchVisionIdeas, sortVisionIdeas, summariseVision } from './lib/visionHelpers';
 
 const DEFAULT_FILTERS = { category: 'all', mood: 'all', savedOnly: false };
 
@@ -21,7 +21,7 @@ export function WeddingVisionBoard() {
   const [query, setQuery] = useState('');
   const { ideas, addRecord, updateRecord, removeRecord } = useWeddingVision();
   const visibleIdeas = useMemo(
-    () => searchVisionIdeas(filterVisionIdeas(ideas, filters), query),
+    () => sortVisionIdeas(searchVisionIdeas(filterVisionIdeas(ideas, filters), query)),
     [ideas, filters, query]
   );
   const summary = summariseVision(ideas);
