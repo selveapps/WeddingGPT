@@ -1,5 +1,6 @@
 import {
   filterDocuments,
+  filterDocumentsByType,
   isDocumentReviewOverdue,
   searchDocuments,
   sortDocuments,
@@ -38,6 +39,12 @@ describe('wedding document checklist helpers', () => {
     expect(filterDocuments(items, 'open')).toEqual([items[0]]);
     expect(filterDocuments(items, 'complete')).toEqual([items[1]]);
     expect(filterDocuments(items)).toEqual(items);
+  });
+
+  it('filters checklist entries by document type', () => {
+    const items = [{ type: 'venue' }, { type: 'insurance' }];
+    expect(filterDocumentsByType(items, 'venue')).toEqual([items[0]]);
+    expect(filterDocumentsByType(items)).toEqual(items);
   });
 
   it('searches document titles, notes, dates, and readable types', () => {

@@ -30,6 +30,10 @@ export function filterDocuments(documents = [], status = 'all') {
   return [...documents];
 }
 
+export function filterDocumentsByType(documents = [], type = 'all') {
+  return type === 'all' ? [...documents] : documents.filter((document) => document.type === type);
+}
+
 export function searchDocuments(documents = [], query = '') {
   const term = String(query).trim().toLocaleLowerCase();
   if (!term) return [...documents];

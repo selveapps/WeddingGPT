@@ -14,7 +14,14 @@ import {
 } from '@/design-system/components';
 import { DocumentForm, DocumentRow } from './components';
 import { useWeddingDocuments } from './hooks/useWeddingDocuments';
-import { filterDocuments, searchDocuments, summariseDocuments } from './lib/documentHelpers';
+import {
+  documentTypeLabel,
+  filterDocuments,
+  filterDocumentsByType,
+  searchDocuments,
+  summariseDocuments,
+} from './lib/documentHelpers';
+import { DOCUMENT_TYPES } from './lib/documentConstants';
 
 const DOCUMENT_FILTERS = [
   { value: 'all', label: 'All' },
@@ -25,10 +32,14 @@ const DOCUMENT_FILTERS = [
 export function WeddingDocuments() {
   const toast = useToast();
   const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [query, setQuery] = useState('');
   const { documents, addRecord, removeRecord, toggleComplete } = useWeddingDocuments();
   const summary = summariseDocuments(documents);
-  const visibleDocuments = searchDocuments(filterDocuments(documents, statusFilter), query);
+  const visibleDocuments = searchDocuments(
+    filterDocumentsByType(filterDocuments(documents, statusFilter), typeFilter),
+    query
+  );
 
   const save = (values) => {
     if (!addRecord(values)) {
@@ -80,6 +91,19 @@ export function WeddingDocuments() {
           ))}
         </Row>
       ) : null}
+      {summary.total ? (
+        <Row gap="xs" wrap>
+          <Chip label="All types" selected={typeFilter === 'all'} onPress={() => setTypeFilter('all')} />
+          {DOCUMENT_TYPES.map((type) => (
+            <Chip
+              key={type.value}
+              label={documentTypeLabel(type.value)}
+              selected={typeFilter === type.value}
+              onPress={() => setTypeFilter(type.value)}
+            />
+          ))}
+        </Row>
+      ) : null}
       <Card>
         <DocumentForm onSave={save} />
       </Card>
@@ -106,6 +130,7 @@ export function WeddingDocuments() {
           actionLabel="Show all"
           onAction={() => {
             setStatusFilter('all');
+            setTypeFilter('all');
             setQuery('');
           }}
         />
