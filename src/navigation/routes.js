@@ -89,6 +89,7 @@ export const Routes = {
   invite: (token) => `/invite/${token}`,
   weddingDetails: '/account/wedding',
   notifications: '/account/notifications',
+  profile: '/account/profile',
   subscription: '/account/subscription',
   privacy: '/account/privacy',
 };

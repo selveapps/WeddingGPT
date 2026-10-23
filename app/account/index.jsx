@@ -121,6 +121,12 @@ export default function AccountScreen() {
           <SectionHeader title="Settings" />
           <Card padding="none">
             <ListRow
+              icon="user"
+              title="Profile"
+              subtitle="Your wedding details, preferences and keepsakes"
+              onPress={() => router.push(Routes.profile)}
+            />
+            <ListRow
               icon="bell"
               title="Reminders"
               subtitle="Daily checklist, deadlines and payments"
