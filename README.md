@@ -330,6 +330,11 @@ Two deliberate choices in the generator:
   sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
   leaves every event's list. Model in `models/events.js`, times in
   `lib/time.js`, screens in `features/events`.
+- **Budget reports.** *Reports* on the Budget tab: each category's plan
+  against what is paid, committed and estimated, with overspends flagged; the
+  same split by event; and what is still to pay in each of the next twelve
+  months, with overdue payments first. *Export as CSV* gives all three for a
+  spreadsheet. Model in `models/financeReport.js`.
 - **Checklists for each event.** Adding a mehndi, sangeet, haldi, rehearsal
   dinner, welcome party, brunch, ceremony or reception offers that event's
   usual tasks, dated back from the event and linked in order; the couple

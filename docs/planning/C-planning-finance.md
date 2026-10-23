@@ -89,3 +89,7 @@ weddings, and is left as a follow-up.
 **C4 Finance reports** — planned (category allocations) against committed and
 paid, by category and by event; payments due per month for the next twelve
 months; overspends highlighted; CSV export of the report.
+
+Status: done on `feature/finance-reports`. Events have no budget of their
+own, so the event view shows money spent and owed without a planned figure;
+per-event budgets can follow if couples ask for them.
