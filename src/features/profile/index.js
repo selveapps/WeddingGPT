@@ -42,6 +42,9 @@ export { WeddingDocuments } from './documents';
 export { CoupleCheckIns } from './checkins';
 export { ProfileBudgetSnapshot } from './budget';
 export { WeddingCountdown } from './countdown';
+export { WeddingPartyRoster } from './party';
+export { WeddingDecisionLog } from './decisions';
+export { WeddingVisionBoard } from './visionBoard';
 
 export {
   PROFILE_SECTIONS,

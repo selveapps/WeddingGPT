@@ -1,4 +1,4 @@
-import { sortDocuments, summariseDocuments, validateDocument } from '../documentHelpers';
+import { filterDocuments, sortDocuments, summariseDocuments, validateDocument } from '../documentHelpers';
 
 describe('wedding document checklist helpers', () => {
   it('validates custom names and review dates', () => {
@@ -18,5 +18,12 @@ describe('wedding document checklist helpers', () => {
 
   it('summarises an empty checklist safely', () => {
     expect(summariseDocuments([])).toEqual({ total: 0, completed: 0, remaining: 0, ratio: 0 });
+  });
+
+  it('filters incomplete and completed paperwork without changing the checklist', () => {
+    const items = [{ completed: false }, { completed: true }];
+    expect(filterDocuments(items, 'open')).toEqual([items[0]]);
+    expect(filterDocuments(items, 'complete')).toEqual([items[1]]);
+    expect(filterDocuments(items)).toEqual(items);
   });
 });

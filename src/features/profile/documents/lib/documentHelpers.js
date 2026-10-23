@@ -23,6 +23,12 @@ export function sortDocuments(documents = []) {
   });
 }
 
+export function filterDocuments(documents = [], status = 'all') {
+  if (status === 'complete') return documents.filter((document) => Boolean(document.completed));
+  if (status === 'open') return documents.filter((document) => !document.completed);
+  return [...documents];
+}
+
 export function summariseDocuments(documents = []) {
   const completed = documents.filter((document) => document.completed).length;
   return {
