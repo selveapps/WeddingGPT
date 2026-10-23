@@ -318,6 +318,18 @@ export default function GuestsScreen() {
 
         <Card padding="none">
           <ListRow
+            icon="guests"
+            title="Seating chart"
+            subtitle="Tables, auto-seating and who to keep apart"
+            onPress={() => router.push(Routes.guestSeating)}
+          />
+          <ListRow
+            icon="vendors"
+            title="Meals for the caterer"
+            subtitle="Plates, meal choices and allergies to check"
+            onPress={() => router.push(Routes.guestMeals)}
+          />
+          <ListRow
             icon="heart"
             title="Wedding website"
             subtitle="Schedule, travel, registry and FAQ for your guests"

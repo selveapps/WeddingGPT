@@ -167,3 +167,26 @@ export {
   validateWebsiteItem,
   websiteFilledSections,
 } from './website';
+export {
+  DEFAULT_TABLE_CAPACITY,
+  MAX_TABLE_CAPACITY,
+  createSeatingTable,
+  createSeatingRules,
+  withKnownGuests,
+  seatableGuests,
+  freeSeats,
+  assignGuest,
+  unassignGuest,
+  unseatedGuests,
+  findConflicts,
+  autoSeat,
+  seatingSummary,
+  guestLabel,
+} from './seating';
+export {
+  ALLERGENS,
+  detectAllergens,
+  buildCateringReport,
+  cateringReportText,
+  cateringCsv,
+} from './catering';

@@ -28,6 +28,8 @@ export const SYNC_COLLECTIONS = [
   'notificationPreferences',
   'rsvpResponses',
   'website',
+  'seatingTables',
+  'seatingRules',
 ];
 
 /**

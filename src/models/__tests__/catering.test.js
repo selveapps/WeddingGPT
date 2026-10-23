@@ -1,7 +1,7 @@
 import { RsvpStatus, PlusOneStatus, MealPreference } from '@/models';
 
 import { csvCell, toCsv } from '@/lib/csv';
-import { buildCateringReport, cateringCsv, cateringReportText, detectAllergens } from '../model';
+import { buildCateringReport, cateringCsv, cateringReportText, detectAllergens } from '../catering';
 
 const guest = (firstName, fields = {}) => ({
   id: firstName,
