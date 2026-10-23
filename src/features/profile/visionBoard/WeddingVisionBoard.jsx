@@ -1,17 +1,29 @@
 import React, { useMemo, useState } from 'react';
 
-import { Card, EmptyState, SectionHeader, Stack, Text, useToast } from '@/design-system/components';
+import {
+  Card,
+  EmptyState,
+  SectionHeader,
+  Stack,
+  Text,
+  TextField,
+  useToast,
+} from '@/design-system/components';
 import { useWeddingVision } from './hooks/useWeddingVision';
 import { VisionFilters, VisionIdeaCard, VisionIdeaForm } from './components';
-import { filterVisionIdeas, summariseVision } from './lib/visionHelpers';
+import { filterVisionIdeas, searchVisionIdeas, summariseVision } from './lib/visionHelpers';
 
 const DEFAULT_FILTERS = { category: 'all', mood: 'all', savedOnly: false };
 
 export function WeddingVisionBoard() {
   const toast = useToast();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [query, setQuery] = useState('');
   const { ideas, addRecord, updateRecord, removeRecord } = useWeddingVision();
-  const visibleIdeas = useMemo(() => filterVisionIdeas(ideas, filters), [ideas, filters]);
+  const visibleIdeas = useMemo(
+    () => searchVisionIdeas(filterVisionIdeas(ideas, filters), query),
+    [ideas, filters, query]
+  );
   const summary = summariseVision(ideas);
 
   const saveIdea = (values) => {
@@ -43,6 +55,13 @@ export function WeddingVisionBoard() {
       </Card>
       {ideas.length ? (
         <Stack gap="md">
+          <TextField
+            label="Search ideas"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search titles, notes, areas or moods"
+            icon="search"
+          />
           <VisionFilters value={filters} onChange={setFilters} />
           {visibleIdeas.length ? (
             <Stack gap="sm">
@@ -57,7 +76,10 @@ export function WeddingVisionBoard() {
               title="No ideas match these filters"
               message="Try another area or feeling, or show all your saved ideas."
               actionLabel="Clear filters"
-              onAction={() => setFilters(DEFAULT_FILTERS)}
+              onAction={() => {
+                setFilters(DEFAULT_FILTERS);
+                setQuery('');
+              }}
             />
           )}
         </Stack>

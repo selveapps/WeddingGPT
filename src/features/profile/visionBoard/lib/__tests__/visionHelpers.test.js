@@ -1,6 +1,7 @@
 import {
   filterVisionIdeas,
   normaliseVisionTags,
+  searchVisionIdeas,
   sortVisionIdeas,
   summariseVision,
   validateVisionIdea,
@@ -32,6 +33,13 @@ describe('wedding vision board helpers', () => {
   it('normalises valid unique tags and sorts saved ideas first', () => {
     expect(normaliseVisionTags(['romantic', 'unknown', 'romantic'])).toEqual(['romantic']);
     expect(sortVisionIdeas(ideas)[0]).toBe(ideas[0]);
+  });
+
+  it('searches idea titles, notes, categories, and moods', () => {
+    expect(searchVisionIdeas(ideas, 'GARDEN')).toEqual([ideas[0]]);
+    expect(searchVisionIdeas(ideas, 'Colors')).toEqual([ideas[1]]);
+    expect(searchVisionIdeas(ideas, 'romantic')).toEqual([ideas[0]]);
+    expect(searchVisionIdeas(ideas, '  ')).toEqual(ideas);
   });
 
   it('summarises ideas and saved counts', () => {

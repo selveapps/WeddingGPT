@@ -35,6 +35,23 @@ export function filterVisionIdeas(ideas = [], { category = 'all', mood = 'all', 
   });
 }
 
+export function searchVisionIdeas(ideas = [], query = '') {
+  const term = String(query).trim().toLocaleLowerCase();
+  if (!term) return [...ideas];
+  return ideas.filter((idea) =>
+    [
+      idea.title,
+      idea.note,
+      visionCategoryLabel(idea.category),
+      ...(idea.moods ?? []).map(visionMoodLabel),
+    ].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(term)
+    )
+  );
+}
+
 export function sortVisionIdeas(ideas = []) {
   return [...ideas].sort((a, b) => {
     if (Boolean(a.saved) !== Boolean(b.saved)) return a.saved ? -1 : 1;
