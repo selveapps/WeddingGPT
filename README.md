@@ -364,7 +364,11 @@ The same server holds **workspaces** (one per wedding) and their members, the
 first slice of accounts and sync. The design, API contract and threat model
 are in `docs/planning/M1-accounts-sync-design.md`. Every workspace route goes
 through one membership check, and a workspace the caller is not a member of
-answers 404, so its id cannot be probed. The app does not use workspaces yet.
+answers 404, so its id cannot be probed. Workspaces sync record by record
+through `POST /v1/workspaces/:id/sync/push` and `GET .../sync/pull`: the server
+orders writes, a conflicting push wins but returns the copy it overwrote, and
+deletes are tombstones with their contents removed. The app does not use
+workspaces or sync yet (slices A3-A4).
 
 ```bash
 cd server/auth
