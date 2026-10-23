@@ -1,18 +1,12 @@
-import {
-  RsvpStatus,
-  RSVP_STATUS_META,
-  PaymentStatus,
-  ExpenseCommitment,
-  guestFullName,
-} from '@/models';
-import { formatMoney } from '@/lib/currency';
-import { formatMediumDate } from '@/lib/date';
-
-import { findDate } from '../shared/dates';
-import { findAmounts } from '../shared/money';
+import { RsvpStatus, RSVP_STATUS_META, PaymentStatus, ExpenseCommitment, SuggestionType } from './enums';
+import { guestFullName } from './guests';
+import { formatMoney } from '../lib/currency';
+import { formatMediumDate } from '../lib/date';
+import { findDate } from '../lib/textDates';
+import { findAmounts } from '../lib/textMoney';
 
 /**
- * Assistant actions (Labs).
+ * Assistant actions (graduated from Labs).
  *
  * Turns a plain request - "add a $2,000 florist expense", "mark the Smiths as
  * attending", "remind me to call the DJ by March 3" - into a proposed change
@@ -20,8 +14,10 @@ import { findAmounts } from '../shared/money';
  * assistant already follows (the AI suggests, the couple confirms), extended
  * from tasks and messages to the budget and the guest list.
  *
- * Rule-based on purpose: it runs offline and is predictable. The same
- * `{ kind, payload }` shape is what a Claude tool call would return later.
+ * Rule-based on purpose: it runs on the phone, offline, and is predictable.
+ * It needs the guest list to know who "the Smiths" are, which is exactly what
+ * the assistant is never sent, so the AI store runs it before any provider
+ * (see `actionReply`), and the request never leaves the phone.
  */
 
 export const ActionKind = {
@@ -43,12 +39,19 @@ export const EXAMPLES = [
 // --- Guests -------------------------------------------------------------------
 
 const STATUS_WORDS = [
-  { re: /^(not coming|can'?t come|cannot come|won'?t come|declined?|declines|said no|rsvp'?d no|no|regrets)$/i, status: RsvpStatus.DECLINED },
-  { re: /^(attending|coming|accepted|accepts|said yes|rsvp'?d yes|yes|will come)$/i, status: RsvpStatus.ATTENDING },
+  {
+    re: /^(not coming|can'?t come|cannot come|won'?t come|declined?|declines|said no|rsvp'?d no|no|regrets)$/i,
+    status: RsvpStatus.DECLINED,
+  },
+  {
+    re: /^(attending|coming|accepted|accepts|said yes|rsvp'?d yes|yes|will come)$/i,
+    status: RsvpStatus.ATTENDING,
+  },
   { re: /^(maybe|unsure|not sure)$/i, status: RsvpStatus.MAYBE },
 ];
 
-const STATUS_ALT = "not coming|can'?t come|cannot come|won'?t come|declined?|declines|said no|rsvp'?d no|regrets|attending|coming|accepted|accepts|said yes|rsvp'?d yes|will come|maybe|unsure|not sure|yes|no";
+const STATUS_ALT =
+  "not coming|can'?t come|cannot come|won'?t come|declined?|declines|said no|rsvp'?d no|regrets|attending|coming|accepted|accepts|said yes|rsvp'?d yes|will come|maybe|unsure|not sure|yes|no";
 
 const RSVP_PATTERNS = [
   new RegExp(`^(?:mark|set|put)\\s+(.+?)\\s+(?:as\\s+|to\\s+)?(${STATUS_ALT})\\b`, 'i'),
@@ -112,7 +115,8 @@ function parseRsvp(text, guests) {
 
 // --- Tasks --------------------------------------------------------------------
 
-const TASK_PREFIX = /^(?:please\s+)?(?:remind me to|remind us to|add (?:a )?task(?: to)?:?|to-?do:?|i need to|we need to|don'?t forget to)\s+(.+)$/i;
+const TASK_PREFIX =
+  /^(?:please\s+)?(?:remind me to|remind us to|add (?:a )?task(?: to)?:?|to-?do:?|i need to|we need to|don'?t forget to)\s+(.+)$/i;
 const DATE_LEAD = /\s+(?:by|on|before|due)\s*$/i;
 
 function parseTask(text, from) {
@@ -155,15 +159,37 @@ const CATEGORY_WORDS = {
 
 const EXPENSE_VERB = /\b(add|spent|spend|paid|pay|expense|cost|costs|deposit|bought|quote)\b/i;
 const PAID_VERB = /\b(spent|paid|bought)\b/i;
-const FILLER = new Set(['add', 'an', 'a', 'the', 'expense', 'spent', 'spend', 'on', 'for', 'paid', 'pay', 'to', 'we', 'i', 'our', 'my', 'of', 'cost', 'costs', 'bought', 'just', 'new']);
+const FILLER = new Set([
+  'add',
+  'an',
+  'a',
+  'the',
+  'expense',
+  'spent',
+  'spend',
+  'on',
+  'for',
+  'paid',
+  'pay',
+  'to',
+  'we',
+  'i',
+  'our',
+  'my',
+  'of',
+  'cost',
+  'costs',
+  'bought',
+  'just',
+  'new',
+]);
 
 export function matchCategory(words, categories = []) {
   for (const word of words) {
     const key = Object.keys(CATEGORY_WORDS).find((k) => CATEGORY_WORDS[k].includes(word));
     if (!key) continue;
     const category =
-      categories.find((c) => c.key === key) ??
-      categories.find((c) => c.name?.toLowerCase().includes(word));
+      categories.find((c) => c.key === key) ?? categories.find((c) => c.name?.toLowerCase().includes(word));
     if (category) return category;
   }
   return null;
@@ -173,7 +199,8 @@ function parseExpense(text, { categories, from }) {
   if (!EXPENSE_VERB.test(text)) return null;
   const date = findDate(text, from);
   const amounts = findAmounts(text).filter(
-    (amount) => !date || amount.index + amount.raw.length <= date.index || amount.index >= date.index + date.raw.length
+    (amount) =>
+      !date || amount.index + amount.raw.length <= date.index || amount.index >= date.index + date.raw.length
   );
   const amount = amounts.find((entry) => entry.explicit) ?? amounts[0];
   if (!amount || amount.minor <= 0) return null;
@@ -200,8 +227,8 @@ function parseExpense(text, { categories, from }) {
       paymentStatus: paid ? PaymentStatus.PAID : PaymentStatus.UNPAID,
       commitment: paid ? ExpenseCommitment.COMMITTED : ExpenseCommitment.ESTIMATED,
       budgetCategoryId: category?.id ?? null,
-      date: paid ? date?.iso ?? null : null,
-      dueDate: paid ? null : date?.iso ?? null,
+      date: paid ? (date?.iso ?? null) : null,
+      dueDate: paid ? null : (date?.iso ?? null),
     },
     summary: `${paid ? 'Record' : 'Add'} ${formatMoney(amount.minor)} "${title}"${category ? ` under ${category.name}` : ''}${paid ? ' as paid' : ''}`,
     warnings: category ? [] : ['No budget category matched - it will be uncategorised.'],
@@ -228,4 +255,71 @@ export function parseCommand(text, { guests = [], categories = [], from = new Da
       ready: false,
     }
   );
+}
+
+/**
+ * A ready action as an assistant reply with a proposal, in the shape the AI
+ * store turns into a suggestion card. Null for anything not understood, so
+ * the message goes to the assistant as usual.
+ */
+export function actionReply(action) {
+  if (!action || action.kind === ActionKind.UNKNOWN) return null;
+  if (!action.ready) {
+    return { content: `${action.summary}. ${action.warnings.join(' ')}`.trim(), proposal: null };
+  }
+  const note = action.warnings.length
+    ? `
+
+${action.warnings.join(' ')}`
+    : '';
+  const ask = 'Check it below - nothing changes until you confirm.';
+
+  if (action.kind === ActionKind.ADD_TASK) {
+    return {
+      content: `I can add that to your plan. ${ask}${note}`,
+      proposal: {
+        type: SuggestionType.CREATE_TASKS,
+        title: action.payload.title,
+        summary: action.summary,
+        payload: { tasks: [{ title: action.payload.title, dueDate: action.payload.dueDate }] },
+      },
+    };
+  }
+  if (action.kind === ActionKind.ADD_EXPENSE) {
+    return {
+      content: `Here is the expense. ${ask}${note}`,
+      proposal: {
+        type: SuggestionType.ADD_EXPENSE,
+        title: action.summary,
+        summary: action.summary,
+        payload: action.payload,
+      },
+    };
+  }
+  return {
+    content: `Here is the RSVP change. ${ask}${note}`,
+    proposal: {
+      type: SuggestionType.UPDATE_GUEST,
+      title: action.summary,
+      summary: action.summary,
+      payload: action.payload,
+    },
+  };
+}
+
+const EXPLICIT_RSVP = /^(?:mark|set|put)\s/i;
+
+/**
+ * What the chat does with a message before the assistant sees it. Stricter
+ * than `parseCommand`, because a wrong guess here hides the assistant's
+ * answer: questions always go to the assistant, and an RSVP change that
+ * matches no guest only gets a reply when it was clearly meant as one.
+ */
+export function deviceActionReply(text, data = {}) {
+  const input = String(text ?? '').trim();
+  if (!input || input.includes('?')) return null;
+  const action = parseCommand(input, data);
+  if (!action || action.kind === ActionKind.UNKNOWN) return null;
+  if (action.kind === ActionKind.SET_RSVP && !action.ready && !EXPLICIT_RSVP.test(input)) return null;
+  return actionReply(action);
 }

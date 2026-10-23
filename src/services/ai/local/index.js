@@ -25,6 +25,7 @@ const FALLBACK = {
     '"How much budget is left?"',
     '"Make a checklist for booking a photographer"',
     '"Draft an RSVP reminder"',
+    '"Add a $2,000 florist expense" or "Mark the Smiths as attending"',
     '"Is it okay to have an adults-only wedding?"',
     '"How do I add a guest?"',
   ])}`,
