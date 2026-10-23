@@ -283,6 +283,31 @@ export function createAuthServer({
     return send(res, 200, { workspace, alreadyMember: result === AcceptResult.ALREADY_MEMBER });
   }
 
+  // --- Account export and deletion (slice A7) --------------------------------
+
+  function exportAccount(req, res, { user }) {
+    const data = db.account.exportFor(user.id);
+    if (!data) return send(res, 401, { error: 'unauthorised' });
+    log.info?.(`[account] ${user.id} exported their data`);
+    return send(res, 200, data);
+  }
+
+  /** Needs the password again: a stolen session alone must not erase an account. */
+  async function deleteAccount(req, res, { user }) {
+    const body = await readJson(req);
+    const password = typeof body.password === 'string' ? body.password : '';
+    if (!password || password.length > LIMITS.passwordMax) return send(res, 400, { error: 'invalid' });
+    if (!(await verifyPassword(password, user.password_hash))) {
+      return send(res, 401, { error: 'invalid_credentials' });
+    }
+    const result = db.account.deleteAccount(user.id);
+    if (!result) return send(res, 401, { error: 'unauthorised' });
+    log.info?.(
+      `[account] deleted ${user.id}: ${result.deletedWorkspaces.length} weddings deleted, ${result.handedOver.length} handed over`
+    );
+    return send(res, 204);
+  }
+
   // --- Routing ---------------------------------------------------------------
   //
   // `access`: 'public' (no session), 'user' (a valid session) or 'member'
@@ -302,7 +327,9 @@ export function createAuthServer({
     .add('GET', '/v1/workspaces/:id/sync/pull', syncPull, { access: 'member' })
     .add('POST', '/v1/workspaces/:id/invites', createInvite, { access: 'member', limited: true })
     .add('DELETE', '/v1/workspaces/:id/invites', revokeInvites, { access: 'member' })
-    .add('POST', '/v1/invites/accept', acceptInvite, { access: 'user', limited: true });
+    .add('POST', '/v1/invites/accept', acceptInvite, { access: 'user', limited: true })
+    .add('GET', '/v1/account/export', exportAccount, { access: 'user', limited: true })
+    .add('DELETE', '/v1/account', deleteAccount, { access: 'user', limited: true });
 
   // RSVP: couple-side routes default to membership checks; guest pages opt out.
   const rsvpRouter = {

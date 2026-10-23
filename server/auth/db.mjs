@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
+import { createAccountRepository } from './account.mjs';
 import { createInviteRepository } from './invites.mjs';
 import { createRsvpRepository } from './rsvp/rsvp.mjs';
 import { createSiteRepository } from './rsvp/site.mjs';
@@ -102,6 +103,9 @@ export function openDatabase(path) {
 
     /** Wedding website visibility, password and indexing - see rsvp/site.mjs. */
     site: createSiteRepository(db),
+
+    /** Export and deletion of a whole account - see account.mjs. */
+    account: createAccountRepository(db),
 
     /** Returns the new user, or null if the email is already registered. */
     createUser({ email, name, passwordHash }) {
