@@ -18,6 +18,7 @@ import {
   filterPartyMembersByRole,
   filterPartyByContact,
   searchPartyMembers,
+  sortPartyMembers,
   summariseParty,
 } from './lib/partyHelpers';
 import { PARTY_ROLES, PARTY_SIDES } from './lib/partyConstants';
@@ -32,12 +33,14 @@ export function WeddingPartyRoster() {
   const summary = summariseParty(members);
   const visibleMembers = useMemo(
     () =>
-      searchPartyMembers(
-        filterPartyByContact(
-          filterPartyMembersByRole(filterPartyMembers(members, side), role),
-          contactFilter
-        ),
-        query
+      sortPartyMembers(
+        searchPartyMembers(
+          filterPartyByContact(
+            filterPartyMembersByRole(filterPartyMembers(members, side), role),
+            contactFilter
+          ),
+          query
+        )
       ),
     [members, query, role, side, contactFilter]
   );
