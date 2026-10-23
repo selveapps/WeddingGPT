@@ -202,6 +202,23 @@ export {
   cateringCsv,
 } from './catering';
 export {
+  ThankYouStatus,
+  THANK_YOU_META,
+  GiftKind,
+  GIFT_KIND_OPTIONS,
+  GIFT_LIMITS,
+  createGift,
+  validateGift,
+  nextThankYouStatus,
+  thankYouDue,
+  summariseGifts,
+  sortGifts,
+  matchGuest,
+  draftThankYou,
+  dueLabel,
+  giftsCsv,
+} from './gifts';
+export {
   EventKind,
   EVENT_KIND_META,
   GuestScope,

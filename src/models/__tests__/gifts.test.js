@@ -7,7 +7,11 @@ import {
   sortGifts,
   summariseGifts,
   thankYouDue,
-} from '../model';
+  createGift,
+  giftsCsv,
+  validateGift,
+} from '../gifts';
+import { parseCsv } from '../../lib/csv';
 
 const WEDDING = '2027-06-19';
 
@@ -82,4 +86,43 @@ it('drafts a note that names the gift', () => {
   expect(draftThankYou({ gift: gift('b', { kind: GiftKind.MONEY, description: 'our honeymoon' }) })).toContain(
     'towards our honeymoon'
   );
+});
+
+describe('createGift', () => {
+  it('trims names and keeps money as whole minor units', () => {
+    const made = createGift({ weddingId: 'w1', fromName: '  Maria ', description: ' mixer ', value: 1999.6 });
+    expect(made).toMatchObject({ fromName: 'Maria', description: 'mixer', value: 2000, thankedOn: null });
+    expect(made.id).toMatch(/^gift_/);
+    expect(createGift({ fromName: 'A', value: -5 }).value).toBe(0);
+  });
+});
+
+describe('validateGift', () => {
+  it('needs a name and a real date', () => {
+    expect(validateGift({ fromName: ' ' }).fromName).toBeTruthy();
+    expect(validateGift({ fromName: 'Maria', receivedOn: '2027-02-30' }).receivedOn).toBeTruthy();
+    expect(validateGift({ fromName: 'Maria', receivedOn: '2027-02-28' })).toEqual({});
+  });
+
+  it('limits lengths', () => {
+    expect(validateGift({ fromName: 'x'.repeat(121) }).fromName).toBeTruthy();
+    expect(validateGift({ fromName: 'Maria', note: 'x'.repeat(2001) }).note).toBeTruthy();
+  });
+});
+
+describe('giftsCsv', () => {
+  it('lists gifts, most urgent first, with money in major units', () => {
+    const csv = giftsCsv(
+      [
+        gift('a', { fromName: 'Sam', thankYouStatus: ThankYouStatus.SENT }),
+        gift('b', { fromName: '=cmd', kind: GiftKind.MONEY, value: 12550, description: 'honeymoon' }),
+      ],
+      { weddingDate: WEDDING, currency: 'USD' }
+    );
+    const rows = parseCsv(csv);
+    expect(rows[0]).toEqual(['From', 'Kind', 'What', 'Value', 'Received', 'Thank by', 'Thank-you']);
+    expect(rows[1]).toEqual(["'=cmd", 'Money', 'honeymoon', '125.5', '2027-06-19', '2027-09-17', 'Thank-you to write']);
+    expect(rows[2][0]).toBe('Sam');
+    expect(rows[2][6]).toBe('Thanked');
+  });
 });
