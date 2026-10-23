@@ -13,7 +13,7 @@ import {
 import { formatMoney, toMajor } from '@/lib/currency';
 import { daysUntil, formatLongDate, formatMediumDate } from '@/lib/date';
 
-import { toCsv } from '../shared/csv';
+import { toCsv } from '@/lib/csv';
 import { SYNC_COLLECTIONS, decodeSnapshot } from '../sync/model';
 
 /**
