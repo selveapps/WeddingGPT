@@ -24,6 +24,25 @@ export function sortPartyMembers(members = []) {
   });
 }
 
+export function searchPartyMembers(members = [], query = '') {
+  const term = String(query).trim().toLocaleLowerCase();
+  if (!term) return [...members];
+  return members.filter((member) =>
+    [
+      member.name,
+      member.email,
+      member.phone,
+      member.note,
+      partyRoleLabel(member.role),
+      partySideLabel(member.side),
+    ].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(term)
+    )
+  );
+}
+
 export function summariseParty(members = []) {
   return {
     total: members.length,

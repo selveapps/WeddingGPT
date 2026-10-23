@@ -1,14 +1,24 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { Card, EmptyState, SectionHeader, Stack, Text, useToast } from '@/design-system/components';
+import {
+  Card,
+  EmptyState,
+  SectionHeader,
+  Stack,
+  Text,
+  TextField,
+  useToast,
+} from '@/design-system/components';
 import { PartyMemberCard, PartyMemberForm } from './components';
 import { usePartyRoster } from './hooks/usePartyRoster';
-import { summariseParty } from './lib/partyHelpers';
+import { searchPartyMembers, summariseParty } from './lib/partyHelpers';
 
 export function WeddingPartyRoster() {
   const toast = useToast();
   const { members, addRecord, removeRecord } = usePartyRoster();
+  const [query, setQuery] = useState('');
   const summary = summariseParty(members);
+  const visibleMembers = useMemo(() => searchPartyMembers(members, query), [members, query]);
 
   const addMember = (values) => {
     if (!addRecord(values)) {
@@ -38,9 +48,27 @@ export function WeddingPartyRoster() {
           <Text variant="caption" color="muted">
             {summary.withContact} people have contact details
           </Text>
-          {members.map((member) => (
-            <PartyMemberCard key={member.id} member={member} onRemove={removeMember} />
-          ))}
+          <TextField
+            label="Find someone"
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search names, email, phone or notes"
+            icon="search"
+          />
+          {visibleMembers.length ? (
+            visibleMembers.map((member) => (
+              <PartyMemberCard key={member.id} member={member} onRemove={removeMember} />
+            ))
+          ) : (
+            <EmptyState
+              icon="search"
+              compact
+              title="No people found"
+              message="Try another name or contact detail."
+              actionLabel="Clear search"
+              onAction={() => setQuery('')}
+            />
+          )}
         </Stack>
       ) : (
         <EmptyState

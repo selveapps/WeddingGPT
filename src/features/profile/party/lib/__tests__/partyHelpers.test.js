@@ -1,6 +1,7 @@
 import {
   partyRoleLabel,
   partySideLabel,
+  searchPartyMembers,
   sortPartyMembers,
   summariseParty,
   validatePartyMember,
@@ -30,6 +31,17 @@ describe('wedding party helpers', () => {
       withContact: 1,
       roles: 2,
     });
+  });
+
+  it('searches names and contact details without changing the source list', () => {
+    const members = [
+      { ...valid, name: 'Mina', email: 'mina@example.com' },
+      { ...valid, name: 'Ravi', phone: '555-0199', note: 'Ceremony reading' },
+    ];
+    expect(searchPartyMembers(members, 'MINA')).toEqual([members[0]]);
+    expect(searchPartyMembers(members, 'reading')).toEqual([members[1]]);
+    expect(searchPartyMembers(members, '  ')).toEqual(members);
+    expect(members).toHaveLength(2);
   });
 
   it('provides friendly labels for recognised and unknown values', () => {
