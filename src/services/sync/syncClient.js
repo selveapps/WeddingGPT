@@ -21,6 +21,8 @@ export const SyncErrorCode = {
   /** An invite link that was used, revoked, expired or never existed. */
   INVITE_INVALID: 'invite_invalid',
   WORKSPACE_FULL: 'workspace_full',
+  /** Another wedding already uses that RSVP page address. */
+  SLUG_TAKEN: 'slug_taken',
 };
 
 /** Codes worth retrying on the next sync. */
@@ -48,6 +50,7 @@ function toSyncError(error) {
   if (error.status === 403 && error.code === 'limit_reached')
     return new SyncError(SyncErrorCode.LIMIT_REACHED);
   if (error.status === 403) return new SyncError(SyncErrorCode.FORBIDDEN);
+  if (error.status === 409 && error.code === 'slug_taken') return new SyncError(SyncErrorCode.SLUG_TAKEN);
   if (error.status === 409 && error.code === 'workspace_full')
     return new SyncError(SyncErrorCode.WORKSPACE_FULL);
   if (error.status === 400 || error.status === 413) return new SyncError(SyncErrorCode.INVALID);
@@ -132,6 +135,43 @@ export function createSyncClient({ url, appToken, timeoutMs = 30000, fetchImpl }
         if (error?.code === SyncErrorCode.GONE) throw new SyncError(SyncErrorCode.INVITE_INVALID);
         throw error;
       }
+    },
+
+    // --- RSVP site (slice E1a) ------------------------------------------------
+
+    async getRsvpSettings(token, workspaceId) {
+      return (await request(workspacePath(workspaceId, '/rsvp/settings'), { token }))?.settings ?? null;
+    },
+
+    /** `{ slug, deadline, questions }`; fields left out keep their value. */
+    async saveRsvpSettings(token, workspaceId, patch) {
+      const json = await request(workspacePath(workspaceId, '/rsvp/settings'), {
+        method: 'PUT',
+        token,
+        body: patch,
+      });
+      return json?.settings ?? null;
+    },
+
+    async listRsvpInvites(token, workspaceId) {
+      return (await request(workspacePath(workspaceId, '/rsvp/invites'), { token }))?.invites ?? [];
+    },
+
+    /** `[{ inviteId, targetType, targetId, url, code, expiresAt }]` - links and codes are only ever returned here. */
+    async createRsvpInvites(token, workspaceId, targets) {
+      const json = await request(workspacePath(workspaceId, '/rsvp/invites'), {
+        method: 'POST',
+        token,
+        body: { targets },
+      });
+      return json?.invites ?? [];
+    },
+
+    async revokeRsvpInvite(token, workspaceId, inviteId) {
+      await request(workspacePath(workspaceId, `/rsvp/invites/${encodeURIComponent(inviteId)}/revoke`), {
+        method: 'POST',
+        token,
+      });
     },
 
     /** `{ records, cursor, hasMore }` after `since`. */

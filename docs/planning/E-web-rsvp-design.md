@@ -197,3 +197,15 @@ All five were approved as recommended.
   (about 40 bits) and are looked up only within their own wedding. Each public
   page threat has a test, and removing escaping, the guest filter, the
   server-only rule or the browser exemption each makes tests fail.
+- **E1b (RSVP in the app).** Guests > RSVP website, available once the
+  wedding is synced: the page address (suggested from the couple's names),
+  a reply-by date, which questions to ask, a link and code per household (or
+  guest without one), sharing, and a CSV of codes for printing. The server
+  returns a link once and keeps only its hash, so links are kept on the phone
+  that made them; another phone sees "link made on another phone" and can
+  issue a new one. Replies sync down as a read-only slice and are applied to
+  the guest list once per submission, after the pull that brought them, so the
+  guest edits reach the partner; conflicts where both phones made the same
+  change are no longer reported. The Labs RSVP-codes prototype is removed. The
+  live integration test covers the round trip: link, guest form post, sync,
+  guest list updated.

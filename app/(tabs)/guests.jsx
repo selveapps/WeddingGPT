@@ -318,6 +318,12 @@ export default function GuestsScreen() {
 
         <Card padding="none">
           <ListRow
+            icon="send"
+            title="RSVP website"
+            subtitle="Send each household a link; replies fill in your list"
+            onPress={() => router.push(Routes.guestRsvp)}
+          />
+          <ListRow
             icon="note"
             title="Spreadsheet"
             subtitle="Import guests from a CSV, or export your list for the caterer"
