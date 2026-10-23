@@ -1,9 +1,9 @@
 # M1 — Accounts and sync: design, API contract and threat model
 
-**Status: draft for team review.** Playbook §6A and §9: accounts and sync are
-built only after the threat model and API contracts are reviewed. Nothing in
-this document is implemented yet. Decisions the team must make are collected
-in [Open decisions](#open-decisions).
+**Status: approved 23 October 2026, with every recommendation in
+[Decisions](#decisions) accepted.** Playbook §6A and §9: accounts and sync are
+built only after the threat model and API contracts are reviewed. Slices are
+implemented in order from A1.
 
 ## 1. Goal
 
@@ -244,9 +244,11 @@ Each slice is a separate PR with tests, following the feature template.
 A1 and A2 can start once this document is approved; A6 waits on the email
 provider.
 
-## Open decisions
+## Decisions
 
-| # | Decision | Recommendation |
+All six were approved as recommended.
+
+| # | Decision | Approved |
 | --- | --- | --- |
 | D1 | Database: keep SQLite or move to Postgres before sync | SQLite on one server with WAL and nightly encrypted backups is enough for launch; keep the SQL portable so moving later is a migration, not a rewrite |
 | D2 | First sign-in when both the phone and the account have a wedding | Ask the person which to keep; never merge two weddings automatically |
