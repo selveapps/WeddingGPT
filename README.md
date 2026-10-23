@@ -369,6 +369,12 @@ Sign-in is optional and runs through `server/auth`, a small Node server that
 keeps accounts in SQLite using Node's built-in `node:sqlite` - no npm
 dependencies.
 
+The same server holds **workspaces** (one per wedding) and their members, the
+first slice of accounts and sync. The design, API contract and threat model
+are in `docs/planning/M1-accounts-sync-design.md`. Every workspace route goes
+through one membership check, and a workspace the caller is not a member of
+answers 404, so its id cannot be probed. The app does not use workspaces yet.
+
 ```bash
 cd server/auth
 cp .env.example .env      # set an APP_TOKEN

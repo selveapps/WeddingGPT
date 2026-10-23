@@ -3,6 +3,8 @@ import { dirname } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
+import { createWorkspaceRepository } from './workspaces.mjs';
+
 /**
  * Account storage, on SQLite through Node's built-in `node:sqlite`.
  *
@@ -78,6 +80,9 @@ export function openDatabase(path) {
   };
 
   return {
+    /** Workspaces and memberships - see workspaces.mjs. */
+    workspaces: createWorkspaceRepository(db),
+
     /** Returns the new user, or null if the email is already registered. */
     createUser({ email, name, passwordHash }) {
       const now = new Date().toISOString();

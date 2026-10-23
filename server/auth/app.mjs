@@ -2,19 +2,27 @@ import http from 'node:http';
 
 import { publicUser } from './db.mjs';
 import { burnPasswordCheck, hashPassword, verifyPassword } from './passwords.mjs';
+import { createRouter } from './router.mjs';
+import { WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './workspaces.mjs';
 
 /**
- * WeddingGPT account server: create an account, sign in, check a session,
- * sign out.
+ * WeddingGPT API server: accounts, and the workspaces a couple shares.
+ * The contract is docs/planning/M1-accounts-sync-design.md section 5.
  *
- *   POST /v1/auth/register  { name, email, password }  -> 201 { user, token, expiresAt }
- *   POST /v1/auth/login     { email, password }        -> 200 { user, token, expiresAt }
- *   GET  /v1/auth/me        Authorization: Bearer <token> -> 200 { user }
- *   POST /v1/auth/logout    Authorization: Bearer <token> -> 204
- *   GET  /health                                       -> 200 { ok: true }
+ *   POST   /v1/auth/register              { name, email, password } -> 201 { user, token, expiresAt }
+ *   POST   /v1/auth/login                 { email, password }       -> 200 { user, token, expiresAt }
+ *   GET    /v1/auth/me                                              -> 200 { user }
+ *   POST   /v1/auth/logout                                          -> 204
+ *   GET    /v1/workspaces                                           -> 200 { workspaces }
+ *   POST   /v1/workspaces                 { name }                  -> 201 { workspace }
+ *   GET    /v1/workspaces/:id/members                               -> 200 { members }
+ *   DELETE /v1/workspaces/:id/members/:userId                       -> 204
+ *   GET    /health                                                  -> 200 { ok: true }
  *
- * Errors are `{ error: code }`, plus `fields` for a 400 so the app can mark the
- * right input. A failed sign-in never says whether the email exists.
+ * Everything except register, login and health needs `Authorization: Bearer
+ * <token>`. Errors are `{ error: code }`, plus `fields` for a 400. A failed
+ * sign-in never says whether the email exists, and a workspace the caller is
+ * not a member of is a 404, never a 403, so workspace ids cannot be probed.
  */
 
 export const LIMITS = {
@@ -109,7 +117,7 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-App-Token',
-      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
     });
     res.end(body === undefined ? '' : JSON.stringify(body));
   }
@@ -163,29 +171,88 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
     return send(res, 204);
   }
 
-  const routes = {
-    'POST /v1/auth/register': { handler: register, limited: true },
-    'POST /v1/auth/login': { handler: login, limited: true },
-    'GET /v1/auth/me': { handler: me },
-    'POST /v1/auth/logout': { handler: logout },
-  };
+  // --- Workspaces (slice A1) ------------------------------------------------
+
+  function listWorkspaces(req, res, { user }) {
+    return send(res, 200, { workspaces: db.workspaces.listForUser(user.id) });
+  }
+
+  async function createWorkspace(req, res, { user }) {
+    const body = await readJson(req);
+    const fields = validateWorkspaceName(body.name);
+    if (fields) return send(res, 400, { error: 'invalid', fields });
+    if (db.workspaces.countForUser(user.id) >= WORKSPACE_LIMITS.perUser) {
+      return send(res, 403, { error: 'limit_reached' });
+    }
+    const workspace = db.workspaces.create(user.id, body.name);
+    log.info?.(`[workspaces] ${user.id} created ${workspace.id}`);
+    return send(res, 201, { workspace });
+  }
+
+  function listMembers(req, res, { workspace }) {
+    return send(res, 200, { members: db.workspaces.members(workspace.id) });
+  }
+
+  function removeMember(req, res, { user, workspace, params }) {
+    const target = db.workspaces.membership(workspace.id, params.userId);
+    if (!target) return send(res, 404, { error: 'not_found' });
+    const allowed = canRemoveMember({
+      actorRole: workspace.role,
+      actorId: user.id,
+      targetRole: target.role,
+      targetId: params.userId,
+    });
+    if (!allowed) return send(res, 403, { error: 'forbidden' });
+    db.workspaces.removeMember(workspace.id, params.userId);
+    log.info?.(`[workspaces] ${user.id} removed ${params.userId} from ${workspace.id}`);
+    return send(res, 204);
+  }
+
+  // --- Routing ---------------------------------------------------------------
+  //
+  // `access`: 'public' (no session), 'user' (a valid session) or 'member'
+  // (a valid session *and* a membership of the `:id` workspace). The checks
+  // live here, once, so no handler can forget them.
+
+  const router = createRouter()
+    .add('POST', '/v1/auth/register', register, { access: 'public', limited: true })
+    .add('POST', '/v1/auth/login', login, { access: 'public', limited: true })
+    .add('GET', '/v1/auth/me', me, { access: 'public' })
+    .add('POST', '/v1/auth/logout', logout, { access: 'public' })
+    .add('GET', '/v1/workspaces', listWorkspaces, { access: 'user' })
+    .add('POST', '/v1/workspaces', createWorkspace, { access: 'user', limited: true })
+    .add('GET', '/v1/workspaces/:id/members', listMembers, { access: 'member' })
+    .add('DELETE', '/v1/workspaces/:id/members/:userId', removeMember, { access: 'member' });
 
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204);
     if (req.method === 'GET' && req.url === '/health') return send(res, 200, { ok: true });
 
-    const route = routes[`${req.method} ${req.url}`];
+    const route = router.match(req.method, req.url);
     if (!route) return send(res, 404, { error: 'not_found' });
+    if (route.methodNotAllowed) return send(res, 405, { error: 'method_not_allowed' });
 
     if (appToken && req.headers['x-app-token'] !== appToken) return send(res, 401, { error: 'unauthorised' });
 
-    if (route.limited) {
+    if (route.options.limited) {
       const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
       if (rateLimited(ip)) return send(res, 429, { error: 'rate_limited' });
     }
 
+    const ctx = { params: route.params, query: route.query, user: null, workspace: null };
+
+    if (route.options.access !== 'public') {
+      ctx.user = db.userForToken(bearerToken(req));
+      if (!ctx.user) return send(res, 401, { error: 'unauthorised' });
+    }
+    if (route.options.access === 'member') {
+      ctx.workspace = db.workspaces.membership(route.params.id, ctx.user.id);
+      // 404, not 403: a non-member cannot tell a real workspace id from a made-up one.
+      if (!ctx.workspace) return send(res, 404, { error: 'not_found' });
+    }
+
     try {
-      return await route.handler(req, res);
+      return await route.handler(req, res, ctx);
     } catch (error) {
       if (error?.status === 413) return send(res, 413, { error: 'too_large' });
       if (error instanceof SyntaxError || error?.message === 'not an object') {
