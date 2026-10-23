@@ -129,3 +129,55 @@ describe('importLabSeating', () => {
     expect(store().labsImportedAt).toEqual(expect.any(String));
   });
 });
+
+describe('seating per event (F2)', () => {
+  beforeEach(() => store().reset());
+
+  it('keeps each event’s tables apart when seating and moving guests', () => {
+    const day = store().addTable({ name: 'Day', capacity: 4 });
+    const henna = store().addTable({ name: 'Henna', capacity: 4, eventId: 'ev_mehndi' });
+    store().assign(day.id, 'g1');
+    store().assign(henna.id, 'g1');
+    // Seated at both: moving within one event never unseats them at the other.
+    expect(tables().find((t) => t.id === day.id).guestIds).toEqual(['g1']);
+    expect(tables().find((t) => t.id === henna.id).guestIds).toEqual(['g1']);
+
+    store().unassign('g1', 'ev_mehndi');
+    expect(tables().find((t) => t.id === henna.id).guestIds).toEqual([]);
+    expect(tables().find((t) => t.id === day.id).guestIds).toEqual(['g1']);
+  });
+
+  it('auto-seats an event from its own guests, at its own tables', () => {
+    store().addTable({ name: 'Day', capacity: 4 });
+    const henna = store().addTable({ name: 'Henna', capacity: 4, eventId: 'ev_mehndi' });
+    const event = {
+      id: 'ev_mehndi',
+      guestScope: 'invited',
+      invitedGuestIds: ['g1', 'g2'],
+      attendance: { g2: 'declined' },
+    };
+    const result = store().autoSeat([guest('g1'), guest('g2'), guest('g3')], { event });
+    expect(result.placed).toBe(1);
+    expect(tables().find((t) => t.id === henna.id).guestIds).toEqual(['g1']);
+    expect(tables().find((t) => t.name === 'Day').guestIds).toEqual([]);
+  });
+
+  it('frees deleted guests everywhere, and does nothing for an empty list', () => {
+    const day = store().addTable({ name: 'Day', capacity: 4 });
+    const henna = store().addTable({ name: 'Henna', capacity: 4, eventId: 'ev_mehndi' });
+    store().assign(day.id, 'g1');
+    store().assign(henna.id, 'g1');
+    store().assign(henna.id, 'g2');
+    expect(store().forgetGuests([])).toBe(0);
+    expect(store().forgetGuests(['g1'])).toBe(2);
+    expect(tables().map((t) => t.guestIds)).toEqual([[], ['g2']]);
+  });
+
+  it('deletes an event’s tables with it, and never the wedding day’s', () => {
+    store().addTable({ name: 'Day' });
+    store().addTable({ name: 'Henna', eventId: 'ev_mehndi' });
+    expect(store().clearEvent(null)).toBe(0);
+    expect(store().clearEvent('ev_mehndi')).toBe(1);
+    expect(tables().map((t) => t.name)).toEqual(['Day']);
+  });
+});

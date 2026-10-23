@@ -5,6 +5,8 @@ import {
   usePlanningStore,
   useRunOfShowStore,
   selectRunOfShow,
+  useSeatingStore,
+  selectSeatingTables,
   selectEvents,
   selectEventById,
   selectAllTasks,
@@ -115,18 +117,22 @@ describe('deleteEvent', () => {
     useRunOfShowStore.getState().reset();
     useRunOfShowStore.getState().addItem({ title: 'Henna for the bride', start: 960, eventId: mehndi.id });
     useRunOfShowStore.getState().addItem({ title: 'Ceremony', start: 960 });
+    useSeatingStore.getState().reset();
+    useSeatingStore.getState().addTable({ name: 'Henna corner', eventId: mehndi.id });
+    useSeatingStore.getState().addTable({ name: 'Top table' });
 
-    expect(eventLinks(mehndi.id)).toEqual({ tasks: 1, expenses: 1, runOfShow: 1 });
+    expect(eventLinks(mehndi.id)).toEqual({ tasks: 1, expenses: 1, runOfShow: 1, tables: 1 });
     deleteEvent(mehndi.id);
     // The mehndi's run of show goes with it; the wedding day's stays.
     expect(selectRunOfShow(useRunOfShowStore.getState()).map((i) => i.title)).toEqual(['Ceremony']);
+    expect(selectSeatingTables(useSeatingStore.getState()).map((t) => t.name)).toEqual(['Top table']);
 
     expect(events().map((e) => e.name)).toEqual(['Brunch']);
     const tasks = new Map(selectAllTasks(usePlanningStore.getState()).map((t) => [t.id, t]));
     expect(tasks.get(henna.id).eventId).toBeNull();
     expect(tasks.get(cake.id).eventId).toBe(brunch.id);
     expect(selectAllExpenses(useBudgetStore.getState()).find((e) => e.id === deposit.id).eventId).toBeNull();
-    expect(eventLinks(mehndi.id)).toEqual({ tasks: 0, expenses: 0, runOfShow: 0 });
+    expect(eventLinks(mehndi.id)).toEqual({ tasks: 0, expenses: 0, runOfShow: 0, tables: 0 });
   });
 });
 

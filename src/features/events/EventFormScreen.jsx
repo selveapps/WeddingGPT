@@ -145,7 +145,7 @@ export function EventFormScreen({ eventId }) {
     router.back();
   };
 
-  const links = confirmDelete && existing ? eventLinks(existing.id) : { tasks: 0, expenses: 0, runOfShow: 0 };
+  const links = confirmDelete && existing ? eventLinks(existing.id) : { tasks: 0, expenses: 0, runOfShow: 0, tables: 0 };
   const linkedText = [
     links.tasks ? `${links.tasks} ${links.tasks === 1 ? 'task' : 'tasks'}` : null,
     links.expenses ? `${links.expenses} ${links.expenses === 1 ? 'cost' : 'costs'}` : null,
@@ -350,6 +350,9 @@ export function EventFormScreen({ eventId }) {
               linkedText ? `Its ${linkedText} stay, as part of the wedding as a whole.` : null,
               links.runOfShow
                 ? `Its run of show (${links.runOfShow} ${links.runOfShow === 1 ? 'item' : 'items'}) is deleted with it.`
+                : null,
+              links.tables
+                ? `Its seating (${links.tables} ${links.tables === 1 ? 'table' : 'tables'}) is deleted with it.`
                 : null,
               'This cannot be undone.',
             ]

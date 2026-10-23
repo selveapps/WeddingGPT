@@ -1,11 +1,14 @@
 import { createEntity } from './base';
 import { RsvpStatus } from './enums';
 import { guestFullName } from './guests';
+import { eventGuests, guestEventStatus } from './events';
 
 /**
  * Seating chart.
  *
- * Tables are `{ id, name, capacity, guestIds }`. Guests are only ever
+ * Tables are `{ id, name, capacity, guestIds, eventId }`. `eventId` gives
+ * each event its own room (slice F2); null is the wedding day itself. The
+ * functions below take one room's tables at a time. Guests are only ever
  * referenced by ID, so editing a guest's name shows up on the chart
  * immediately. Everything here is pure; the seating store persists (and
  * syncs) what these functions return.
@@ -16,10 +19,20 @@ import { guestFullName } from './guests';
 export const DEFAULT_TABLE_CAPACITY = 8;
 export const MAX_TABLE_CAPACITY = 40;
 
-export function createSeatingTable({ weddingId, name, capacity = DEFAULT_TABLE_CAPACITY, guestIds = [] } = {}) {
+export function createSeatingTable({
+  weddingId,
+  name,
+  capacity = DEFAULT_TABLE_CAPACITY,
+  guestIds = [],
+  eventId = null,
+} = {}) {
   const seats = Math.min(MAX_TABLE_CAPACITY, Math.max(1, Math.round(Number(capacity) || DEFAULT_TABLE_CAPACITY)));
-  return createEntity('table', { weddingId, name, capacity: seats, guestIds });
+  return createEntity('table', { weddingId, name, capacity: seats, guestIds, eventId });
 }
+
+/** One room's tables: an event's, or the wedding day's (`eventId` null). */
+export const tablesForEvent = (tables = [], eventId = null) =>
+  tables.filter((table) => (table.eventId ?? null) === (eventId ?? null));
 
 export function createSeatingRules({ weddingId, avoidPairs = [] } = {}) {
   return createEntity('seatrules', { weddingId, avoidPairs });
@@ -40,9 +53,13 @@ export function withKnownGuests(tables, knownIds) {
   return changed ? next : tables;
 }
 
-/** Anyone not declined still needs a seat on the plan. */
-export function seatableGuests(guests = []) {
-  return guests.filter((guest) => guest.rsvpStatus !== RsvpStatus.DECLINED);
+/**
+ * Anyone not declined still needs a seat on the plan. For an event: anyone
+ * invited to it who has not declined it (their answer for that event first).
+ */
+export function seatableGuests(guests = [], event = null) {
+  if (!event) return guests.filter((guest) => guest.rsvpStatus !== RsvpStatus.DECLINED);
+  return eventGuests(event, guests).filter((guest) => guestEventStatus(event, guest) !== RsvpStatus.DECLINED);
 }
 
 export function freeSeats(table) {
@@ -72,9 +89,9 @@ export function assignGuest(tables, tableId, guestId) {
   };
 }
 
-export function unseatedGuests(tables, guests) {
+export function unseatedGuests(tables, guests, event = null) {
   const seated = new Set(tables.flatMap((table) => table.guestIds));
-  return seatableGuests(guests).filter((guest) => !seated.has(guest.id));
+  return seatableGuests(guests, event).filter((guest) => !seated.has(guest.id));
 }
 
 const pairKey = (a, b) => [a, b].sort().join('|');
@@ -105,12 +122,12 @@ function clashes(table, guestIds, avoid) {
  * clash-free table with the most room that fits it whole; failing that, its
  * members are seated one by one wherever there is clash-free room.
  */
-export function autoSeat(tables, guests, { avoidPairs = [] } = {}) {
+export function autoSeat(tables, guests, { avoidPairs = [], event = null } = {}) {
   const avoid = new Set(avoidPairs.map(([a, b]) => pairKey(a, b)));
   const next = tables.map((table) => ({ ...table, guestIds: [...table.guestIds] }));
 
   const groups = new Map();
-  for (const guest of unseatedGuests(next, guests)) {
+  for (const guest of unseatedGuests(next, guests, event)) {
     const key = guest.householdId ?? guest.id;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(guest.id);
@@ -146,14 +163,14 @@ export function autoSeat(tables, guests, { avoidPairs = [] } = {}) {
   return { tables: next, placed, unplaced };
 }
 
-export function seatingSummary(tables, guests) {
+export function seatingSummary(tables, guests, event = null) {
   const capacity = tables.reduce((sum, table) => sum + (table.capacity ?? 0), 0);
   const seated = tables.reduce((sum, table) => sum + table.guestIds.length, 0);
   return {
     tables: tables.length,
     capacity,
     seated,
-    unseated: unseatedGuests(tables, guests).length,
+    unseated: unseatedGuests(tables, guests, event).length,
     spare: Math.max(0, capacity - seated),
   };
 }
