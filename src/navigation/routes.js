@@ -60,6 +60,8 @@ export const Routes = {
   expenseAdd: '/budget/expense/new',
   expenseDetail: (id) => `/budget/expense/${id}`,
   budgetSetup: '/budget/setup',
+  /** Planned against actual, by category and event, and payments due (slice C4). */
+  budgetReport: '/budget/report',
 
   // --- Guests -------------------------------------------------------------
   guestDetail: (id) => `/guests/${id}`,

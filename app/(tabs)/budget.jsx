@@ -190,6 +190,15 @@ export default function BudgetScreen() {
           </Stack>
         </Card>
 
+        <Card padding="none">
+          <ListRow
+            icon="sort"
+            title="Reports"
+            subtitle="Against the plan by category and event, and what is due each month."
+            onPress={() => router.push(Routes.budgetReport)}
+          />
+        </Card>
+
         {/* --- Categories --------------------------------------------------- */}
         <Stack gap="sm">
           <SectionHeader
