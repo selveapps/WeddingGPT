@@ -3,6 +3,7 @@ import {
   partySideLabel,
   normalisePartyMember,
   filterPartyMembers,
+  filterPartyByContact,
   filterPartyMembersByRole,
   searchPartyMembers,
   sortPartyMembers,
@@ -81,6 +82,16 @@ describe('wedding party helpers', () => {
     ];
     expect(filterPartyMembersByRole(members, 'reader')).toEqual([members[1]]);
     expect(filterPartyMembersByRole(members)).toEqual(members);
+  });
+
+  it('filters people who have missing or known contact methods', () => {
+    const members = [
+      { ...valid, name: 'Mina', email: 'mina@example.com' },
+      { ...valid, name: 'Ravi', email: '', phone: '' },
+    ];
+    expect(filterPartyByContact(members, 'with-contact')).toEqual([members[0]]);
+    expect(filterPartyByContact(members, 'missing-contact')).toEqual([members[1]]);
+    expect(filterPartyByContact(members)).toEqual(members);
   });
 
   it('provides friendly labels for recognised and unknown values', () => {

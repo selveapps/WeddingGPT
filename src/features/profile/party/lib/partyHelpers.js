@@ -64,6 +64,16 @@ export function filterPartyMembersByRole(members = [], role = 'all') {
   return role === 'all' ? [...members] : members.filter((member) => member.role === role);
 }
 
+export function filterPartyByContact(members = [], contactFilter = 'all') {
+  if (contactFilter === 'with-contact') {
+    return members.filter((member) => Boolean(member.email || member.phone));
+  }
+  if (contactFilter === 'missing-contact') {
+    return members.filter((member) => !member.email && !member.phone);
+  }
+  return [...members];
+}
+
 export function summariseParty(members = []) {
   return {
     total: members.length,
