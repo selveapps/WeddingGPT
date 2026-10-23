@@ -36,13 +36,6 @@ export const LAB_FEATURES = [
     route: '/labs/meals',
   },
   {
-    key: 'rsvp',
-    title: 'RSVP codes',
-    blurb: 'A short code per household, shareable invites, and paste-in replies.',
-    icon: 'mail',
-    route: '/labs/rsvp',
-  },
-  {
     key: 'gifts',
     title: 'Gifts and thank-yous',
     blurb: 'Log gifts, see when each thank-you is due, and draft the note.',
