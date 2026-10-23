@@ -121,6 +121,17 @@ export {
   summariseDailyTasks,
 } from './daily';
 export {
+  DEPENDENCY_LIMITS,
+  TEMPLATE_DEPENDENCIES,
+  prerequisitesOf,
+  openPrerequisites,
+  isTaskWaiting,
+  dependentsOf,
+  dependencyError,
+  pruneDependencies,
+  linkTemplateDependencies,
+} from './dependencies';
+export {
   VENUE_STYLES,
   findMetro,
   recommendVenues,

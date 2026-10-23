@@ -1,4 +1,5 @@
 import { createTask } from './planning';
+import { linkTemplateDependencies } from './dependencies';
 import { TaskPriority, DateType, PlanningStage } from './enums';
 import { addDays, addMonths, daysUntil, toISODate } from '../lib/date';
 
@@ -479,7 +480,7 @@ export function generatePersonalisedPlan({ wedding, categories = [], from = new 
     });
   });
 
-  return { tasks, horizonMonths };
+  return { tasks: linkTemplateDependencies(tasks), horizonMonths };
 }
 
 /**
