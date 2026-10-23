@@ -1,4 +1,4 @@
-import { createSyncStore, selectPendingCount } from '../syncStore';
+import { createSyncStore, sameContent, selectPendingCount } from '../syncStore';
 
 const change = (id, data = { id }) => ({ collection: 'tasks', id, op: 'upsert', data });
 
@@ -71,6 +71,35 @@ describe('syncStore', () => {
 
     state().dismissConflict(notice.id);
     expect(state().conflicts).toEqual([]);
+  });
+
+  it('does not report a conflict when both phones made the same change', () => {
+    state().enqueue([change('a', { id: 'a', rsvpStatus: 'attending', updatedAt: 'mine', version: 3 })]);
+    const sent = state().outbox;
+    state().markPushed(sent, {
+      applied: [{ mutationId: sent[0].mutationId, version: 4, seq: 1 }],
+      conflicts: [
+        {
+          mutationId: sent[0].mutationId,
+          overwritten: {
+            version: 3,
+            data: { id: 'a', rsvpStatus: 'attending', updatedAt: 'theirs', version: 2 },
+          },
+        },
+      ],
+    });
+    expect(state().conflicts).toEqual([]);
+  });
+
+  it('compares content without the fields every write changes', () => {
+    expect(
+      sameContent(
+        { id: 'a', n: 1, updatedAt: 'x', version: 1 },
+        { n: 1, id: 'a', updatedAt: 'y', version: 9 }
+      )
+    ).toBe(true);
+    expect(sameContent({ id: 'a', n: 1 }, { id: 'a', n: 2 })).toBe(false);
+    expect(sameContent(null, undefined)).toBe(true);
   });
 
   it('drops refused changes from the outbox and records why', () => {
