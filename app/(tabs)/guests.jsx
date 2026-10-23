@@ -330,6 +330,12 @@ export default function GuestsScreen() {
             onPress={() => router.push(Routes.guestMeals)}
           />
           <ListRow
+            icon="star"
+            title="Gifts and thank-yous"
+            subtitle="Log gifts and write every note on time"
+            onPress={() => router.push(Routes.guestGifts)}
+          />
+          <ListRow
             icon="heart"
             title="Wedding website"
             subtitle="Schedule, travel, registry and FAQ for your guests"
