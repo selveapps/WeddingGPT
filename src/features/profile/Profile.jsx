@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 
 import { Screen, Stack, PageHeader, ConfirmSheet, EmptyState, useToast } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
@@ -13,7 +13,9 @@ import {
   ProfileSettingsLinks,
   ProfileDangerZone,
   ProfileStickyActions,
+  ProfileFeatureHub,
 } from './components';
+import { PROFILE_FEATURE_CATEGORIES } from './components/ProfileFeatureHub';
 import { PROFILE_COPY, PROFILE_SECTIONS } from './lib/profileConstants';
 import { WeddingTimeline } from './timeline';
 import { ProfilePrivacy } from './privacy';
@@ -30,17 +32,13 @@ import { WeddingCountdown } from './countdown';
 import { WeddingPartyRoster } from './party';
 import { WeddingDecisionLog } from './decisions';
 import { WeddingVisionBoard } from './visionBoard';
+import { Contact } from './contact';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
  *
- * Layout, top to bottom:
- *  1. Hero        - couple avatars, names, date/place, key stats
- *  2. Strength    - completeness ring and the single best "Next up" prompt
- *  3. Snapshot    - two-column tiles; empty ones jump to the right section
- *  4. Edit        - segmented switcher showing one form section at a time
- *  5. Settings    - links to other account screens
- *  6. Danger zone - device reset
+ * The landing page summarizes the wedding and links into categorized profile
+ * tools. Each tool is shown on its own focused view to avoid one long screen.
  *
  * Feature files live in `components/`, `fields/`, `hooks/`, `lib/` and the
  * profile-specific collections. This file is the screen shell only.
@@ -48,6 +46,8 @@ import { WeddingVisionBoard } from './visionBoard';
 export function Profile() {
   const { spacing } = useTheme();
   const toast = useToast();
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeFeature, setActiveFeature] = useState(null);
 
   const form = useProfileForm();
 
@@ -87,9 +87,15 @@ export function Profile() {
       if (!sectionId) return;
       form.setFocusedSection(sectionId);
       form.setEditing(true);
+      setActiveCategory('wedding');
+      setActiveFeature('details');
     },
     [form]
   );
+
+  const openFeature = useCallback((featureId) => {
+    setActiveFeature(featureId);
+  }, []);
 
   /** Manual tab switches clear the highlight so the same prompt can re-trigger it. */
   const handleSectionChange = useCallback(() => {
@@ -137,60 +143,48 @@ export function Profile() {
       }
     >
       <Stack gap="xl">
-        <PageHeader eyebrow={PROFILE_COPY.screenEyebrow} title={PROFILE_COPY.screenTitle} />
-
-        <Stack gap="md">
-          <ProfileHero
-            values={form.values}
-            completenessPercent={form.completeness.percent}
-            onPartnerPress={() => openSection(PROFILE_SECTIONS.PARTNER)}
+        {activeFeature ? (
+          <>
+            <PageHeader
+              eyebrow={PROFILE_COPY.screenEyebrow}
+              title={getFeatureTitle(activeCategory, activeFeature)}
+              actionLabel="Back to tools"
+              onActionPress={() => setActiveFeature(null)}
+            />
+            {renderProfileFeature(activeFeature, {
+              form,
+              handleSave,
+              handleDiscardRequest,
+              handleSectionChange,
+              handleResetConfirm,
+              openSection,
+            })}
+          </>
+        ) : activeCategory ? (
+          <ProfileFeatureHub
+            categoryId={activeCategory}
+            onSelectFeature={openFeature}
+            onBack={() => setActiveCategory(null)}
           />
-          <ProfileCompleteness completeness={form.completeness} onMissingPress={openSection} />
-        </Stack>
-
-        <ProfileSummaryCard values={form.values} onTilePress={openSection} />
-
-        <WeddingCountdown />
-        <ProfileBudgetSnapshot />
-        <WeddingTimeline />
-
-        <ProfileForm
-          values={form.values}
-          errors={form.errors}
-          dirty={form.dirty}
-          saving={form.saving}
-          focusedSection={form.focusedSection}
-          onChange={form.setField}
-          onBlur={form.blurField}
-          onLocate={form.applyLocation}
-          onGuestCountOption={form.setGuestCountOption}
-          onSave={handleSave}
-          onDiscard={handleDiscardRequest}
-          onSectionChange={handleSectionChange}
-          showActions={false}
-        />
-
-        <ProfilePreferences />
-        <ProfilePrivacy />
-        <CoupleJournal />
-        <KeepsakeCollection />
-        <RelationshipMilestones />
-        <CoupleGoals />
-        <CoupleCheckIns />
-        <WeddingDocuments />
-        <WeddingPartyRoster />
-        <WeddingDecisionLog />
-        <WeddingVisionBoard />
-        <ProfileShareSummary values={form.values} />
-
-        <ProfileSettingsLinks />
-
-        <ProfileDangerZone
-          confirmOpen={form.resetConfirmOpen}
-          onRequestReset={() => form.setResetConfirmOpen(true)}
-          onCancelReset={() => form.setResetConfirmOpen(false)}
-          onConfirmReset={handleResetConfirm}
-        />
+        ) : (
+          <>
+            <PageHeader
+              eyebrow={PROFILE_COPY.screenEyebrow}
+              title={PROFILE_COPY.screenTitle}
+              subtitle={PROFILE_COPY.screenSubtitle}
+            />
+            <Stack gap="md">
+              <ProfileHero
+                values={form.values}
+                completenessPercent={form.completeness.percent}
+                onPartnerPress={() => openSection(PROFILE_SECTIONS.PARTNER)}
+              />
+              <ProfileCompleteness completeness={form.completeness} onMissingPress={openSection} />
+            </Stack>
+            <ProfileSummaryCard values={form.values} onTilePress={openSection} />
+            <ProfileFeatureHub onSelectCategory={setActiveCategory} />
+          </>
+        )}
       </Stack>
 
       <ConfirmSheet
@@ -206,6 +200,82 @@ export function Profile() {
       />
     </Screen>
   );
+}
+
+function getFeatureTitle(categoryId, featureId) {
+  const category = PROFILE_FEATURE_CATEGORIES.find((item) => item.id === categoryId);
+  return category?.features.find((feature) => feature.id === featureId)?.title ?? 'Profile';
+}
+
+function renderProfileFeature(feature, handlers) {
+  const { form, handleSave, handleDiscardRequest, handleSectionChange, handleResetConfirm } = handlers;
+
+  switch (feature) {
+    case 'details':
+      return (
+        <ProfileForm
+          values={form.values}
+          errors={form.errors}
+          dirty={form.dirty}
+          saving={form.saving}
+          focusedSection={form.focusedSection}
+          onChange={form.setField}
+          onBlur={form.blurField}
+          onLocate={form.applyLocation}
+          onGuestCountOption={form.setGuestCountOption}
+          onSave={handleSave}
+          onDiscard={handleDiscardRequest}
+          onSectionChange={handleSectionChange}
+          showActions={false}
+        />
+      );
+    case 'countdown':
+      return <WeddingCountdown />;
+    case 'budget':
+      return <ProfileBudgetSnapshot />;
+    case 'timeline':
+      return <WeddingTimeline />;
+    case 'preferences':
+      return <ProfilePreferences />;
+    case 'privacy':
+      return <ProfilePrivacy />;
+    case 'journal':
+      return <CoupleJournal />;
+    case 'keepsakes':
+      return <KeepsakeCollection />;
+    case 'milestones':
+      return <RelationshipMilestones />;
+    case 'goals':
+      return <CoupleGoals />;
+    case 'checkins':
+      return <CoupleCheckIns />;
+    case 'documents':
+      return <WeddingDocuments />;
+    case 'contacts':
+      return <Contact embedded />;
+    case 'party':
+      return <WeddingPartyRoster />;
+    case 'decisions':
+      return <WeddingDecisionLog />;
+    case 'vision':
+      return <WeddingVisionBoard />;
+    case 'sharing':
+      return <ProfileShareSummary values={form.values} />;
+    case 'accountSettings':
+      return (
+        <>
+          <ProfileSettingsLinks />
+          <ProfileDangerZone
+            confirmOpen={form.resetConfirmOpen}
+            onRequestReset={() => form.setResetConfirmOpen(true)}
+            onCancelReset={() => form.setResetConfirmOpen(false)}
+            onConfirmReset={handleResetConfirm}
+          />
+        </>
+      );
+    default:
+      return null;
+  }
 }
 
 export default Profile;

@@ -21,7 +21,8 @@ import { useContacts } from './hooks/useContacts';
 import { CONTACT_COPY, ContactFilter } from './lib/contactConstants';
 import { countContactMethods } from './lib/contactHelpers';
 
-export function Contact() {
+export function Contact({ embedded = false }) {
+  const Container = embedded ? React.Fragment : Screen;
   const router = useRouter();
   const toast = useToast();
   const [filter, setFilter] = useState(ContactFilter.ALL);
@@ -40,13 +41,15 @@ export function Contact() {
   if (!wedding) {
     // If the wedding workspace isn't set up yet, show an empty state prompting the user to set it up.
     return (
-      <Screen>
+      <Container>
         <Stack gap="lg">
-          <PageHeader
-            eyebrow={CONTACT_COPY.eyebrow}
-            title={CONTACT_COPY.title}
-            subtitle={CONTACT_COPY.subtitle}
-          />
+          {!embedded ? (
+            <PageHeader
+              eyebrow={CONTACT_COPY.eyebrow}
+              title={CONTACT_COPY.title}
+              subtitle={CONTACT_COPY.subtitle}
+            />
+          ) : null}
           <EmptyState
             icon="guests"
             title="Set up your wedding first"
@@ -55,19 +58,21 @@ export function Contact() {
             onAction={() => router.push(Routes.onboarding)}
           />
         </Stack>
-      </Screen>
+      </Container>
     );
   }
 
   return (
     // The main contact list screen, showing a summary, search/filter controls, and the list of contacts or an empty state.
-    <Screen>
+    <Container>
       <Stack gap="lg" testID="profile-contacts">
-        <PageHeader
-          eyebrow={CONTACT_COPY.eyebrow}
-          title={CONTACT_COPY.title}
-          subtitle={CONTACT_COPY.subtitle}
-        />
+        {!embedded ? (
+          <PageHeader
+            eyebrow={CONTACT_COPY.eyebrow}
+            title={CONTACT_COPY.title}
+            subtitle={CONTACT_COPY.subtitle}
+          />
+        ) : null}
         {/* Show a summary of the number of contacts and available contact methods. */}
         <ContactSummary contactCount={contacts.length} methods={methods} />
 
@@ -94,7 +99,7 @@ export function Contact() {
               <ContactRow
                 key={contact.id}
                 contact={contact}
-                onOpen={(item) => router.push(Routes.bookingDetail(item.id))}
+                onOpen={(item) => router.push(Routes.vendorDetail(item.id))}
                 onEmail={(item) => openLink(`mailto:${item.email}`)}
                 onCall={(item) => openLink(`tel:${item.phone}`)}
                 onWebsite={(item) => {
@@ -110,8 +115,14 @@ export function Contact() {
           <EmptyState
             icon="guests"
             compact
-            title={query || filter !== ContactFilter.ALL ? CONTACT_COPY.noResultsTitle : CONTACT_COPY.emptyTitle}
-            message={query || filter !== ContactFilter.ALL ? CONTACT_COPY.noResultsMessage : CONTACT_COPY.emptyMessage}
+            title={
+              query || filter !== ContactFilter.ALL ? CONTACT_COPY.noResultsTitle : CONTACT_COPY.emptyTitle
+            }
+            message={
+              query || filter !== ContactFilter.ALL
+                ? CONTACT_COPY.noResultsMessage
+                : CONTACT_COPY.emptyMessage
+            }
             actionLabel={
               query || filter !== ContactFilter.ALL ? 'Clear search and filters' : 'Browse bookings'
             }
@@ -121,7 +132,7 @@ export function Contact() {
                     setQuery('');
                     setFilter(ContactFilter.ALL);
                   }
-                : () => router.push(Routes.bookingTracker)
+                : () => router.push(Routes.vendors)
             }
           />
         )}
@@ -132,7 +143,7 @@ export function Contact() {
           </Text>
         ) : null}
       </Stack>
-    </Screen>
+    </Container>
   );
 }
 

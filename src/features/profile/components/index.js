@@ -9,3 +9,4 @@ export { ProfileChipField } from './ProfileChipField';
 export { ProfileSettingsLinks } from './ProfileSettingsLinks';
 export { ProfileDangerZone } from './ProfileDangerZone';
 export { ProfileStickyActions } from './ProfileStickyActions';
+export { ProfileFeatureHub } from './ProfileFeatureHub';
