@@ -1,0 +1,1 @@
+export { useCoupleGoals } from './useCoupleGoals';

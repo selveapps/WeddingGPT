@@ -1,0 +1,1 @@
+export { useCoupleJournal } from './useCoupleJournal';
