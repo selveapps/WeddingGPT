@@ -1,5 +1,6 @@
 import { DOCUMENT_TYPES, MAX_DOCUMENT_NOTE } from './documentConstants';
 import { isCalendarDate } from '../../keepsakes/lib/keepsakeHelpers';
+import { toISODate } from '@/lib/date';
 
 export function validateDocument(values = {}) {
   const errors = {};
@@ -41,13 +42,19 @@ export function searchDocuments(documents = [], query = '') {
   );
 }
 
-export function summariseDocuments(documents = []) {
+export function isDocumentReviewOverdue(document, now = new Date()) {
+  if (document?.completed || !isCalendarDate(document?.reviewDate)) return false;
+  return document.reviewDate < toISODate(now);
+}
+
+export function summariseDocuments(documents = [], now = new Date()) {
   const completed = documents.filter((document) => document.completed).length;
   return {
     total: documents.length,
     completed,
     remaining: documents.length - completed,
     ratio: documents.length ? completed / documents.length : 0,
+    overdue: documents.filter((document) => isDocumentReviewOverdue(document, now)).length,
   };
 }
 

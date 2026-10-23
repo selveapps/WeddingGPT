@@ -1,5 +1,6 @@
 import {
   filterDocuments,
+  isDocumentReviewOverdue,
   searchDocuments,
   sortDocuments,
   summariseDocuments,
@@ -23,7 +24,13 @@ describe('wedding document checklist helpers', () => {
   });
 
   it('summarises an empty checklist safely', () => {
-    expect(summariseDocuments([])).toEqual({ total: 0, completed: 0, remaining: 0, ratio: 0 });
+    expect(summariseDocuments([])).toEqual({
+      total: 0,
+      completed: 0,
+      remaining: 0,
+      ratio: 0,
+      overdue: 0,
+    });
   });
 
   it('filters incomplete and completed paperwork without changing the checklist', () => {
@@ -42,5 +49,15 @@ describe('wedding document checklist helpers', () => {
     expect(searchDocuments(rows, 'Alex')).toEqual([rows[0]]);
     expect(searchDocuments(rows, '2027')).toEqual([rows[1]]);
     expect(searchDocuments(rows, '')).toEqual(rows);
+  });
+
+  it('counts past review dates only for incomplete paperwork', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const overdue = { completed: false, reviewDate: '2026-10-20' };
+    const completed = { completed: true, reviewDate: '2026-10-20' };
+    expect(isDocumentReviewOverdue(overdue, now)).toBe(true);
+    expect(isDocumentReviewOverdue(completed, now)).toBe(false);
+    expect(isDocumentReviewOverdue({ completed: false, reviewDate: 'invalid' }, now)).toBe(false);
+    expect(summariseDocuments([overdue, completed], now).overdue).toBe(1);
   });
 });

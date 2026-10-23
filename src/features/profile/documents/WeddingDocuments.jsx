@@ -50,7 +50,7 @@ export function WeddingDocuments() {
         title="Document checklist"
         subtitle={
           summary.total
-            ? `${summary.completed} of ${summary.total} items ready · ${summary.remaining} remaining`
+            ? `${summary.completed} of ${summary.total} items ready · ${summary.remaining} remaining${summary.overdue ? ` · ${summary.overdue} overdue` : ''}`
             : 'Track contracts and paperwork without storing sensitive document files here.'
         }
       />
