@@ -359,6 +359,11 @@ Two deliberate choices in the generator:
   press), remove with undo, put back removed defaults, share. Items sync
   (`packingItems`); template items have stable ids, so two phones starting
   the same list never double it. Graduated from Labs; imported once.
+- **Your style.** *Your style* on the Planning tab: a five-tap style quiz, the
+  palettes that suit the result, *Save as our style* (writes `styleTags`, the
+  field the profile edits) and a brief for vendors that includes the vision
+  board's ideas. Saved on the wedding, so it syncs. Graduated from the Labs
+  style studio; its moodboard notes and links move into the vision board once.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

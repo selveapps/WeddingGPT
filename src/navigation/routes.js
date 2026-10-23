@@ -52,6 +52,8 @@ export const Routes = {
   /** The suggested checklist for one event (slice C3). */
   eventChecklist: (id) => `/planning/events/${id}/checklist`,
   packing: '/planning/packing',
+  /** The style quiz and palette (graduated from the Labs style studio). */
+  style: '/planning/style',
   /** The run of show for the wedding day, or for one event. */
   runOfShow: (eventId) => (eventId ? `/planning/run-of-show?event=${eventId}` : '/planning/run-of-show'),
 

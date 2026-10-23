@@ -260,6 +260,13 @@ export default function PlanningScreen() {
             subtitleLines={1}
             onPress={() => router.push(Routes.packing)}
           />
+          <ListRow
+            icon="vision"
+            title="Your style"
+            subtitle="A five-tap style quiz, your palette, and a brief for vendors"
+            subtitleLines={1}
+            onPress={() => router.push(Routes.style)}
+          />
         </Card>
 
         {/* --- Filters ----------------------------------------------------- */}
