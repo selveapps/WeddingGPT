@@ -1,9 +1,11 @@
 import { createAsyncStorageService } from './asyncStorageService';
 import { createMemoryStorageService } from './memoryStorageService';
+import { createWorkspaceStorage } from './workspaceStorage';
 
 export { StorageKeys, SCHEMA_VERSION } from './StorageService';
 export { createAsyncStorageService } from './asyncStorageService';
 export { createMemoryStorageService } from './memoryStorageService';
+export { LOCAL_WORKSPACE, workspaceKey, createWorkspaceStorage } from './workspaceStorage';
 
 /**
  * The single StorageService instance the app uses.
@@ -26,21 +28,17 @@ function resolveStorage() {
 export const storage = resolveStorage();
 
 /**
- * Adapter that lets zustand's `persist` middleware write through our
- * StorageService rather than talking to AsyncStorage directly. Keeping the
- * indirection means swapping in a remote backend later touches this file only.
+ * The active workspace's view of storage (see workspaceStorage.js). Signed
+ * out, that is the `local` workspace with the original unprefixed keys.
  */
-export const zustandStorage = {
-  getItem: async (name) => {
-    const value = await storage.get(name);
-    return value ?? null;
-  },
-  setItem: async (name, value) => {
-    await storage.set(name, value);
-  },
-  removeItem: async (name) => {
-    await storage.remove(name);
-  },
-};
+export const workspaceStorage = createWorkspaceStorage(storage);
+
+/**
+ * Adapter that lets zustand's `persist` middleware write through our
+ * StorageService rather than talking to AsyncStorage directly, scoped to the
+ * active workspace. Every persisted store must also call
+ * `workspaceStorage.register(store)`, so it switches with the workspace.
+ */
+export const zustandStorage = workspaceStorage.adapter;
 
 export default storage;

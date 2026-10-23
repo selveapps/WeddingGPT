@@ -7,6 +7,7 @@ import { useGuestStore } from './guestStore';
 import { useAIStore } from './aiStore';
 import { useNotificationStore } from './notificationStore';
 import { useVendorStore } from './vendorStore';
+import { workspaceStorage } from '../services/storage';
 
 export * from './weddingStore';
 export * from './planningStore';
@@ -28,6 +29,9 @@ const STORES = [
   useVendorStore,
 ];
 
+// Every persisted store switches with the active workspace (slice A3).
+STORES.forEach((store) => workspaceStorage.register(store));
+
 /**
  * Gate the app until every persisted store has rehydrated from disk.
  *
@@ -42,17 +46,13 @@ const STORES = [
  * already finished, and checking only the flag misses ones still in flight.
  */
 export function useStoreHydration() {
-  const [hydrated, setHydrated] = useState(() =>
-    STORES.every((store) => store.persist.hasHydrated())
-  );
+  const [hydrated, setHydrated] = useState(() => STORES.every((store) => store.persist.hasHydrated()));
 
   useEffect(() => {
     if (hydrated) return undefined;
 
     let cancelled = false;
-    const pending = new Set(
-      STORES.filter((store) => !store.persist.hasHydrated())
-    );
+    const pending = new Set(STORES.filter((store) => !store.persist.hasHydrated()));
 
     const settle = (store) => {
       pending.delete(store);
@@ -61,9 +61,7 @@ export function useStoreHydration() {
 
     // A store can finish between the initial check and this subscription, so
     // re-check each one after subscribing rather than trusting the snapshot.
-    const unsubscribers = [...pending].map((store) =>
-      store.persist.onFinishHydration(() => settle(store))
-    );
+    const unsubscribers = [...pending].map((store) => store.persist.onFinishHydration(() => settle(store)));
 
     for (const store of [...pending]) {
       if (store.persist.hasHydrated()) settle(store);

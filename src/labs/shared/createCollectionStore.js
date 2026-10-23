@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { zustandStorage } from '@/services/storage';
+import { zustandStorage, workspaceStorage } from '@/services/storage';
 import {
   createEntity,
   touchEntity,
@@ -26,53 +26,56 @@ import {
 export function createCollectionStore({ key, prefix, version = 1, extend }) {
   const initial = () => ({ items: emptyCollection(), meta: {} });
 
-  return create()(
-    persist(
-      (set, get) => ({
-        ...initial(),
+  // Registered so Labs data switches with the workspace like the real stores.
+  return workspaceStorage.register(
+    create()(
+      persist(
+        (set, get) => ({
+          ...initial(),
 
-        add(fields = {}) {
-          const item = createEntity(prefix, fields);
-          set((state) => ({ items: upsert(state.items, item) }));
-          return item;
-        },
+          add(fields = {}) {
+            const item = createEntity(prefix, fields);
+            set((state) => ({ items: upsert(state.items, item) }));
+            return item;
+          },
 
-        addMany(list = []) {
-          const items = list.map((fields) => createEntity(prefix, fields));
-          if (!items.length) return [];
-          set((state) => ({ items: upsertMany(state.items, items) }));
-          return items;
-        },
+          addMany(list = []) {
+            const items = list.map((fields) => createEntity(prefix, fields));
+            if (!items.length) return [];
+            set((state) => ({ items: upsertMany(state.items, items) }));
+            return items;
+          },
 
-        update(id, patch) {
-          const existing = get().items.byId[id];
-          if (!existing) return null;
-          const fields = typeof patch === 'function' ? patch(existing) : patch;
-          const next = touchEntity(existing, fields);
-          set((state) => ({ items: upsert(state.items, next) }));
-          return next;
-        },
+          update(id, patch) {
+            const existing = get().items.byId[id];
+            if (!existing) return null;
+            const fields = typeof patch === 'function' ? patch(existing) : patch;
+            const next = touchEntity(existing, fields);
+            set((state) => ({ items: upsert(state.items, next) }));
+            return next;
+          },
 
-        remove(id) {
-          set((state) => ({ items: removeById(state.items, id) }));
-        },
+          remove(id) {
+            set((state) => ({ items: removeById(state.items, id) }));
+          },
 
-        setMeta(patch) {
-          set((state) => ({ meta: { ...state.meta, ...patch } }));
-        },
+          setMeta(patch) {
+            set((state) => ({ meta: { ...state.meta, ...patch } }));
+          },
 
-        reset() {
-          set(initial());
-        },
+          reset() {
+            set(initial());
+          },
 
-        ...(extend ? extend(set, get) : {}),
-      }),
-      {
-        name: `labs:${key}`,
-        storage: zustandStorage,
-        version,
-        partialize: (state) => ({ items: state.items, meta: state.meta }),
-      }
+          ...(extend ? extend(set, get) : {}),
+        }),
+        {
+          name: `labs:${key}`,
+          storage: zustandStorage,
+          version,
+          partialize: (state) => ({ items: state.items, meta: state.meta }),
+        }
+      )
     )
   );
 }
