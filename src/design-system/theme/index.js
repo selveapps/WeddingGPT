@@ -6,3 +6,4 @@ export {
 } from './ThemeProvider';
 export { useMotion } from './useMotion';
 export { appFonts, appFontNames } from './fonts';
+export { useBreakpoint, breakpointFor, BREAKPOINTS } from './useBreakpoint';
