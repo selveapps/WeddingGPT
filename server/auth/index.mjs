@@ -11,6 +11,7 @@ import { openDatabase } from './db.mjs';
  *   APP_TOKEN       optional shared token the app sends as X-App-Token
  *   PORT            default 8788
  *   ALLOWED_ORIGIN  CORS origin for the web build (default *)
+ *   PUBLIC_BASE_URL where guests open RSVP pages (default http://localhost:PORT)
  *   INVITE_URL_BASE where invite links point; the token is appended
  *                   (default weddinggpt://invite/, the app's own link)
  */
@@ -20,6 +21,7 @@ const DB_PATH = process.env.AUTH_DB_PATH || fileURLToPath(new URL('./data/auth.d
 const APP_TOKEN = process.env.APP_TOKEN || null;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const INVITE_URL_BASE = process.env.INVITE_URL_BASE || undefined;
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
 
 const db = openDatabase(DB_PATH);
 const server = createAuthServer({
@@ -27,6 +29,7 @@ const server = createAuthServer({
   appToken: APP_TOKEN,
   allowedOrigin: ALLOWED_ORIGIN,
   inviteUrlBase: INVITE_URL_BASE,
+  publicBaseUrl: PUBLIC_BASE_URL,
 });
 
 // Expired sessions are already ignored on read, and old tombstones are only

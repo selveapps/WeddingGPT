@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
 import { createInviteRepository } from './invites.mjs';
+import { createRsvpRepository } from './rsvp/rsvp.mjs';
 import { createSyncRepository } from './sync.mjs';
 import { createWorkspaceRepository } from './workspaces.mjs';
 
@@ -82,6 +83,8 @@ export function openDatabase(path) {
   };
 
   const workspaces = createWorkspaceRepository(db);
+  // Sync references the workspace tables, and RSVP reads and writes sync records.
+  const sync = createSyncRepository(db);
 
   return {
     /** Workspaces and memberships - see workspaces.mjs. */
@@ -90,8 +93,11 @@ export function openDatabase(path) {
     /** Partner invites - see invites.mjs. */
     invites: createInviteRepository(db, workspaces),
 
-    /** Push, pull and tombstones - see sync.mjs. Created after workspaces, whose tables it references. */
-    sync: createSyncRepository(db),
+    /** Push, pull and tombstones - see sync.mjs. */
+    sync,
+
+    /** RSVP settings, invites and guest replies - see rsvp/rsvp.mjs. */
+    rsvp: createRsvpRepository(db, sync),
 
     /** Returns the new user, or null if the email is already registered. */
     createUser({ email, name, passwordHash }) {

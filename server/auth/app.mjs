@@ -3,6 +3,8 @@ import http from 'node:http';
 import { publicUser } from './db.mjs';
 import { burnPasswordCheck, hashPassword, verifyPassword } from './passwords.mjs';
 import { createRouter } from './router.mjs';
+import { PAGE_HEADERS } from './rsvp/html.mjs';
+import { registerRsvpRoutes } from './rsvp/routes.mjs';
 import { AcceptResult } from './invites.mjs';
 import { SYNC_LIMITS, parsePullQuery } from './sync.mjs';
 import { Role, WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './workspaces.mjs';
@@ -96,6 +98,18 @@ function readBody(req, limit = LIMITS.bodyBytes) {
   });
 }
 
+const FORM_BYTES = 16 * 1024;
+
+/** An `application/x-www-form-urlencoded` body as a plain object. */
+async function readForm(req) {
+  const text = await readBody(req, FORM_BYTES);
+  return Object.fromEntries(new URLSearchParams(text));
+}
+
+function clientIp(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+}
+
 async function readJson(req, limit) {
   const text = await readBody(req, limit);
   const body = JSON.parse(text || '{}');
@@ -120,9 +134,16 @@ export function createAuthServer({
   appToken = null,
   allowedOrigin = '*',
   inviteUrlBase = 'weddinggpt://invite/',
+  /** Where guests open RSVP pages, e.g. https://rsvp.weddinggpt.app (decision D7). */
+  publicBaseUrl = 'http://localhost:8788',
   log = console,
 } = {}) {
   const rateLimited = createRateLimiter(LIMITS.attemptsPerMinute);
+
+  function sendHtml(res, status, body) {
+    res.writeHead(status, PAGE_HEADERS);
+    res.end(String(body));
+  }
 
   function send(res, status, body) {
     res.writeHead(status, {
@@ -130,7 +151,7 @@ export function createAuthServer({
       'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-App-Token',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     });
     res.end(body === undefined ? '' : JSON.stringify(body));
   }
@@ -283,6 +304,23 @@ export function createAuthServer({
     .add('DELETE', '/v1/workspaces/:id/invites', revokeInvites, { access: 'member' })
     .add('POST', '/v1/invites/accept', acceptInvite, { access: 'user', limited: true });
 
+  // RSVP: couple-side routes default to membership checks; guest pages opt out.
+  const rsvpRouter = {
+    add(method, pattern, handler, options = { access: 'member' }) {
+      router.add(method, pattern, handler, options);
+      return this;
+    },
+  };
+  registerRsvpRoutes(rsvpRouter, {
+    db,
+    send,
+    sendHtml,
+    readJson,
+    readForm,
+    clientIp,
+    publicBaseUrl: publicBaseUrl.replace(/\/+$/, ''),
+  });
+
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204);
     if (req.method === 'GET' && req.url === '/health') return send(res, 200, { ok: true });
@@ -291,10 +329,13 @@ export function createAuthServer({
     if (!route) return send(res, 404, { error: 'not_found' });
     if (route.methodNotAllowed) return send(res, 405, { error: 'method_not_allowed' });
 
-    if (appToken && req.headers['x-app-token'] !== appToken) return send(res, 401, { error: 'unauthorised' });
+    // Guest pages are opened by browsers, which never carry the app's token.
+    if (appToken && !route.options.browser && req.headers['x-app-token'] !== appToken) {
+      return send(res, 401, { error: 'unauthorised' });
+    }
 
     if (route.options.limited) {
-      const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress;
+      const ip = clientIp(req);
       if (rateLimited(ip)) return send(res, 429, { error: 'rate_limited' });
     }
 
