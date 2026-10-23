@@ -31,6 +31,7 @@ export { PersonalFields, PartnerFields, WeddingDetailsFields, VisionFields } fro
 export { useProfileForm } from './hooks';
 
 export { WeddingTimeline } from './timeline';
+export { WeddingDayChecklist } from './dayChecklist';
 export { ProfilePrivacy } from './privacy';
 export { ProfilePreferences } from './preferences';
 export { CoupleJournal } from './journal';

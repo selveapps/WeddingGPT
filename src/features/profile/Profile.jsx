@@ -18,6 +18,7 @@ import {
 import { PROFILE_FEATURE_CATEGORIES } from './components/ProfileFeatureHub';
 import { PROFILE_COPY, PROFILE_SECTIONS } from './lib/profileConstants';
 import { WeddingTimeline } from './timeline';
+import { WeddingDayChecklist } from './dayChecklist';
 import { ProfilePrivacy } from './privacy';
 import { ProfilePreferences } from './preferences';
 import { CoupleJournal } from './journal';
@@ -245,6 +246,8 @@ function renderProfileFeature(feature, handlers) {
       return <ProfileBudgetSnapshot />;
     case 'timeline':
       return <WeddingTimeline />;
+    case 'dayChecklist':
+      return <WeddingDayChecklist />;
     case 'preferences':
       return <ProfilePreferences />;
     case 'privacy':

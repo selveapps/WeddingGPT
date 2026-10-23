@@ -20,6 +20,12 @@ export const PROFILE_FEATURE_CATEGORIES = [
       },
       { id: 'budget', title: 'Budget snapshot', subtitle: 'Paid, committed and remaining.', icon: 'budget' },
       { id: 'timeline', title: 'Wedding timeline', subtitle: 'The day-of schedule.', icon: 'clock' },
+      {
+        id: 'dayChecklist',
+        title: 'Wedding-day checklist',
+        subtitle: 'Tasks, owners and progress for the day.',
+        icon: 'checklist',
+      },
     ],
   },
   {
