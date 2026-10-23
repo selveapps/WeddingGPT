@@ -174,6 +174,22 @@ export function createSyncClient({ url, appToken, timeoutMs = 30000, fetchImpl }
       });
     },
 
+    // --- Wedding website (slice E2) -------------------------------------------
+
+    async getSiteSettings(token, workspaceId) {
+      return (await request(workspacePath(workspaceId, '/site/settings'), { token }))?.settings ?? null;
+    },
+
+    /** `{ visibility, indexable, password }`; `password: null` removes it. */
+    async saveSiteSettings(token, workspaceId, patch) {
+      const json = await request(workspacePath(workspaceId, '/site/settings'), {
+        method: 'PUT',
+        token,
+        body: patch,
+      });
+      return json?.settings ?? null;
+    },
+
     /** `{ records, cursor, hasMore }` after `since`. */
     async pull(token, workspaceId, { since = 0, limit } = {}) {
       const json = await request(workspacePath(workspaceId, '/sync/pull'), {

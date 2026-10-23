@@ -318,6 +318,12 @@ export default function GuestsScreen() {
 
         <Card padding="none">
           <ListRow
+            icon="heart"
+            title="Wedding website"
+            subtitle="Schedule, travel, registry and FAQ for your guests"
+            onPress={() => router.push(Routes.guestWebsite)}
+          />
+          <ListRow
             icon="send"
             title="RSVP website"
             subtitle="Send each household a link; replies fill in your list"

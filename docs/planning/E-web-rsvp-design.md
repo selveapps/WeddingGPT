@@ -209,3 +209,14 @@ All five were approved as recommended.
   change are no longer reported. The Labs RSVP-codes prototype is removed. The
   live integration test covers the round trip: link, guest form post, sync,
   guest list updated.
+- **E2 (wedding website).** Content is a synced `website` record edited in
+  Guests > Wedding website: welcome, schedule (with map directions), getting
+  there and places to stay, registry links and FAQ. Visibility (off, public,
+  password), the password and search indexing are server settings set through
+  the API, so syncing can never publish or unlock a site. The site uses the
+  RSVP page address (`/w/<slug>`, RSVP at `/w/<slug>/rsvp`). A correct password
+  sets an HttpOnly, SameSite=Lax cookie for that path only, signed with a
+  per-database secret and tied to the password hash, so changing the password
+  signs every visitor out. Only http(s) links are rendered, and a
+  password-protected site is never indexed. Couples can write before the
+  wedding is synced; publishing waits for sync.

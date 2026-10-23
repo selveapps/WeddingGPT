@@ -27,6 +27,7 @@ export const SYNC_COLLECTIONS = [
   'vendors',
   'notificationPreferences',
   'rsvpResponses',
+  'website',
 ];
 
 /**

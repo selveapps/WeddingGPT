@@ -63,6 +63,13 @@ export const PAGE_HEADERS = {
   'Cache-Control': 'no-store',
 };
 
+/** The same headers, minus the noindex, for a website the couple chose to list in search (D9). */
+export function pageHeaders({ indexable = false } = {}) {
+  if (!indexable) return PAGE_HEADERS;
+  const { 'X-Robots-Tag': _hidden, ...rest } = PAGE_HEADERS;
+  return rest;
+}
+
 const STYLES = raw(`
   :root { color-scheme: light dark; --ink: #2b2220; --muted: #6f625e; --line: #e8ddd8; --bg: #fffbf7; --card: #ffffff; --brand: #b4485f; }
   @media (prefers-color-scheme: dark) { :root { --ink: #f3ebe7; --muted: #b9aca7; --line: #3a302d; --bg: #191413; --card: #241d1b; --brand: #f49ab3; } }
@@ -81,16 +88,23 @@ const STYLES = raw(`
   button { background: var(--brand); color: #fff; border: 0; border-radius: 999px; padding: 14px 24px; font: inherit; font-weight: 600; width: 100%; cursor: pointer; }
   .error { color: #c0392b; }
   .ok { color: #2e7d4f; }
+  h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; font-size: 22px; margin: 32px 0 8px; }
+  a { color: var(--brand); }
+  .event { border-top: 1px solid var(--line); padding: 12px 0; }
+  .event:first-child { border-top: 0; }
+  .button { display: block; text-align: center; background: var(--brand); color: #fff; border-radius: 999px; padding: 14px 24px; font-weight: 600; text-decoration: none; margin: 20px 0; }
+  dt { font-weight: 600; margin-top: 12px; }
+  dd { margin: 4px 0 0; }
 `);
 
 /** The page shell. `title` and `body` follow the same escaping rules. */
-export function page({ title, body, lang = 'en' }) {
+export function page({ title, body, lang = 'en', indexable = false }) {
   return html`<!doctype html>
 <html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
+${indexable ? '' : raw('<meta name="robots" content="noindex, nofollow">')}
 <title>${title}</title>
 <style>${STYLES}</style>
 </head>
