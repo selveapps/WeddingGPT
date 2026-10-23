@@ -109,3 +109,29 @@ describe('savedSession', () => {
     await expect(savedSession.load()).resolves.toBeNull();
   });
 });
+
+describe('account export and deletion', () => {
+  it('exports with the token', async () => {
+    const data = { user, workspaces: [] };
+    const { client, fetchImpl } = clientWith(reply(200, data));
+    await expect(client.exportAccount('tok')).resolves.toEqual(data);
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('https://auth.example.com/v1/account/export');
+    expect(init.headers.Authorization).toBe('Bearer tok');
+  });
+
+  it('refuses an export that is not one', async () => {
+    const { client } = clientWith(reply(200, { nope: true }));
+    expect(await codeOf(client.exportAccount('tok'))).toBe(AuthErrorCode.UNAVAILABLE);
+  });
+
+  it('deletes with the password, and reports a wrong one', async () => {
+    const { client, fetchImpl } = clientWith(reply(204), reply(401, { error: 'invalid_credentials' }));
+    await client.deleteAccount('tok', 'a good password');
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe('https://auth.example.com/v1/account');
+    expect(init.method).toBe('DELETE');
+    expect(JSON.parse(init.body)).toEqual({ password: 'a good password' });
+    expect(await codeOf(client.deleteAccount('tok', 'nope'))).toBe(AuthErrorCode.INVALID_CREDENTIALS);
+  });
+});

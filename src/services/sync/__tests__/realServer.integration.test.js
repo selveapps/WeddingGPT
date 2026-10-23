@@ -1,6 +1,7 @@
 /**
  * @jest-environment node
  */
+import { Buffer } from 'buffer';
 import http from 'http';
 import { create } from 'zustand';
 
@@ -10,6 +11,7 @@ import { SliceKind } from '../changes';
 import { createSyncStore } from '../../../store/syncStore';
 import { applyPendingResponses } from '../../../features/rsvp/applyResponses';
 import { templatePackingItems } from '../../../models/packing';
+import { createAuthClient } from '../../auth/authClient';
 
 /**
  * The real client and engine against a running server/auth - the check that
@@ -28,7 +30,9 @@ const run = URL_ ? describe : describe.skip;
  */
 function nodeFetch(url, { method = 'GET', headers = {}, body } = {}) {
   return new Promise((resolve, reject) => {
-    const request = http.request(url, { method, headers }, (response) => {
+    // Node sends no body on a DELETE without a length, so always give one.
+    const sized = body ? { ...headers, 'Content-Length': Buffer.byteLength(body) } : headers;
+    const request = http.request(url, { method, headers: sized }, (response) => {
       let text = '';
       response.setEncoding('utf8');
       response.on('data', (chunk) => {
@@ -427,7 +431,10 @@ run('sync against the real server', () => {
     await a.engine.syncNow();
     expect(a.syncStore.getState().rejected).toEqual([]);
     await b.engine.syncNow();
-    expect(b.wedding.getState().events.byId.event_1).toMatchObject({ name: 'Mehndi', invitedGuestIds: ['g1', 'g2'] });
+    expect(b.wedding.getState().events.byId.event_1).toMatchObject({
+      name: 'Mehndi',
+      invitedGuestIds: ['g1', 'g2'],
+    });
     expect(b.wedding.getState().tasks.byId.task_1.eventId).toBe('event_1');
     expect(b.wedding.getState().tasks.byId.task_2.waitsFor).toEqual(['task_1']);
     expect(b.wedding.getState().expenses.byId.exp_1.eventId).toBe('event_1');
@@ -484,7 +491,11 @@ run('sync against the real server', () => {
       gifts: {
         ...state.gifts,
         byId: {
-          gift_1: { ...state.gifts.byId.gift_1, thankYouStatus: 'sent', updatedAt: '2027-01-02T00:00:00.000Z' },
+          gift_1: {
+            ...state.gifts.byId.gift_1,
+            thankYouStatus: 'sent',
+            updatedAt: '2027-01-02T00:00:00.000Z',
+          },
         },
       },
     }));
@@ -557,7 +568,14 @@ run('sync against the real server', () => {
     };
     const a = phone();
     const b = phone();
-    const dinner = { id: 'ros_1', title: 'Dinner', start: 1080, durationMin: 90, eventId: null, updatedAt: '2027-01-01T00:00:00.000Z' };
+    const dinner = {
+      id: 'ros_1',
+      title: 'Dinner',
+      start: 1080,
+      durationMin: 90,
+      eventId: null,
+      updatedAt: '2027-01-01T00:00:00.000Z',
+    };
     a.show.setState({ items: { byId: { ros_1: dinner }, allIds: ['ros_1'] } });
     await a.engine.syncNow();
     expect(a.syncStore.getState().rejected).toEqual([]);
@@ -565,7 +583,10 @@ run('sync against the real server', () => {
     expect(b.show.getState().items.byId.ros_1.start).toBe(1080);
 
     b.show.setState((state) => ({
-      items: { ...state.items, byId: { ros_1: { ...dinner, start: 1100, updatedAt: '2027-01-02T00:00:00.000Z' } } },
+      items: {
+        ...state.items,
+        byId: { ros_1: { ...dinner, start: 1100, updatedAt: '2027-01-02T00:00:00.000Z' } },
+      },
     }));
     await b.engine.syncNow();
     await a.engine.syncNow();
@@ -604,5 +625,44 @@ run('sync against the real server', () => {
     expect(b.syncStore.getState().rejected).toEqual([]);
     expect(a.packing.getState().items.allIds).toHaveLength(fromA.length);
     expect(b.packing.getState().items.allIds).toHaveLength(fromA.length);
+  });
+
+  it('exports an account and deletes it for good, with its solo wedding (A7)', async () => {
+    // Its own address, so the earlier scenarios' sign-ups do not use up its rate limit.
+    const fromOwnIp = (url, init = {}) =>
+      nodeFetch(url, {
+        ...init,
+        headers: { ...init.headers, 'X-Forwarded-For': `10.7.${Date.now() % 250}.7` },
+      });
+    const auth = createAuthClient({ url: URL_, fetchImpl: fromOwnIp });
+    const email = `delete-me-${Date.now()}@example.com`;
+    const session = await auth.register({ name: 'Delete me', email, password: 'delete-me-pass' });
+    const solo = await client.createWorkspace(session.token, 'Short-lived wedding');
+    await client.push(session.token, solo.id, [
+      {
+        mutationId: `mut_a7_${Date.now()}`,
+        collection: 'guests',
+        id: 'guest_a7',
+        op: 'upsert',
+        baseVersion: 0,
+        data: { firstName: 'Ana' },
+      },
+    ]);
+
+    const exported = await auth.exportAccount(session.token);
+    expect(exported.user.email).toBe(email);
+    expect(exported.workspaces[0].records.map((r) => r.data.firstName)).toEqual(['Ana']);
+    expect(JSON.stringify(exported)).not.toMatch(/password|token_hash/);
+
+    await expect(auth.deleteAccount(session.token, 'wrong password')).rejects.toMatchObject({
+      code: 'invalid_credentials',
+    });
+    await expect(auth.me(session.token)).resolves.toMatchObject({ email });
+
+    await auth.deleteAccount(session.token, 'delete-me-pass');
+    await expect(auth.me(session.token)).rejects.toMatchObject({ code: 'unauthorised' });
+    await expect(auth.login({ email, password: 'delete-me-pass' })).rejects.toMatchObject({
+      code: 'invalid_credentials',
+    });
   });
 });

@@ -307,3 +307,20 @@ Details settled while building, which refine sections 4 and 5.
   `/invite/[token]` screen handles; a signed-out partner signs in and comes
   straight back. The live integration test covers two accounts sharing one
   wedding end to end, including removal.
+- **A7 (export and deletion).** `GET /v1/account/export` returns the account
+  and, for every wedding, its members (names and roles) and live records;
+  never a password hash, session or invite token, or website password.
+  `DELETE /v1/account` needs the password again and shares the per-IP rate
+  limit with sign-in, and has its own limit of 5 tries a minute per account,
+  so a stolen session cannot erase an account or guess the password - even
+  from a new claimed address each time (the per-IP limit trusts
+  `X-Forwarded-For`; see the note in the PR). Deletion is one transaction: an owned wedding with a partner
+  passes to the longest-standing partner (D4), who becomes `created_by` too;
+  an owned solo wedding is deleted, and records, tombstones, mutations,
+  cursors, invites, RSVP settings and links and website settings cascade with
+  it. In weddings that stay, `records.updated_by` and invite
+  `created_by`/`accepted_by` become `deleted`, open invites they sent are
+  revoked, and their pull cursors go; then the user row, which removes their
+  sessions and memberships. The T13 test scans every column of every table
+  for the user's id and email afterwards and finds nothing. Backups are
+  outside the server code; they must expire within 30 days.
