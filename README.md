@@ -320,6 +320,12 @@ Two deliberate choices in the generator:
   sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
   leaves every event's list. Model in `models/events.js`, times in
   `lib/time.js`, screens in `features/events`.
+- **Checklists for each event.** Adding a mehndi, sangeet, haldi, rehearsal
+  dinner, welcome party, brunch, ceremony or reception offers that event's
+  usual tasks, dated back from the event and linked in order; the couple
+  unticks what does not apply and nothing is added until they press Add.
+  *Suggested tasks* on an event offers what is not on the checklist yet.
+  Content in `models/eventTemplates.js`.
 - **Tasks that wait for others.** On a task, *Wait for another task* links
   it to what has to happen first ("Send the invitations" waits for the guest
   list). A waiting task says so, stays off the daily checklist and the next

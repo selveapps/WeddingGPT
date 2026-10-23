@@ -81,6 +81,11 @@ be undone.
 dated from the event; the couple picks which tasks to add; nothing is added
 without confirming.
 
+Status: done on `feature/event-templates`, for event checklists. Saving a
+couple's own plan as a reusable template (in the slice table) is not built:
+it needs a new synced collection and an answer to who may reuse it across
+weddings, and is left as a follow-up.
+
 **C4 Finance reports** — planned (category allocations) against committed and
 paid, by category and by event; payments due per month for the next twelve
 months; overspends highlighted; CSV export of the report.
