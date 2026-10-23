@@ -30,6 +30,7 @@ import {
   eventGuestSummary,
   eventName,
   validateEvent,
+  eventChecklist,
 } from '@/models';
 import { formatTime, fromClock } from '@/lib/time';
 import { DateField } from '@/features/shared/DateField';
@@ -135,6 +136,11 @@ export function EventFormScreen({ eventId }) {
         return;
       }
       toast.success(`${eventName(added)} added`);
+      // Offer the checklist for this kind of event; nothing is added without choosing.
+      if (eventChecklist(added.kind).length) {
+        router.replace(Routes.eventChecklist(added.id));
+        return;
+      }
     }
     router.back();
   };
@@ -292,6 +298,14 @@ export function EventFormScreen({ eventId }) {
 
           <Stack gap="xs">
             <Button label={existing ? 'Save event' : 'Add event'} onPress={submit} />
+            {existing && eventChecklist(existing.kind).length ? (
+              <Button
+                label="Suggested tasks"
+                variant="secondary"
+                iconLeft="checklist"
+                onPress={() => router.push(Routes.eventChecklist(existing.id))}
+              />
+            ) : null}
             {existing ? (
               <Button label="Delete event" variant="ghost" onPress={() => setConfirmDelete(true)} />
             ) : (

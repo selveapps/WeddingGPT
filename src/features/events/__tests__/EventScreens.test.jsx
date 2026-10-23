@@ -116,7 +116,8 @@ describe('EventFormScreen', () => {
       dressCode: 'Bright colours',
       guestScope: GuestScope.EVERYONE,
     });
-    expect(mockRouter.back).toHaveBeenCalled();
+    // A sangeet has a suggested checklist, so that is offered next.
+    expect(mockRouter.replace).toHaveBeenCalledWith(`/planning/events/${events()[0].id}/checklist`);
   });
 
   it('refuses a time it cannot read and saves nothing', async () => {
