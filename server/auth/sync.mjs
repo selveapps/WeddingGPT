@@ -26,7 +26,15 @@ export const SYNC_COLLECTIONS = [
   'households',
   'vendors',
   'notificationPreferences',
+  'rsvpResponses',
 ];
+
+/**
+ * Collections only the server writes: guests' RSVP replies (design E §2).
+ * A device may read them but never push to them, so a reply can only come
+ * from the guest's own link and never overwrites the couple's edits.
+ */
+export const SERVER_WRITTEN_COLLECTIONS = ['rsvpResponses'];
 
 export const SYNC_LIMITS = {
   mutationsPerPush: 100,
@@ -131,6 +139,9 @@ export function createSyncRepository(db) {
   const statements = {
     nextSeq: db.prepare("UPDATE counters SET value = value + 1 WHERE name = 'seq' RETURNING value"),
     findRecord: db.prepare('SELECT * FROM records WHERE workspace_id = ? AND collection = ? AND id = ?'),
+    liveInCollection: db.prepare(
+      'SELECT * FROM records WHERE workspace_id = ? AND collection = ? AND deleted_at IS NULL ORDER BY seq'
+    ),
     upsertRecord: db.prepare(
       `INSERT INTO records (workspace_id, collection, id, data, version, updated_at, updated_by, deleted_at, seq)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -214,7 +225,7 @@ export function createSyncRepository(db) {
      * Apply a batch in one transaction. Invalid mutations are rejected one by
      * one; the rest still apply.
      */
-    push(workspaceId, userId, mutations) {
+    push(workspaceId, userId, mutations, { asServer = false } = {}) {
       const applied = [];
       const conflicts = [];
       const rejected = [];
@@ -223,7 +234,9 @@ export function createSyncRepository(db) {
       db.exec('BEGIN IMMEDIATE');
       try {
         for (const mutation of mutations) {
-          const error = validateMutation(mutation);
+          const error =
+            validateMutation(mutation) ??
+            (!asServer && SERVER_WRITTEN_COLLECTIONS.includes(mutation.collection) ? 'read_only' : null);
           if (error) {
             rejected.push({ mutationId: typeof mutation?.mutationId === 'string' ? mutation.mutationId : null, error });
             continue;
@@ -240,6 +253,17 @@ export function createSyncRepository(db) {
       }
 
       return { applied, conflicts, rejected };
+    },
+
+    /** One live record's data, or null. For the server's own pages (RSVP). */
+    getRecord(workspaceId, collection, id) {
+      const row = statements.findRecord.get(workspaceId, collection, id);
+      return row && !row.deleted_at ? { ...toRecord(row) } : null;
+    },
+
+    /** Every live record in a collection, oldest first. */
+    liveRecords(workspaceId, collection) {
+      return statements.liveInCollection.all(workspaceId, collection).map(toRecord);
     },
 
     /** Records changed after `since`, oldest first, and where to continue. */

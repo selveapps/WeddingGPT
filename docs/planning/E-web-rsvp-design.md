@@ -183,3 +183,17 @@ All five were approved as recommended.
 | D9 | Search engine indexing of wedding websites | Off by default; the couple can turn it on |
 | D10 | Can guests change a reply after submitting | Yes, until the RSVP deadline |
 | D11 | Build the vendor portal (E4) | Decide after E1–E3 ship; it is the largest and least certain slice |
+
+## Implementation notes
+
+- **E1a (RSVP server).** Pages live in `server/auth/rsvp`: an escaping `html`
+  template (`html.mjs`), page renderers, the repository and the routes. Guest
+  pages skip the app-token check (browsers never carry it) and nothing else.
+  Replies are sync records in `rsvpResponses`, which the sync layer refuses
+  from devices (`read_only`), so only a guest's own link can write one. A
+  household may reply again until the deadline; the newest reply replaces the
+  previous one. Links stop working 30 days after the deadline, or a year after
+  they were made when there is no deadline. Short codes are 8 characters
+  (about 40 bits) and are looked up only within their own wedding. Each public
+  page threat has a test, and removing escaping, the guest filter, the
+  server-only rule or the browser exemption each makes tests fail.
