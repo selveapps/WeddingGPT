@@ -1,6 +1,11 @@
 import {
   decisionCategoryLabel,
   filterDecisions,
+  filterDecisionsByCategory,
+  filterOverdueDecisions,
+  isDecisionDueToday,
+  isDecisionOverdue,
+  searchDecisions,
   parseDecisionOptions,
   sortDecisions,
   summariseDecisions,
@@ -34,14 +39,64 @@ describe('wedding decision helpers', () => {
       { status: 'open', revisitDate: '2026-11-01' },
     ];
     expect(sortDecisions(items)).toEqual([items[2], items[1], items[0]]);
-    expect(summariseDecisions(items)).toEqual({ total: 3, decided: 1, open: 2 });
+    expect(summariseDecisions(items, new Date(2026, 9, 23, 12))).toEqual({
+      total: 3,
+      decided: 1,
+      open: 2,
+      overdue: 0,
+      dueToday: 0,
+    });
   });
 
-  it('filters open and decided records without mutating the decision log', () => {
-    const items = [{ status: 'open' }, { status: 'decided' }];
-    expect(filterDecisions(items, 'open')).toEqual([items[0]]);
-    expect(filterDecisions(items, 'decided')).toEqual([items[1]]);
+  it('filters open, decided, and overdue records without mutating the decision log', () => {
+    const items = [
+      { status: 'open', revisitDate: '2026-10-22' },
+      { status: 'open', revisitDate: '2026-10-23' },
+      { status: 'decided', revisitDate: '2026-10-01' },
+    ];
+    expect(filterDecisions(items, 'open')).toEqual([items[0], items[1]]);
+    expect(filterDecisions(items, 'decided')).toEqual([items[2]]);
+    expect(filterDecisions(items, 'overdue', new Date(2026, 9, 23, 12))).toEqual([items[0]]);
+    expect(filterDecisions(items, 'due-today', new Date(2026, 9, 23, 12))).toEqual([items[1]]);
     expect(filterDecisions(items)).toEqual(items);
+  });
+
+  it('searches decision questions, notes, options, and chosen option', () => {
+    const items = [
+      {
+        question: 'Pick a reading',
+        note: 'Family story',
+        options: ['Poem', 'Letter'],
+        selectedOption: 'Letter',
+      },
+      { question: 'Choose cake', note: '', options: ['Chocolate', 'Vanilla'] },
+    ];
+    expect(searchDecisions(items, 'FAMILY')).toEqual([items[0]]);
+    expect(searchDecisions(items, 'vanilla')).toEqual([items[1]]);
+    expect(searchDecisions(items, '  ')).toEqual(items);
+  });
+
+  it('filters decisions by category without changing their order', () => {
+    const items = [{ category: 'ceremony' }, { category: 'style' }, { category: 'ceremony' }];
+    expect(filterDecisionsByCategory(items, 'ceremony')).toEqual([items[0], items[2]]);
+    expect(filterDecisionsByCategory(items)).toEqual(items);
+  });
+
+  it('marks only past-due open decisions as overdue', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const overdue = { status: 'open', revisitDate: '2026-10-22' };
+    const today = { status: 'open', revisitDate: '2026-10-23' };
+    const decided = { status: 'decided', revisitDate: '2026-10-01' };
+    expect(isDecisionOverdue(overdue, now)).toBe(true);
+    expect(isDecisionOverdue(today, now)).toBe(false);
+    expect(isDecisionOverdue(decided, now)).toBe(false);
+    expect(filterOverdueDecisions([overdue, today, decided], now)).toEqual([overdue]);
+  });
+
+  it('identifies open decisions scheduled for today', () => {
+    const now = new Date(2026, 9, 23, 12);
+    expect(isDecisionDueToday({ status: 'open', revisitDate: '2026-10-23' }, now)).toBe(true);
+    expect(isDecisionDueToday({ status: 'decided', revisitDate: '2026-10-23' }, now)).toBe(false);
   });
 
   it('returns a readable category fallback', () => {

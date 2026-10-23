@@ -8,25 +8,38 @@ import {
   SectionHeader,
   Stack,
   Text,
+  TextField,
   useToast,
 } from '@/design-system/components';
 import { DecisionCard, DecisionForm } from './components';
 import { useDecisionLog } from './hooks/useDecisionLog';
-import { filterDecisions, summariseDecisions } from './lib/decisionHelpers';
-import { DECISION_STATUSES } from './lib/decisionConstants';
+import {
+  filterDecisions,
+  filterDecisionsByCategory,
+  searchDecisions,
+  summariseDecisions,
+} from './lib/decisionHelpers';
+import { DECISION_CATEGORIES, DECISION_STATUSES } from './lib/decisionConstants';
 
 const DECISION_FILTERS = [
   { value: 'all', label: 'All decisions' },
   { value: DECISION_STATUSES.OPEN, label: 'Open' },
   { value: DECISION_STATUSES.DECIDED, label: 'Decided' },
+  { value: 'due-today', label: 'Due today' },
+  { value: 'overdue', label: 'Overdue' },
 ];
 
 export function WeddingDecisionLog() {
   const toast = useToast();
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [categoryFilter, setCategoryFilter] = React.useState('all');
+  const [query, setQuery] = React.useState('');
   const { decisions, addRecord, decide, reopen, removeDecision } = useDecisionLog();
   const summary = summariseDecisions(decisions);
-  const visibleDecisions = filterDecisions(decisions, statusFilter);
+  const visibleDecisions = searchDecisions(
+    filterDecisionsByCategory(filterDecisions(decisions, statusFilter), categoryFilter),
+    query
+  );
 
   const save = (values) => {
     if (!addRecord(values)) {
@@ -54,19 +67,51 @@ export function WeddingDecisionLog() {
       <SectionHeader
         eyebrow="One choice at a time"
         title="Decision log"
-        subtitle={`${summary.open} open · ${summary.decided} decided`}
+        subtitle={`${summary.open} open · ${summary.decided} decided${summary.overdue ? ` · ${summary.overdue} overdue` : ''}`}
       />
       <Card>
         <DecisionForm onSave={save} />
       </Card>
       {decisions.length ? (
+        <TextField
+          label="Search decisions"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search questions, options or notes"
+          icon="search"
+        />
+      ) : null}
+      {decisions.length ? (
         <Row gap="xs" wrap>
           {DECISION_FILTERS.map((filter) => (
             <Chip
               key={filter.value}
-              label={filter.label}
+              label={
+                filter.value === 'overdue'
+                  ? `${filter.label} (${summary.overdue})`
+                  : filter.value === 'due-today'
+                    ? `${filter.label} (${summary.dueToday})`
+                    : filter.label
+              }
               selected={statusFilter === filter.value}
               onPress={() => setStatusFilter(filter.value)}
+            />
+          ))}
+        </Row>
+      ) : null}
+      {decisions.length ? (
+        <Row gap="xs" wrap>
+          <Chip
+            label="All areas"
+            selected={categoryFilter === 'all'}
+            onPress={() => setCategoryFilter('all')}
+          />
+          {DECISION_CATEGORIES.map((category) => (
+            <Chip
+              key={category.value}
+              label={category.label}
+              selected={categoryFilter === category.value}
+              onPress={() => setCategoryFilter(category.value)}
             />
           ))}
         </Row>
@@ -98,7 +143,11 @@ export function WeddingDecisionLog() {
           title={`No ${statusFilter} decisions`}
           message="Choose another filter to review the rest of your decision log."
           actionLabel="Show all"
-          onAction={() => setStatusFilter('all')}
+          onAction={() => {
+            setStatusFilter('all');
+            setCategoryFilter('all');
+            setQuery('');
+          }}
         />
       ) : null}
       <Text variant="caption" color="subtle">

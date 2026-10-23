@@ -1,7 +1,9 @@
 import {
   partyRoleLabel,
   partySideLabel,
+  normalisePartyMember,
   filterPartyMembers,
+  filterPartyByContact,
   filterPartyMembersByRole,
   searchPartyMembers,
   sortPartyMembers,
@@ -18,6 +20,23 @@ describe('wedding party helpers', () => {
     expect(validatePartyMember({ ...valid, role: 'unknown' }).errors.role).toBeTruthy();
   });
 
+  it('normalises contact strings before saving a roster member', () => {
+    expect(
+      normalisePartyMember({
+        ...valid,
+        name: ' Mina ',
+        email: ' MINA@Example.COM ',
+        phone: ' 555-0100 ',
+        note: ' Reading ',
+      })
+    ).toMatchObject({
+      name: 'Mina',
+      email: 'mina@example.com',
+      phone: '555-0100',
+      note: 'Reading',
+    });
+  });
+
   it('sorts a copy by role and name', () => {
     const list = [
       { ...valid, name: 'Zoe', role: 'reader' },
@@ -31,8 +50,13 @@ describe('wedding party helpers', () => {
     expect(summariseParty([valid, { ...valid, role: 'reader', email: 'reader@example.com' }])).toEqual({
       total: 2,
       withContact: 1,
+      withEmail: 1,
+      withPhone: 0,
+      contactCoverage: 50,
       roles: 2,
+      roleCounts: { attendant: 1, reader: 1 },
     });
+    expect(summariseParty([]).contactCoverage).toBe(0);
   });
 
   it('searches names and contact details without changing the source list', () => {
@@ -63,6 +87,19 @@ describe('wedding party helpers', () => {
     ];
     expect(filterPartyMembersByRole(members, 'reader')).toEqual([members[1]]);
     expect(filterPartyMembersByRole(members)).toEqual(members);
+  });
+
+  it('filters people who have missing or known contact methods', () => {
+    const members = [
+      { ...valid, name: 'Mina', email: 'mina@example.com' },
+      { ...valid, name: 'Ravi', email: '', phone: '555-0100' },
+      { ...valid, name: 'Asha', email: '', phone: '' },
+    ];
+    expect(filterPartyByContact(members, 'with-contact')).toEqual([members[0], members[1]]);
+    expect(filterPartyByContact(members, 'with-email')).toEqual([members[0]]);
+    expect(filterPartyByContact(members, 'with-phone')).toEqual([members[1]]);
+    expect(filterPartyByContact(members, 'missing-contact')).toEqual([members[2]]);
+    expect(filterPartyByContact(members)).toEqual(members);
   });
 
   it('provides friendly labels for recognised and unknown values', () => {

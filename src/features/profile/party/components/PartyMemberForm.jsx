@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 
 import { Button, Chip, Row, Stack, Text, TextField } from '@/design-system/components';
 import { PARTY_ROLES, PARTY_SIDES } from '../lib/partyConstants';
-import { validatePartyMember } from '../lib/partyHelpers';
+import { normalisePartyMember, validatePartyMember } from '../lib/partyHelpers';
 
 const EMPTY_MEMBER = { name: '', role: 'attendant', side: 'both', email: '', phone: '', note: '' };
 
@@ -36,11 +36,7 @@ export function PartyMemberForm({ onSave }) {
     const result = validatePartyMember(values);
     setErrors(result.errors);
     if (!result.isValid) return;
-    if (
-      !onSave({ ...values, name: values.name.trim(), email: values.email.trim(), note: values.note.trim() })
-    ) {
-      return;
-    }
+    if (!onSave(normalisePartyMember(values))) return;
     setValues(EMPTY_MEMBER);
     setErrors({});
   };

@@ -1,5 +1,6 @@
 import { DOCUMENT_TYPES, MAX_DOCUMENT_NOTE } from './documentConstants';
 import { isCalendarDate } from '../../keepsakes/lib/keepsakeHelpers';
+import { toISODate } from '@/lib/date';
 
 export function validateDocument(values = {}) {
   const errors = {};
@@ -23,19 +24,55 @@ export function sortDocuments(documents = []) {
   });
 }
 
-export function filterDocuments(documents = [], status = 'all') {
+export function filterDocuments(documents = [], status = 'all', now = new Date()) {
+  if (status === 'overdue') {
+    return documents.filter((document) => isDocumentReviewOverdue(document, now));
+  }
+  if (status === 'due-soon') {
+    return documents.filter((document) => isDocumentReviewDueSoon(document, now));
+  }
   if (status === 'complete') return documents.filter((document) => Boolean(document.completed));
   if (status === 'open') return documents.filter((document) => !document.completed);
   return [...documents];
 }
 
-export function summariseDocuments(documents = []) {
+export function filterDocumentsByType(documents = [], type = 'all') {
+  return type === 'all' ? [...documents] : documents.filter((document) => document.type === type);
+}
+
+export function searchDocuments(documents = [], query = '') {
+  const term = String(query).trim().toLocaleLowerCase();
+  if (!term) return [...documents];
+  return documents.filter((document) =>
+    [document.title, document.note, documentTypeLabel(document.type), document.reviewDate].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(term)
+    )
+  );
+}
+
+export function isDocumentReviewOverdue(document, now = new Date()) {
+  if (document?.completed || !isCalendarDate(document?.reviewDate)) return false;
+  return document.reviewDate < toISODate(now);
+}
+
+export function isDocumentReviewDueSoon(document, now = new Date(), daysAhead = 7) {
+  if (document?.completed || !isCalendarDate(document?.reviewDate)) return false;
+  const lastDay = new Date(now);
+  lastDay.setDate(lastDay.getDate() + daysAhead);
+  return document.reviewDate >= toISODate(now) && document.reviewDate <= toISODate(lastDay);
+}
+
+export function summariseDocuments(documents = [], now = new Date()) {
   const completed = documents.filter((document) => document.completed).length;
   return {
     total: documents.length,
     completed,
     remaining: documents.length - completed,
     ratio: documents.length ? completed / documents.length : 0,
+    overdue: documents.filter((document) => isDocumentReviewOverdue(document, now)).length,
+    dueSoon: documents.filter((document) => isDocumentReviewDueSoon(document, now)).length,
   };
 }
 

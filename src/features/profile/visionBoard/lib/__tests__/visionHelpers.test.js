@@ -35,6 +35,21 @@ describe('wedding vision board helpers', () => {
     expect(sortVisionIdeas(ideas)[0]).toBe(ideas[0]);
   });
 
+  it('supports alphabetical ordering within pinned and unpinned groups', () => {
+    const list = [
+      { title: 'Zulu', saved: false },
+      { title: 'Bravo', saved: true },
+      { title: 'Alpha', saved: false },
+      { title: 'Able', saved: true },
+    ];
+    expect(sortVisionIdeas(list, 'title').map((idea) => idea.title)).toEqual([
+      'Able',
+      'Bravo',
+      'Alpha',
+      'Zulu',
+    ]);
+  });
+
   it('searches idea titles, notes, categories, and moods', () => {
     expect(searchVisionIdeas(ideas, 'GARDEN')).toEqual([ideas[0]]);
     expect(searchVisionIdeas(ideas, 'Colors')).toEqual([ideas[1]]);
@@ -43,6 +58,11 @@ describe('wedding vision board helpers', () => {
   });
 
   it('summarises ideas and saved counts', () => {
-    expect(summariseVision(ideas)).toEqual({ total: 2, saved: 1, categories: 2 });
+    expect(summariseVision(ideas)).toEqual({
+      total: 2,
+      saved: 1,
+      categories: 2,
+      categoryCounts: { decor: 1, palette: 1 },
+    });
   });
 });

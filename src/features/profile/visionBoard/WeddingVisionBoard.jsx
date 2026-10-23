@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Card,
+  Chip,
   EmptyState,
+  Row,
   SectionHeader,
   Stack,
   Text,
@@ -11,7 +13,7 @@ import {
 } from '@/design-system/components';
 import { useWeddingVision } from './hooks/useWeddingVision';
 import { VisionFilters, VisionIdeaCard, VisionIdeaForm } from './components';
-import { filterVisionIdeas, searchVisionIdeas, summariseVision } from './lib/visionHelpers';
+import { filterVisionIdeas, searchVisionIdeas, sortVisionIdeas, summariseVision } from './lib/visionHelpers';
 
 const DEFAULT_FILTERS = { category: 'all', mood: 'all', savedOnly: false };
 
@@ -19,10 +21,11 @@ export function WeddingVisionBoard() {
   const toast = useToast();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
   const { ideas, addRecord, updateRecord, removeRecord } = useWeddingVision();
   const visibleIdeas = useMemo(
-    () => searchVisionIdeas(filterVisionIdeas(ideas, filters), query),
-    [ideas, filters, query]
+    () => sortVisionIdeas(searchVisionIdeas(filterVisionIdeas(ideas, filters), query), sortBy),
+    [ideas, filters, query, sortBy]
   );
   const summary = summariseVision(ideas);
 
@@ -62,7 +65,15 @@ export function WeddingVisionBoard() {
             placeholder="Search titles, notes, areas or moods"
             icon="search"
           />
-          <VisionFilters value={filters} onChange={setFilters} />
+          <Row gap="xs" wrap>
+            <Chip
+              label="Pinned and recent"
+              selected={sortBy === 'recent'}
+              onPress={() => setSortBy('recent')}
+            />
+            <Chip label="Pinned and A–Z" selected={sortBy === 'title'} onPress={() => setSortBy('title')} />
+          </Row>
+          <VisionFilters value={filters} onChange={setFilters} categoryCounts={summary.categoryCounts} />
           {visibleIdeas.length ? (
             <Stack gap="sm">
               {visibleIdeas.map((idea) => (

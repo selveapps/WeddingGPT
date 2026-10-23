@@ -16,7 +16,9 @@ import { usePartyRoster } from './hooks/usePartyRoster';
 import {
   filterPartyMembers,
   filterPartyMembersByRole,
+  filterPartyByContact,
   searchPartyMembers,
+  sortPartyMembers,
   summariseParty,
 } from './lib/partyHelpers';
 import { PARTY_ROLES, PARTY_SIDES } from './lib/partyConstants';
@@ -27,10 +29,20 @@ export function WeddingPartyRoster() {
   const [query, setQuery] = useState('');
   const [side, setSide] = useState('all');
   const [role, setRole] = useState('all');
+  const [contactFilter, setContactFilter] = useState('all');
   const summary = summariseParty(members);
   const visibleMembers = useMemo(
-    () => searchPartyMembers(filterPartyMembersByRole(filterPartyMembers(members, side), role), query),
-    [members, query, role, side]
+    () =>
+      sortPartyMembers(
+        searchPartyMembers(
+          filterPartyByContact(
+            filterPartyMembersByRole(filterPartyMembers(members, side), role),
+            contactFilter
+          ),
+          query
+        )
+      ),
+    [members, query, role, side, contactFilter]
   );
 
   const addMember = (values) => {
@@ -59,7 +71,8 @@ export function WeddingPartyRoster() {
       {members.length ? (
         <Stack gap="sm">
           <Text variant="caption" color="muted">
-            {summary.withContact} people have contact details
+            Contact coverage: {summary.contactCoverage}% · {summary.withEmail} email · {summary.withPhone}{' '}
+            phone
           </Text>
           <TextField
             label="Find someone"
@@ -80,11 +93,27 @@ export function WeddingPartyRoster() {
             ))}
           </Row>
           <Row gap="xs" wrap>
+            {[
+              { value: 'all', label: 'Any contact status' },
+              { value: 'with-contact', label: 'Has contact' },
+              { value: 'with-email', label: 'Has email' },
+              { value: 'with-phone', label: 'Has phone' },
+              { value: 'missing-contact', label: 'Needs contact' },
+            ].map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={contactFilter === option.value}
+                onPress={() => setContactFilter(option.value)}
+              />
+            ))}
+          </Row>
+          <Row gap="xs" wrap>
             <Chip label="All roles" selected={role === 'all'} onPress={() => setRole('all')} />
             {PARTY_ROLES.map((option) => (
               <Chip
                 key={option.value}
-                label={option.label}
+                label={`${option.label} (${summary.roleCounts[option.value] ?? 0})`}
                 selected={role === option.value}
                 onPress={() => setRole(option.value)}
               />
@@ -105,6 +134,7 @@ export function WeddingPartyRoster() {
                 setQuery('');
                 setSide('all');
                 setRole('all');
+                setContactFilter('all');
               }}
             />
           )}

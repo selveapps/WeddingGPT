@@ -52,18 +52,26 @@ export function searchVisionIdeas(ideas = [], query = '') {
   );
 }
 
-export function sortVisionIdeas(ideas = []) {
+export function sortVisionIdeas(ideas = [], sortBy = 'recent') {
   return [...ideas].sort((a, b) => {
     if (Boolean(a.saved) !== Boolean(b.saved)) return a.saved ? -1 : 1;
+    if (sortBy === 'title') {
+      return (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' });
+    }
     return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
   });
 }
 
 export function summariseVision(ideas = []) {
+  const categoryCounts = ideas.reduce((counts, idea) => {
+    if (idea.category) counts[idea.category] = (counts[idea.category] ?? 0) + 1;
+    return counts;
+  }, {});
   return {
     total: ideas.length,
     saved: ideas.filter((idea) => idea.saved).length,
     categories: new Set(ideas.map((idea) => idea.category).filter(Boolean)).size,
+    categoryCounts,
   };
 }
 

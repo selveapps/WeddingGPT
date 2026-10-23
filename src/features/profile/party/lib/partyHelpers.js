@@ -17,6 +17,19 @@ export function validatePartyMember(values = {}) {
   return { isValid: Object.keys(errors).length === 0, errors };
 }
 
+export function normalisePartyMember(values = {}) {
+  return {
+    ...values,
+    name: String(values.name ?? '').trim(),
+    email:
+      String(values.email ?? '')
+        .trim()
+        .toLocaleLowerCase() || '',
+    phone: String(values.phone ?? '').trim(),
+    note: String(values.note ?? '').trim(),
+  };
+}
+
 export function sortPartyMembers(members = []) {
   return [...members].sort((a, b) => {
     const roleCompare = (a.role ?? '').localeCompare(b.role ?? '');
@@ -51,11 +64,38 @@ export function filterPartyMembersByRole(members = [], role = 'all') {
   return role === 'all' ? [...members] : members.filter((member) => member.role === role);
 }
 
+export function filterPartyByContact(members = [], contactFilter = 'all') {
+  if (contactFilter === 'with-email') {
+    return members.filter((member) => Boolean(member.email));
+  }
+  if (contactFilter === 'with-phone') {
+    return members.filter((member) => Boolean(member.phone));
+  }
+  if (contactFilter === 'with-contact') {
+    return members.filter((member) => Boolean(member.email || member.phone));
+  }
+  if (contactFilter === 'missing-contact') {
+    return members.filter((member) => !member.email && !member.phone);
+  }
+  return [...members];
+}
+
 export function summariseParty(members = []) {
+  const hasEmail = (member) => Boolean(String(member.email ?? '').trim());
+  const hasPhone = (member) => Boolean(String(member.phone ?? '').trim());
+  const withContact = members.filter((member) => hasEmail(member) || hasPhone(member)).length;
+  const roleCounts = members.reduce((counts, member) => {
+    if (member.role) counts[member.role] = (counts[member.role] ?? 0) + 1;
+    return counts;
+  }, {});
   return {
     total: members.length,
-    withContact: members.filter((member) => Boolean(member.email || member.phone)).length,
+    withContact,
+    withEmail: members.filter(hasEmail).length,
+    withPhone: members.filter(hasPhone).length,
+    contactCoverage: members.length ? Math.round((withContact / members.length) * 100) : 0,
     roles: new Set(members.map((member) => member.role).filter(Boolean)).size,
+    roleCounts,
   };
 }
 

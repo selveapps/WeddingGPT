@@ -1,4 +1,13 @@
-import { filterDocuments, sortDocuments, summariseDocuments, validateDocument } from '../documentHelpers';
+import {
+  filterDocuments,
+  filterDocumentsByType,
+  isDocumentReviewDueSoon,
+  isDocumentReviewOverdue,
+  searchDocuments,
+  sortDocuments,
+  summariseDocuments,
+  validateDocument,
+} from '../documentHelpers';
 
 describe('wedding document checklist helpers', () => {
   it('validates custom names and review dates', () => {
@@ -17,7 +26,14 @@ describe('wedding document checklist helpers', () => {
   });
 
   it('summarises an empty checklist safely', () => {
-    expect(summariseDocuments([])).toEqual({ total: 0, completed: 0, remaining: 0, ratio: 0 });
+    expect(summariseDocuments([])).toEqual({
+      total: 0,
+      completed: 0,
+      remaining: 0,
+      ratio: 0,
+      overdue: 0,
+      dueSoon: 0,
+    });
   });
 
   it('filters incomplete and completed paperwork without changing the checklist', () => {
@@ -25,5 +41,57 @@ describe('wedding document checklist helpers', () => {
     expect(filterDocuments(items, 'open')).toEqual([items[0]]);
     expect(filterDocuments(items, 'complete')).toEqual([items[1]]);
     expect(filterDocuments(items)).toEqual(items);
+  });
+
+  it('filters only incomplete paperwork with a past review date', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const rows = [
+      { completed: false, reviewDate: '2026-10-22' },
+      { completed: false, reviewDate: '2026-10-23' },
+      { completed: true, reviewDate: '2026-10-01' },
+    ];
+    expect(filterDocuments(rows, 'overdue', now)).toEqual([rows[0]]);
+  });
+
+  it('finds incomplete reviews due today through the next seven days', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const today = { completed: false, reviewDate: '2026-10-23' };
+    const withinWeek = { completed: false, reviewDate: '2026-10-30' };
+    const later = { completed: false, reviewDate: '2026-10-31' };
+    const completed = { completed: true, reviewDate: '2026-10-24' };
+    expect(isDocumentReviewDueSoon(today, now)).toBe(true);
+    expect(isDocumentReviewDueSoon(withinWeek, now)).toBe(true);
+    expect(filterDocuments([today, withinWeek, later, completed], 'due-soon', now)).toEqual([
+      today,
+      withinWeek,
+    ]);
+    expect(summariseDocuments([today, withinWeek, later, completed], now).dueSoon).toBe(2);
+  });
+
+  it('filters checklist entries by document type', () => {
+    const items = [{ type: 'venue' }, { type: 'insurance' }];
+    expect(filterDocumentsByType(items, 'venue')).toEqual([items[0]]);
+    expect(filterDocumentsByType(items)).toEqual(items);
+  });
+
+  it('searches document titles, notes, dates, and readable types', () => {
+    const rows = [
+      { type: 'venue', title: '', note: 'Call Alex', reviewDate: '2026-11-01' },
+      { type: 'insurance', title: 'Policy renewal', note: '', reviewDate: '2027-01-01' },
+    ];
+    expect(searchDocuments(rows, 'venue')).toEqual([rows[0]]);
+    expect(searchDocuments(rows, 'Alex')).toEqual([rows[0]]);
+    expect(searchDocuments(rows, '2027')).toEqual([rows[1]]);
+    expect(searchDocuments(rows, '')).toEqual(rows);
+  });
+
+  it('counts past review dates only for incomplete paperwork', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const overdue = { completed: false, reviewDate: '2026-10-20' };
+    const completed = { completed: true, reviewDate: '2026-10-20' };
+    expect(isDocumentReviewOverdue(overdue, now)).toBe(true);
+    expect(isDocumentReviewOverdue(completed, now)).toBe(false);
+    expect(isDocumentReviewOverdue({ completed: false, reviewDate: 'invalid' }, now)).toBe(false);
+    expect(summariseDocuments([overdue, completed], now).overdue).toBe(1);
   });
 });
