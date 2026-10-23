@@ -298,3 +298,12 @@ Details settled while building, which refine sections 4 and 5.
   workspace (D6), warning first if changes have not synced. An integration
   test runs the real client against the real server in CI, and confirmed the
   fake server used in unit tests follows the same protocol.
+- **A5 (invites).** A wedding is two people for now (owner and one partner);
+  accepting into a full wedding returns 409 `workspace_full` and does not use
+  the invite up. Creating an invite revokes the open one, so there is never
+  more than one live link. A member who opens their own link gets the
+  workspace back without using it up. The response includes `url`, built from
+  `INVITE_URL_BASE` (default `weddinggpt://invite/`), which the app's
+  `/invite/[token]` screen handles; a signed-out partner signs in and comes
+  straight back. The live integration test covers two accounts sharing one
+  wedding end to end, including removal.

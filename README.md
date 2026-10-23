@@ -390,7 +390,10 @@ In the app, **Account > Sync** backs up the phone's wedding to the account, or
 opens the account's wedding on another phone (the phone's own wedding stays as
 it is, and comes back on sign-out). Changes sync two seconds after an edit and
 when the app opens; edits made on two phones at once are listed there with the
-option to restore the other version. Engine: `services/sync`; reminder
+option to restore the other version. Once the wedding is synced, *Invite your
+partner* (Home, or Account > Planning together) sends a link that works once,
+for 7 days; it opens `/invite/[token]`, where the partner signs in and joins.
+The owner can remove the partner and a partner can leave. Engine: `services/sync`; reminder
 preferences and assistant chats stay on each phone. The sync integration test
 runs the real client against a real server in CI
 (`SYNC_SERVER_URL=... npx jest realServer`).

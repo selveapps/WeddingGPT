@@ -17,6 +17,10 @@ export const SyncErrorCode = {
   LIMIT_REACHED: 'limit_reached',
   INVALID: 'invalid',
   UNAVAILABLE: 'unavailable',
+  FORBIDDEN: 'forbidden',
+  /** An invite link that was used, revoked, expired or never existed. */
+  INVITE_INVALID: 'invite_invalid',
+  WORKSPACE_FULL: 'workspace_full',
 };
 
 /** Codes worth retrying on the next sync. */
@@ -43,6 +47,9 @@ function toSyncError(error) {
   if (error.status === 404) return new SyncError(SyncErrorCode.GONE);
   if (error.status === 403 && error.code === 'limit_reached')
     return new SyncError(SyncErrorCode.LIMIT_REACHED);
+  if (error.status === 403) return new SyncError(SyncErrorCode.FORBIDDEN);
+  if (error.status === 409 && error.code === 'workspace_full')
+    return new SyncError(SyncErrorCode.WORKSPACE_FULL);
   if (error.status === 400 || error.status === 413) return new SyncError(SyncErrorCode.INVALID);
   return new SyncError(SyncErrorCode.UNAVAILABLE);
 }
@@ -84,6 +91,47 @@ export function createSyncClient({ url, appToken, timeoutMs = 30000, fetchImpl }
         conflicts: json?.conflicts ?? [],
         rejected: json?.rejected ?? [],
       };
+    },
+
+    async listMembers(token, workspaceId) {
+      const json = await request(workspacePath(workspaceId, '/members'), { token });
+      return Array.isArray(json?.members) ? json.members : [];
+    },
+
+    /** The owner removes the partner, or a partner removes themselves (leaves). */
+    async removeMember(token, workspaceId, userId) {
+      await request(workspacePath(workspaceId, `/members/${encodeURIComponent(userId)}`), {
+        method: 'DELETE',
+        token,
+      });
+    },
+
+    /** `{ token, url, expiresAt }`. Owner only. */
+    async createInvite(token, workspaceId) {
+      const json = await request(workspacePath(workspaceId, '/invites'), { method: 'POST', token });
+      if (!json?.url) throw new SyncError(SyncErrorCode.UNAVAILABLE);
+      return json;
+    },
+
+    async revokeInvites(token, workspaceId) {
+      await request(workspacePath(workspaceId, '/invites'), { method: 'DELETE', token });
+    },
+
+    /** `{ workspace, alreadyMember }`, or INVITE_INVALID / WORKSPACE_FULL. */
+    async acceptInvite(token, inviteToken) {
+      try {
+        const json = await request('/v1/invites/accept', {
+          method: 'POST',
+          token,
+          body: { token: inviteToken },
+        });
+        if (!json?.workspace?.id) throw new SyncError(SyncErrorCode.UNAVAILABLE);
+        return { workspace: json.workspace, alreadyMember: Boolean(json.alreadyMember) };
+      } catch (error) {
+        // Here a 404 means the invite, not a workspace we lost.
+        if (error?.code === SyncErrorCode.GONE) throw new SyncError(SyncErrorCode.INVITE_INVALID);
+        throw error;
+      }
     },
 
     /** `{ records, cursor, hasMore }` after `since`. */

@@ -76,6 +76,7 @@ export const Routes = {
   paywall: '/paywall',
   account: '/account',
   signIn: '/account/sign-in',
+  invite: (token) => `/invite/${token}`,
   weddingDetails: '/account/wedding',
   notifications: '/account/notifications',
   subscription: '/account/subscription',

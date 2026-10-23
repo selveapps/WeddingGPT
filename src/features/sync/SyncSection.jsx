@@ -23,6 +23,7 @@ import {
 import { coupleDisplayName } from '@/models';
 import { syncEngine, workspaceLink } from '@/services/sync';
 import { useActiveWorkspace } from './useActiveWorkspace';
+import { MembersCard } from './MembersCard';
 import { describeConflict, describeSyncStatus, syncErrorMessage } from './syncStatus';
 
 /**
@@ -211,6 +212,8 @@ function LinkedSync() {
           />
         </Stack>
       </Card>
+
+      <MembersCard />
 
       {conflicts.length ? (
         <Stack gap="xs">
