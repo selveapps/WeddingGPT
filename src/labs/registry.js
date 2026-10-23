@@ -22,13 +22,6 @@ export const LAB_FEATURES = [
     route: '/labs/sync',
   },
   {
-    key: 'gifts',
-    title: 'Gifts and thank-yous',
-    blurb: 'Log gifts, see when each thank-you is due, and draft the note.',
-    icon: 'heart',
-    route: '/labs/gifts',
-  },
-  {
     key: 'timeline',
     title: 'Day-of timeline',
     blurb: 'A minute-by-minute run of show with overlap checks and a running-late button.',

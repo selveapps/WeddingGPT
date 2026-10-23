@@ -301,6 +301,11 @@ Two deliberate choices in the generator:
   guests reply in the browser, without the app, and their answers update the
   guest list when the app syncs. Server: `server/auth/rsvp`; app:
   `features/rsvp`.
+- **Gifts and thank-yous.** *Gifts and thank-yous* (Guests tab): log each
+  gift as it arrives (matched to the guest it came from), see when its note is
+  due - two weeks for a gift before the wedding, three months after - write it
+  from a warm first draft, share it and mark it sent. Gifts sync (`gifts`) and
+  export as CSV. Graduated from Labs; gifts logged there are imported once.
 - **Seating chart and meals.** *Seating chart* (Guests tab): tables, auto-seating
   that keeps households together, keep-apart pairs, and on a wide screen the
   tables in a grid beside the guests still to seat. Tables and pairs sync

@@ -447,4 +447,48 @@ run('sync against the real server', () => {
     expect(a.wedding.getState().events.allIds).toEqual([]);
     expect(a.wedding.getState().tasks.byId.task_1.eventId).toBeNull();
   });
+
+  it('a gift logged on one phone is thanked on the other (gifts)', async () => {
+    const giftPhone = () => {
+      const gifts = create(() => ({ gifts: { byId: {}, allIds: [] } }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [{ collection: 'gifts', store: gifts, key: 'gifts', kind: SliceKind.MANY }],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { gifts, syncStore, engine };
+    };
+    const a = giftPhone();
+    const b = giftPhone();
+    const gift = {
+      id: 'gift_1',
+      fromName: 'Maria',
+      kind: 'item',
+      description: 'vase',
+      thankYouStatus: 'todo',
+      updatedAt: '2027-01-01T00:00:00.000Z',
+    };
+    a.gifts.setState({ gifts: { byId: { gift_1: gift }, allIds: ['gift_1'] } });
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    await b.engine.syncNow();
+    expect(b.gifts.getState().gifts.byId.gift_1.fromName).toBe('Maria');
+
+    b.gifts.setState((state) => ({
+      gifts: {
+        ...state.gifts,
+        byId: {
+          gift_1: { ...state.gifts.byId.gift_1, thankYouStatus: 'sent', updatedAt: '2027-01-02T00:00:00.000Z' },
+        },
+      },
+    }));
+    await b.engine.syncNow();
+    await a.engine.syncNow();
+    expect(a.gifts.getState().gifts.byId.gift_1.thankYouStatus).toBe('sent');
+  });
 });

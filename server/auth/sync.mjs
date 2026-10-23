@@ -31,6 +31,7 @@ export const SYNC_COLLECTIONS = [
   'seatingTables',
   'seatingRules',
   'events',
+  'gifts',
 ];
 
 /**
