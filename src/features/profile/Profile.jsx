@@ -27,6 +27,9 @@ import { WeddingDocuments } from './documents';
 import { CoupleCheckIns } from './checkins';
 import { ProfileBudgetSnapshot } from './budget';
 import { WeddingCountdown } from './countdown';
+import { WeddingPartyRoster } from './party';
+import { WeddingDecisionLog } from './decisions';
+import { WeddingVisionBoard } from './visionBoard';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
@@ -175,6 +178,9 @@ export function Profile() {
         <CoupleGoals />
         <CoupleCheckIns />
         <WeddingDocuments />
+        <WeddingPartyRoster />
+        <WeddingDecisionLog />
+        <WeddingVisionBoard />
         <ProfileShareSummary values={form.values} />
 
         <ProfileSettingsLinks />
