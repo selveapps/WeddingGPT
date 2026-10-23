@@ -320,6 +320,12 @@ Two deliberate choices in the generator:
   sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
   leaves every event's list. Model in `models/events.js`, times in
   `lib/time.js`, screens in `features/events`.
+- **Tasks that wait for others.** On a task, *Wait for another task* links
+  it to what has to happen first ("Send the invitations" waits for the guest
+  list). A waiting task says so, stays off the daily checklist and the next
+  best action until its prerequisites are done, and can still be ticked off.
+  Loops are refused; deleting a task frees what waited for it; a new plan comes
+  with the obvious links. Model in `models/dependencies.js`.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

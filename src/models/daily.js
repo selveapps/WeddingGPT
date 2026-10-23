@@ -1,5 +1,6 @@
 import { TaskPriority } from './enums';
 import { isTaskOpen, isSnoozeActive } from './planning';
+import { isTaskWaiting } from './dependencies';
 import { daysUntil } from '../lib/date';
 
 /**
@@ -12,7 +13,8 @@ import { daysUntil } from '../lib/date';
  *
  * Picking order: anything overdue (oldest first), then what is due in the next
  * two weeks (soonest first), then high priority, then everything else by due
- * date, with undated tasks last. Snoozed tasks wait until their snooze ends.
+ * date, with undated tasks last. Snoozed tasks wait until their snooze ends,
+ * and tasks waiting for others until those are done.
  */
 
 export const DAILY_CHECKLIST_SIZE = 3;
@@ -27,11 +29,25 @@ function rank(task, from) {
   return [4, -(task.monthsBefore ?? 0)];
 }
 
-/** Today's tasks, most pressing first. `exclude` is a list of task ids to skip. */
-export function pickDailyTasks(tasks = [], { from = new Date(), size = DAILY_CHECKLIST_SIZE, exclude = [] } = {}) {
+/**
+ * Today's tasks, most pressing first. `exclude` is a list of task ids to skip;
+ * `assumeDone` ids count as finished when deciding what is still waiting.
+ */
+export function pickDailyTasks(
+  tasks = [],
+  { from = new Date(), size = DAILY_CHECKLIST_SIZE, exclude = [], assumeDone = [] } = {}
+) {
   const skip = new Set(exclude);
+  const byId = new Map(tasks.map((task) => [task.id, task]));
+  const finished = new Set(assumeDone);
   return tasks
-    .filter((task) => isTaskOpen(task) && !isSnoozeActive(task, from) && !skip.has(task.id))
+    .filter(
+      (task) =>
+        isTaskOpen(task) &&
+        !isSnoozeActive(task, from) &&
+        !skip.has(task.id) &&
+        !isTaskWaiting(task, byId, finished)
+    )
     .map((task) => ({ task, key: rank(task, from) }))
     .sort((a, b) => a.key[0] - b.key[0] || a.key[1] - b.key[1])
     .slice(0, size)
@@ -56,7 +72,7 @@ export function planDailyChecklists(tasks = [], { from = new Date(), days = 14, 
     const picked =
       offset === 0 && firstDay
         ? firstDay.filter((task) => isTaskOpen(task))
-        : pickDailyTasks(tasks, { from: date, exclude: used });
+        : pickDailyTasks(tasks, { from: date, exclude: used, assumeDone: used });
     if (picked.length === 0) continue;
     used.push(...picked.map((task) => task.id));
     plan.push({ date, tasks: picked });

@@ -71,6 +71,12 @@ that is briefly empty during a workspace switch never clears invitations.
 but the task shows what it waits for; cycles are refused; the daily checklist
 skips tasks still waiting; plan generation adds the obvious dependencies.
 
+Status: done on `feature/task-dependencies`. Links live on the waiting task
+(`waitsFor`), so they sync with tasks. Two partners can still make a loop by
+linking at the same moment on two phones; everything that reads links copes
+with a loop instead of hanging, and the task screen shows both sides so it can
+be undone.
+
 **C3 Templates** — adding an event of a known kind offers its checklist,
 dated from the event; the couple picks which tasks to add; nothing is added
 without confirming.

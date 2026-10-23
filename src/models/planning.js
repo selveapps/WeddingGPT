@@ -1,6 +1,7 @@
 import { createEntity } from './base';
 import { TaskStatus, TaskPriority, Assignee } from './enums';
 import { daysUntil } from '../lib/date';
+import { isTaskWaiting } from './dependencies';
 
 /**
  * Tasks and task categories.
@@ -47,6 +48,8 @@ export function createTask({
   monthsBefore = null,
   /** The event this task is for, or null for the wedding as a whole. */
   eventId = null,
+  /** Ids of the tasks this one waits for (slice C2). */
+  waitsFor = [],
 } = {}) {
   return createEntity('task', {
     weddingId,
@@ -60,6 +63,7 @@ export function createTask({
     notes,
     isSystemGenerated,
     eventId,
+    waitsFor,
     monthsBefore,
     completedAt: null,
     snoozedUntil: null,
@@ -107,9 +111,13 @@ export function calculateProgress(tasks = []) {
  * Ordering intent, highest first: overdue work, then high-priority work due
  * soon, then whatever is due soonest. Tasks with no due date sort last - they
  * are real, but they are never the most urgent thing on a given morning.
+ * Tasks still waiting for others are never the next thing to do.
  */
 export function selectNextBestAction(tasks = [], from = new Date()) {
-  const candidates = tasks.filter((t) => isTaskOpen(t) && !isSnoozeActive(t, from));
+  const byId = new Map(tasks.map((task) => [task.id, task]));
+  const candidates = tasks.filter(
+    (t) => isTaskOpen(t) && !isSnoozeActive(t, from) && !isTaskWaiting(t, byId)
+  );
   if (candidates.length === 0) return null;
 
   const score = (task) => {

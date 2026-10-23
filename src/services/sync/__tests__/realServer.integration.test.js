@@ -374,7 +374,7 @@ run('sync against the real server', () => {
     expect(b.seating.getState().rules.avoidPairs).toEqual([['g1', 'g2']]);
   });
 
-  it('events, and the tasks and costs that belong to them, sync between phones (C1)', async () => {
+  it('events, and the tasks, task order and costs that belong to them, sync between phones (C1, C2)', async () => {
     const planningPhone = () => {
       const wedding = create(() => ({
         events: { byId: {}, allIds: [] },
@@ -411,7 +411,13 @@ run('sync against the real server', () => {
     };
     a.wedding.setState({
       events: { byId: { event_1: mehndi }, allIds: ['event_1'] },
-      tasks: { byId: { task_1: { id: 'task_1', title: 'Book henna', eventId: 'event_1' } }, allIds: ['task_1'] },
+      tasks: {
+        byId: {
+          task_1: { id: 'task_1', title: 'Book henna', eventId: 'event_1' },
+          task_2: { id: 'task_2', title: 'Confirm henna design', waitsFor: ['task_1'] },
+        },
+        allIds: ['task_1', 'task_2'],
+      },
       expenses: {
         byId: { exp_1: { id: 'exp_1', title: 'Henna artist', amount: 300, eventId: 'event_1' } },
         allIds: ['exp_1'],
@@ -422,6 +428,7 @@ run('sync against the real server', () => {
     await b.engine.syncNow();
     expect(b.wedding.getState().events.byId.event_1).toMatchObject({ name: 'Mehndi', invitedGuestIds: ['g1', 'g2'] });
     expect(b.wedding.getState().tasks.byId.task_1.eventId).toBe('event_1');
+    expect(b.wedding.getState().tasks.byId.task_2.waitsFor).toEqual(['task_1']);
     expect(b.wedding.getState().expenses.byId.exp_1.eventId).toBe('event_1');
 
     // Phone B deletes the event and unassigns its task; phone A follows.
@@ -429,7 +436,10 @@ run('sync against the real server', () => {
       events: { byId: {}, allIds: [] },
       tasks: {
         ...state.tasks,
-        byId: { task_1: { ...state.tasks.byId.task_1, eventId: null, updatedAt: '2027-01-02T00:00:00.000Z' } },
+        byId: {
+          ...state.tasks.byId,
+          task_1: { ...state.tasks.byId.task_1, eventId: null, updatedAt: '2027-01-02T00:00:00.000Z' },
+        },
       },
     }));
     await b.engine.syncNow();

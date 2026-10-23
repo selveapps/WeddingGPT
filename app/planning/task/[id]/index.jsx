@@ -30,6 +30,7 @@ import {
   isSnoozeActive,
 } from '@/models';
 import { formatLongDate, formatRelativeDay } from '@/lib/date';
+import { TaskDependencies } from '@/features/planning/TaskDependencies';
 
 /** Snooze lengths offered on the sheet. Anything longer is really a new date. */
 const SNOOZE_OPTIONS = [
@@ -243,6 +244,8 @@ export default function TaskDetailScreen() {
             />
           ) : null}
         </Card>
+
+        <TaskDependencies task={task} />
 
         {/* --- Notes -------------------------------------------------------- */}
         <Stack gap="xs">

@@ -15,6 +15,8 @@ import {
   deriveFromCollection,
   TaskStatus,
   DEFAULT_TASK_CATEGORIES,
+  dependencyError,
+  pruneDependencies,
 } from '../models';
 import { addDays, todayISO } from '../lib/date';
 
@@ -157,8 +159,35 @@ export const usePlanningStore = create()(
       },
 
       deleteTask(id) {
-        set((state) => ({ tasks: removeById(state.tasks, id) }));
+        // Tasks that waited for this one stop waiting rather than point at nothing.
+        const unlinked = pruneDependencies(denormalise(get().tasks), [id]).map(({ id: taskId, waitsFor }) =>
+          touchEntity(get().tasks.byId[taskId], { waitsFor })
+        );
+        set((state) => ({ tasks: upsertMany(removeById(state.tasks, id), unlinked) }));
         analytics.track(AnalyticsEvents.TASK_DELETED, { taskId: id });
+      },
+
+      // --- Dependencies (slice C2) --------------------------------------------
+      /**
+       * Make `taskId` wait for `prerequisiteId`. Returns `{ ok: true }`, or
+       * `{ ok: false, error }` when the link is refused (a loop, a repeat, too many).
+       */
+      addPrerequisite(taskId, prerequisiteId) {
+        const error = dependencyError(taskId, prerequisiteId, denormalise(get().tasks));
+        if (error) return { ok: false, error };
+        const task = get().tasks.byId[taskId];
+        const updated = touchEntity(task, { waitsFor: [...(task.waitsFor ?? []), prerequisiteId] });
+        set((state) => ({ tasks: upsert(state.tasks, updated) }));
+        analytics.track(AnalyticsEvents.TASK_DEPENDENCY_ADDED, { taskId });
+        return { ok: true };
+      },
+
+      removePrerequisite(taskId, prerequisiteId) {
+        const task = get().tasks.byId[taskId];
+        if (!task || !(task.waitsFor ?? []).includes(prerequisiteId)) return false;
+        const updated = touchEntity(task, { waitsFor: task.waitsFor.filter((id) => id !== prerequisiteId) });
+        set((state) => ({ tasks: upsert(state.tasks, updated) }));
+        return true;
       },
 
       // --- Categories -------------------------------------------------------
