@@ -6,7 +6,9 @@ import {
   quizResult,
   rankPalettes,
   styleBrief,
-} from '../model';
+  topStyleKeys,
+  moodItemsToVisionIdeas,
+} from '../styleQuiz';
 
 const RUSTIC = { setting: 'barn', mood: 'calm', dress: 'flowing', table: 'long', detail: 'lighting' };
 
@@ -59,4 +61,41 @@ it('writes a brief with style, palette, notes and links', () => {
   expect(brief).toContain('Palette: Ivory and gilt');
   expect(brief).toContain('- Candles on every table');
   expect(brief).toContain('- https://pinterest.com/us');
+});
+
+describe('topStyleKeys', () => {
+  it('saves the winner, and the runner-up only when it is close', () => {
+    expect(topStyleKeys({})).toEqual([]);
+    expect(topStyleKeys(RUSTIC)).toEqual(['rustic']);
+    // A ballroom weighs classic and glamour equally.
+    expect(topStyleKeys({ setting: 'ballroom' })).toEqual(['classic', 'glamour']);
+    // Garden 3, whimsical 2: not close enough to save both.
+    expect(topStyleKeys({ setting: 'garden', detail: 'music' })).toEqual(['garden']);
+  });
+});
+
+describe('moodItemsToVisionIdeas', () => {
+  it('turns notes and links into vision board ideas', () => {
+    const long = 'Candles on every table, '.repeat(6).trim();
+    const ideas = moodItemsToVisionIdeas([
+      { kind: MoodItemKind.NOTE, text: ' Peonies, not roses ' },
+      { kind: MoodItemKind.LINK, text: 'https://pinterest.com/us' },
+      { kind: MoodItemKind.NOTE, text: long },
+      { kind: MoodItemKind.NOTE, text: '   ' },
+    ]);
+    expect(ideas).toHaveLength(3);
+    expect(ideas[0]).toEqual({ title: 'Peonies, not roses', category: 'other', moods: [], note: '' });
+    expect(ideas[1]).toMatchObject({ title: 'Inspiration link', note: 'https://pinterest.com/us' });
+    expect(ideas[2].title.length).toBeLessThanOrEqual(90);
+    expect(ideas[2].title.endsWith('…')).toBe(true);
+    expect(ideas[2].note).toBe(long);
+  });
+});
+
+it('puts vision board ideas in the brief', () => {
+  const brief = styleBrief({
+    answers: RUSTIC,
+    ideas: [{ title: 'Peonies', note: 'Blush, loose' }, { title: 'Sparklers' }],
+  });
+  expect(brief).toContain('Ideas we have saved:\n- Peonies: Blush, loose\n- Sparklers');
 });
