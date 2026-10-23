@@ -1,7 +1,6 @@
-import { VendorStatus } from '@/models';
+import { VendorStatus, paymentsFromMilestones } from '@/models';
 import { formatMoney } from '@/lib/currency';
 import { formatMediumDate } from '@/lib/date';
-import { createId } from '@/lib/id';
 
 import { findDates } from '../shared/dates';
 import { findAmounts, findPercents } from '../shared/money';
@@ -47,7 +46,11 @@ Cancellations within 60 days of the event forfeit all payments.
 Quote valid until January 31, 2027.`;
 
 function explicitAmount(line) {
-  return findAmounts(line).filter((amount) => amount.explicit).pop() ?? null;
+  return (
+    findAmounts(line)
+      .filter((amount) => amount.explicit)
+      .pop() ?? null
+  );
 }
 
 function lineLabel(line, amount) {
@@ -134,15 +137,22 @@ export function extractQuote(text, { from = new Date() } = {}) {
       `Line items add up to ${formatMoney(itemsSum)}, but the quote says ${formatMoney(reference)}. Ask what the difference covers.`
     );
   }
-  if (result.expiresOn && result.expiresOn < (result.dates.find((d) => d.label === 'Deposit due')?.iso ?? '9999')) {
-    result.warnings.push(`The quote expires ${formatMediumDate(result.expiresOn)} - before the deposit is due.`);
+  if (
+    result.expiresOn &&
+    result.expiresOn < (result.dates.find((d) => d.label === 'Deposit due')?.iso ?? '9999')
+  ) {
+    result.warnings.push(
+      `The quote expires ${formatMediumDate(result.expiresOn)} - before the deposit is due.`
+    );
   }
 
   return result;
 }
 
 export function hasFindings(result) {
-  return Boolean(result && (result.total || result.lineItems.length || result.dates.length || result.finePrint.length));
+  return Boolean(
+    result && (result.total || result.lineItems.length || result.dates.length || result.finePrint.length)
+  );
 }
 
 /** A tidy summary for the couple's notes or their partner. */
@@ -150,35 +160,39 @@ export function quoteSummary(result) {
   const lines = [result.vendorName ? `${result.vendorName} - quote summary` : 'Quote summary', ''];
   if (result.total !== null) lines.push(`Total: ${formatMoney(result.total)}`);
   if (result.deposit !== null) {
-    lines.push(`Deposit: ${formatMoney(result.deposit)}${result.depositPercent ? ` (${result.depositPercent}%)` : ''}`);
+    lines.push(
+      `Deposit: ${formatMoney(result.deposit)}${result.depositPercent ? ` (${result.depositPercent}%)` : ''}`
+    );
   }
   if (result.balance !== null) lines.push(`Balance: ${formatMoney(result.balance)}`);
   for (const date of result.dates) lines.push(`${date.label}: ${formatMediumDate(date.iso)}`);
   if (result.expiresOn) lines.push(`Quote valid until: ${formatMediumDate(result.expiresOn)}`);
-  if (result.finePrint.length) lines.push('', 'Read carefully:', ...result.finePrint.map((f) => `- ${f.line}`));
+  if (result.finePrint.length)
+    lines.push('', 'Read carefully:', ...result.finePrint.map((f) => `- ${f.line}`));
   if (result.warnings.length) lines.push('', 'Questions to ask:', ...result.warnings.map((w) => `- ${w}`));
   return lines.join('\n');
 }
 
 /** Fields for a Labs vendor-manager entry, with the quote's own payment dates. */
-export function toLabVendor(result, categoryKey) {
+/**
+ * The fields the real vendor store's `addVendor` takes, for this quote. The
+ * deposit and balance become the vendor's payment plan.
+ */
+export function toVendorDraft(result, categoryKey) {
   const total = result.total ?? 0;
   const deposit = Math.min(result.deposit ?? 0, total);
   const due = (label) => result.dates.find((date) => date.label === label)?.iso ?? null;
-  const payments = [];
-  if (deposit > 0) {
-    payments.push({ id: createId('pay'), label: 'Deposit', amount: deposit, dueDate: due('Deposit due'), paidAt: null });
-  }
-  if (total - deposit > 0) {
-    payments.push({ id: createId('pay'), label: 'Balance', amount: total - deposit, dueDate: due('Balance due'), paidAt: null });
-  }
   return {
     name: result.vendorName || 'New vendor',
     categoryKey,
     status: VendorStatus.QUOTED,
-    contractTotal: total,
-    payments,
-    expenseId: null,
-    bookedAt: null,
+    quotedAmount: total > 0 ? total : null,
+    payments: paymentsFromMilestones({
+      quotedAmount: total,
+      depositAmount: deposit || null,
+      depositDueAt: due('Deposit due'),
+      finalAmount: total - deposit > 0 ? total - deposit : null,
+      finalDueAt: due('Balance due'),
+    }),
   };
 }

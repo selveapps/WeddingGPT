@@ -15,18 +15,20 @@ import {
   useToast,
 } from '@/design-system/components';
 import { VENDOR_CATEGORIES } from '@/models';
+import { useVendorStore, useWeddingStore, selectWedding } from '@/store';
+import { Routes } from '@/navigation/routes';
 import { formatMoney } from '@/lib/currency';
 import { formatMediumDate } from '@/lib/date';
 
 import { LabScreen } from '../shared/LabScreen';
 import { shareText } from '../shared/share';
-import { useLabVendorStore } from '../vendors/store';
-import { SAMPLE_QUOTE, extractQuote, hasFindings, quoteSummary, toLabVendor } from './model';
+import { SAMPLE_QUOTE, extractQuote, hasFindings, quoteSummary, toVendorDraft } from './model';
 
 export default function QuoteReaderScreen() {
   const router = useRouter();
   const toast = useToast();
-  const addVendor = useLabVendorStore((state) => state.add);
+  const addVendor = useVendorStore((state) => state.addVendor);
+  const wedding = useWeddingStore(selectWedding);
 
   const [text, setText] = useState('');
   const [categoryKey, setCategoryKey] = useState(null);
@@ -38,9 +40,9 @@ export default function QuoteReaderScreen() {
   };
 
   const saveToVendors = () => {
-    addVendor(toLabVendor(result, categoryKey));
-    toast.success('Saved to the Labs vendor manager');
-    router.push('/labs/vendors');
+    const vendor = addVendor({ ...toVendorDraft(result, categoryKey), weddingId: wedding?.id ?? null });
+    toast.success('Saved to your vendors');
+    router.push(Routes.vendorDetail(vendor.id));
   };
 
   return (
@@ -100,13 +102,22 @@ export default function QuoteReaderScreen() {
               <SectionHeader title="Dates" />
               <Card padding="none">
                 {result.dates.map((date) => (
-                  <ListRow key={`${date.label}-${date.iso}`} title={date.label} meta={formatMediumDate(date.iso)} showChevron={false} />
+                  <ListRow
+                    key={`${date.label}-${date.iso}`}
+                    title={date.label}
+                    meta={formatMediumDate(date.iso)}
+                    showChevron={false}
+                  />
                 ))}
                 {result.eventDate ? (
                   <ListRow title="Event date" meta={formatMediumDate(result.eventDate)} showChevron={false} />
                 ) : null}
                 {result.expiresOn ? (
-                  <ListRow title="Quote valid until" meta={formatMediumDate(result.expiresOn)} showChevron={false} />
+                  <ListRow
+                    title="Quote valid until"
+                    meta={formatMediumDate(result.expiresOn)}
+                    showChevron={false}
+                  />
                 ) : null}
               </Card>
             </Stack>
@@ -144,7 +155,10 @@ export default function QuoteReaderScreen() {
           ) : null}
 
           <Stack gap="sm">
-            <SectionHeader title="Save it" subtitle="Pick a category to add this vendor to the Labs vendor manager." />
+            <SectionHeader
+              title="Save it"
+              subtitle="Pick a category to add this vendor to your vendor list."
+            />
             <Row gap="xs" wrap>
               {VENDOR_CATEGORIES.map((category) => (
                 <Chip
@@ -156,7 +170,11 @@ export default function QuoteReaderScreen() {
                 />
               ))}
             </Row>
-            <Button label="Save to vendor manager" onPress={saveToVendors} disabled={!categoryKey || !result.total} />
+            <Button
+              label="Save to my vendors"
+              onPress={saveToVendors}
+              disabled={!categoryKey || !result.total}
+            />
             <Button label="Share summary" variant="secondary" iconLeft="send" onPress={share} />
           </Stack>
         </>

@@ -109,6 +109,7 @@ app/                       Routes. File-based, via expo-router.
   budget/                  setup, category/[id], expense/new, expense/[id]
   guests/                  new, [id], household/[id]
   account/                 Account (sign-in status), sign-in, reminders
+  vendors/                 list, new, [id], [id]/edit
 
 src/
   design-system/
@@ -282,6 +283,14 @@ Two deliberate choices in the generator:
   *Invite your partner* (native share sheet; set `EXPO_PUBLIC_INVITE_URL` to
   include a link) and *Venues and vendors* (`app/home/local.jsx`), which saves
   the wedding city and opens map searches per vendor category.
+- **Vendors.** *Your vendors* on Home opens `/vendors`: the couple's
+  shortlist, with status, quote, contact details and a deposit/balance payment
+  plan. Payments are ticked off as paid, upcoming ones are listed with overdue
+  flags, and a booked vendor can be added to the budget as a committed
+  expense. The model and payment maths are in `models/vendors.js`, the store
+  in `store/vendorStore.js` (in the launch hydration gate), the screens in
+  `features/vendors`. This graduated the Labs vendor manager; anything saved
+  there is imported once, the first time Vendors opens.
 - **Famous venues.** `models/venues.js` holds a hand-picked list of
   well-known wedding venues for about 20 major US metros (matched by city,
   neighbourhood or suburb). They show on Home, on the plan reveal and on the

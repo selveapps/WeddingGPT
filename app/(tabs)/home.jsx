@@ -25,6 +25,7 @@ import {
   useBudgetStore,
   useGuestStore,
   useNotificationStore,
+  useVendorStore,
   selectWedding,
   selectCouple,
   selectAllTasks,
@@ -32,6 +33,7 @@ import {
   selectBudgetTotal,
   selectAllGuests,
   selectNotificationPromptDismissed,
+  selectAllVendors,
 } from '@/store';
 import {
   calculateProgress,
@@ -40,6 +42,7 @@ import {
   coupleDisplayName,
   hasExactDate,
   recommendLocalPicks,
+  summariseVendors,
 } from '@/models';
 import { daysUntil, formatLongDate } from '@/lib/date';
 import { formatMoneyCompact } from '@/lib/currency';
@@ -85,6 +88,7 @@ export default function HomeScreen() {
   const expenses = useBudgetStore(selectAllExpenses);
   const budgetTotal = useBudgetStore(selectBudgetTotal);
   const guests = useGuestStore(selectAllGuests);
+  const vendors = useVendorStore(selectAllVendors);
   const updateWedding = useWeddingStore((state) => state.updateWedding);
   const updateCouple = useWeddingStore((state) => state.updateCouple);
   const promptDismissed = useNotificationStore(selectNotificationPromptDismissed);
@@ -101,6 +105,7 @@ export default function HomeScreen() {
   const progress = useMemo(() => calculateProgress(tasks), [tasks]);
   const budget = useMemo(() => summariseBudget(budgetTotal, expenses), [budgetTotal, expenses]);
   const rsvps = useMemo(() => summariseRsvps(guests), [guests]);
+  const vendorSummary = useMemo(() => summariseVendors(vendors), [vendors]);
   const localPicks = useMemo(
     () =>
       recommendLocalPicks({ weddingDate: wedding?.date ?? null, tasks })
@@ -284,6 +289,16 @@ export default function HomeScreen() {
 
         {/* --- Together and nearby ----------------------------------------- */}
         <Card padding="none">
+          <ListRow
+            icon="vendors"
+            title="Your vendors"
+            subtitle={
+              vendorSummary.total
+                ? `${vendorSummary.booked} of ${vendorSummary.total} booked`
+                : 'Track quotes, bookings and payments'
+            }
+            onPress={() => router.push(Routes.vendors)}
+          />
           <ListRow
             icon="userPlus"
             title={invited ? `Invited ${partnerName || 'your partner'}` : 'Invite your partner'}

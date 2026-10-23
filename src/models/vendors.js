@@ -1,5 +1,6 @@
 import { createEntity } from './base';
-import { VendorStatus, TaskStatus } from './enums';
+import { VendorStatus, TaskStatus, PaymentStatus, ExpenseCommitment } from './enums';
+import { daysUntil } from '../lib/date';
 
 /**
  * Vendors, their categories, quotes and notes.
@@ -164,6 +165,14 @@ export function createVendor({
   priceHint = null,
   rating = null,
   notes = '',
+  quotedAmount = null,
+  quoteScope = '',
+  quoteValidUntil = null,
+  meetingAt = null,
+  payments = [],
+  expenseId = null,
+  bookedAt = null,
+  lastContactedAt = null,
 } = {}) {
   return createEntity('vendor', {
     weddingId,
@@ -180,9 +189,184 @@ export function createVendor({
     priceHint,
     rating,
     notes,
-    bookedAt: null,
-    lastContactedAt: null,
+    /** The quoted or contracted price, in minor units. Payments are split from it. */
+    quotedAmount,
+    /** What the quote actually covers - vital when comparing two vendors. */
+    quoteScope,
+    quoteValidUntil,
+    meetingAt,
+    /** `[{ id, label, amount, dueDate, paidAt }]` - see `paymentsFromMilestones`. */
+    payments,
+    /** The budget expense created from this vendor, once there is one. */
+    expenseId,
+    bookedAt,
+    lastContactedAt,
   });
+}
+
+// --- Payments ------------------------------------------------------------------
+//
+// A vendor's price is split into a deposit and a final balance. They are kept
+// as a list of payments with stable ids, so marking one paid survives editing
+// the amounts, and a third instalment can be added later without a migration.
+
+export const PaymentId = {
+  DEPOSIT: 'deposit',
+  BALANCE: 'balance',
+};
+
+const PAYMENT_LABELS = {
+  [PaymentId.DEPOSIT]: 'Deposit',
+  [PaymentId.BALANCE]: 'Final balance',
+};
+
+/**
+ * Build the payment list from the form's deposit and balance fields.
+ *
+ * The balance defaults to whatever the deposit leaves of the quote. A payment
+ * keeps its `paidAt` from `existing`, so editing a due date does not un-pay it.
+ * Payments with neither an amount nor a date are left out.
+ */
+export function paymentsFromMilestones(
+  {
+    quotedAmount = null,
+    depositAmount = null,
+    depositDueAt = null,
+    finalAmount = null,
+    finalDueAt = null,
+  } = {},
+  existing = []
+) {
+  const paidAt = (id) => existing.find((payment) => payment.id === id)?.paidAt ?? null;
+  const balance = finalAmount ?? (quotedAmount > 0 ? Math.max(0, quotedAmount - (depositAmount ?? 0)) : null);
+
+  return [
+    { id: PaymentId.DEPOSIT, amount: depositAmount, dueDate: depositDueAt },
+    { id: PaymentId.BALANCE, amount: balance, dueDate: finalDueAt },
+  ]
+    .filter((payment) => payment.amount > 0 || payment.dueDate)
+    .map((payment) => ({
+      ...payment,
+      label: PAYMENT_LABELS[payment.id],
+      amount: payment.amount ?? 0,
+      paidAt: paidAt(payment.id),
+    }));
+}
+
+/** The form's deposit and balance fields, read back from a vendor's payments. */
+export function milestonesFromPayments(vendor) {
+  const find = (id) => (vendor?.payments ?? []).find((payment) => payment.id === id);
+  const deposit = find(PaymentId.DEPOSIT);
+  const balance = find(PaymentId.BALANCE);
+  return {
+    depositAmount: deposit?.amount || null,
+    depositDueAt: deposit?.dueDate ?? null,
+    finalAmount: balance?.amount || null,
+    finalDueAt: balance?.dueDate ?? null,
+  };
+}
+
+export function paymentTotals(vendor) {
+  const payments = vendor?.payments ?? [];
+  const scheduled = payments.reduce((sum, payment) => sum + (payment.amount ?? 0), 0);
+  const total = vendor?.quotedAmount ?? scheduled;
+  const paid = payments.filter((payment) => payment.paidAt).reduce((sum, payment) => sum + payment.amount, 0);
+  return { total, paid, outstanding: Math.max(0, total - paid) };
+}
+
+export function derivePaymentStatus(vendor) {
+  const { total, paid } = paymentTotals(vendor);
+  if (total > 0 && paid >= total) return PaymentStatus.PAID;
+  if (paid === 0) return PaymentStatus.UNPAID;
+  const onlyDeposit = (vendor.payments ?? []).every(
+    (payment) => Boolean(payment.paidAt) === (payment.id === PaymentId.DEPOSIT)
+  );
+  return onlyDeposit ? PaymentStatus.DEPOSIT_PAID : PaymentStatus.PARTIALLY_PAID;
+}
+
+/** Unpaid payments for booked vendors, soonest first; undated ones last. */
+export function upcomingVendorPayments(vendors = [], { from = new Date(), limit = 5 } = {}) {
+  const rows = [];
+  for (const vendor of vendors) {
+    if (vendor.status !== VendorStatus.BOOKED) continue;
+    for (const payment of vendor.payments ?? []) {
+      if (payment.paidAt || !(payment.amount > 0)) continue;
+      const days = payment.dueDate ? daysUntil(payment.dueDate, from) : null;
+      rows.push({
+        ...payment,
+        key: `${vendor.id}:${payment.id}`,
+        vendorId: vendor.id,
+        vendorName: vendor.name,
+        daysUntil: days,
+        overdue: days !== null && days < 0,
+      });
+    }
+  }
+
+  rows.sort((a, b) => {
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return 0;
+  });
+
+  return rows.slice(0, limit);
+}
+
+/**
+ * The fields `useBudgetStore().addExpense` takes, for a vendor. Booked means
+ * contractually owed, so it lands as committed; anything earlier is an estimate.
+ */
+export function vendorToExpenseDraft(vendor, weddingId) {
+  const { total, paid } = paymentTotals(vendor);
+  const nextDue = (vendor.payments ?? []).find((payment) => !payment.paidAt)?.dueDate ?? null;
+  const category = VENDOR_CATEGORIES.find((item) => item.key === vendor.categoryKey);
+
+  return {
+    weddingId,
+    vendorId: vendor.id,
+    vendorName: vendor.name,
+    title: category ? `${vendor.name} (${category.name})` : vendor.name,
+    amount: total,
+    paidAmount: paid,
+    paymentStatus: derivePaymentStatus(vendor),
+    commitment:
+      vendor.status === VendorStatus.BOOKED ? ExpenseCommitment.COMMITTED : ExpenseCommitment.ESTIMATED,
+    dueDate: nextDue,
+  };
+}
+
+/**
+ * Map a vendor saved by the Labs vendor manager (or the Labs quote reader) to
+ * the fields `createVendor` takes. Labs used `contractTotal` and random payment
+ * ids labelled "Deposit" and "Balance".
+ */
+export function vendorFieldsFromLab(lab, weddingId = null) {
+  const payments = (lab?.payments ?? []).map((payment) => {
+    const id = /deposit/i.test(payment.label ?? '')
+      ? PaymentId.DEPOSIT
+      : /balance/i.test(payment.label ?? '')
+        ? PaymentId.BALANCE
+        : payment.id;
+    return {
+      id,
+      label: PAYMENT_LABELS[id] ?? payment.label ?? 'Payment',
+      amount: payment.amount ?? 0,
+      dueDate: payment.dueDate ?? null,
+      paidAt: payment.paidAt ?? null,
+    };
+  });
+
+  return {
+    weddingId: lab?.weddingId ?? weddingId,
+    categoryKey: lab?.categoryKey ?? null,
+    name: lab?.name?.trim() || 'Vendor',
+    status: Object.values(VendorStatus).includes(lab?.status) ? lab.status : VendorStatus.SAVED,
+    quotedAmount: lab?.contractTotal > 0 ? lab.contractTotal : null,
+    payments,
+    expenseId: lab?.expenseId ?? null,
+    bookedAt: lab?.bookedAt ?? null,
+  };
 }
 
 export function createQuote({

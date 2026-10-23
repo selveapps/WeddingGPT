@@ -105,6 +105,14 @@ export {
   summariseVendors,
   localSearchQuery,
   recommendLocalPicks,
+  PaymentId,
+  paymentsFromMilestones,
+  milestonesFromPayments,
+  paymentTotals,
+  derivePaymentStatus,
+  upcomingVendorPayments,
+  vendorToExpenseDraft,
+  vendorFieldsFromLab,
 } from './vendors';
 export {
   DAILY_CHECKLIST_SIZE,

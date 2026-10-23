@@ -1,6 +1,6 @@
 import { VendorStatus } from '@/models';
 
-import { SAMPLE_QUOTE, extractQuote, hasFindings, quoteSummary, toLabVendor } from '../model';
+import { SAMPLE_QUOTE, extractQuote, hasFindings, quoteSummary, toVendorDraft } from '../model';
 
 const FROM = new Date(2027, 0, 10);
 
@@ -48,7 +48,9 @@ it('warns when line items do not add up', () => {
 });
 
 it('accepts a total that includes listed tax and fees', () => {
-  const result = extractQuote('Dinner: $5,000\nService charge: $1,000\nSubtotal: $5,000\nTotal: $6,000', { from: FROM });
+  const result = extractQuote('Dinner: $5,000\nService charge: $1,000\nSubtotal: $5,000\nTotal: $6,000', {
+    from: FROM,
+  });
   expect(result.warnings).toEqual([]);
   expect(result.total).toBe(600000);
 });
@@ -64,10 +66,14 @@ it('handles empty input', () => {
 it('summarises and converts to a vendor with the quoted dates', () => {
   const result = extractQuote(SAMPLE_QUOTE, { from: FROM });
   expect(quoteSummary(result)).toContain('Deposit: $1,110 (30%)');
-  const vendor = toLabVendor(result, 'florals');
-  expect(vendor).toMatchObject({ name: 'Rosewood Florals', status: VendorStatus.QUOTED, contractTotal: 370000 });
+  const vendor = toVendorDraft(result, 'florals');
+  expect(vendor).toMatchObject({
+    name: 'Rosewood Florals',
+    status: VendorStatus.QUOTED,
+    quotedAmount: 370000,
+  });
   expect(vendor.payments.map((p) => [p.label, p.amount, p.dueDate])).toEqual([
     ['Deposit', 111000, '2027-02-15'],
-    ['Balance', 259000, '2027-06-05'],
+    ['Final balance', 259000, '2027-06-05'],
   ]);
 });

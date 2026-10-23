@@ -8,13 +8,6 @@
  */
 export const LAB_FEATURES = [
   {
-    key: 'vendors',
-    title: 'Vendor manager',
-    blurb: 'Track each vendor from saved to booked, with deposits and balances.',
-    icon: 'vendors',
-    route: '/labs/vendors',
-  },
-  {
     key: 'style',
     title: 'Style studio',
     blurb: 'A five-question style quiz, palette picks and a shareable moodboard.',
