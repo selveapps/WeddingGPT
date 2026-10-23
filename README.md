@@ -298,6 +298,12 @@ Two deliberate choices in the generator:
   Save it as a new vendor, or as an existing vendor's quote and payment plan
   (payments already made are kept). Model in `models/quoteReader.js`.
   Graduated from Labs.
+- **Backup and restore.** *Account > Backup* downloads every part of the plan
+  that syncs as one checked file, and restores one: the backup replaces the
+  phone's own plan after showing what is in it (never a synced wedding, which
+  the account keeps). Works without an account. The file is checked as
+  untrusted input before anything is written. Model in `models/backup.js`.
+  Replaces the Labs backup and partner sync, which real sync has superseded.
 - **Famous venues.** `models/venues.js` holds a hand-picked list of
   well-known wedding venues for about 20 major US metros (matched by city,
   neighbourhood or suburb). They show on Home, on the plan reveal and on the
