@@ -301,6 +301,8 @@ export {
   sortEvents,
   eventGuests,
   eventGuestSummary,
+  EventAttendance,
+  guestEventStatus,
   clockFromInput,
   validateEvent,
   eventWhen,

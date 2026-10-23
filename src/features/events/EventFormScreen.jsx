@@ -91,7 +91,7 @@ export function EventFormScreen({ eventId }) {
     );
   }
 
-  const summary = eventGuestSummary({ guestScope, invitedGuestIds }, guests);
+  const summary = eventGuestSummary({ guestScope, invitedGuestIds, attendance: existing?.attendance }, guests);
 
   const clearError = (key) => {
     if (errors[key]) setErrors((current) => ({ ...current, [key]: undefined }));

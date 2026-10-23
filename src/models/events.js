@@ -63,6 +63,8 @@ export function createWeddingEvent({
   notes = '',
   guestScope = GuestScope.EVERYONE,
   invitedGuestIds = [],
+  /** `{ [guestId]: 'attending' | 'declined' }` from guests' per-event replies (slice F1). */
+  attendance = {},
   order = 0,
 } = {}) {
   return createEntity('event', {
@@ -78,6 +80,7 @@ export function createWeddingEvent({
     notes,
     guestScope,
     invitedGuestIds,
+    attendance,
     order,
   });
 }
@@ -106,17 +109,28 @@ export function eventGuests(event, guests = []) {
   return guests.filter((guest) => invited.has(guest.id));
 }
 
-/** Invited, and their (wedding-wide) replies so far. */
+export const EventAttendance = { ATTENDING: 'attending', DECLINED: 'declined' };
+
+/**
+ * A guest's answer for one event: their per-event reply when they gave one
+ * (F1), otherwise their reply for the wedding as a whole.
+ */
+export function guestEventStatus(event, guest) {
+  const own = event?.attendance?.[guest.id];
+  if (own === EventAttendance.ATTENDING) return RsvpStatus.ATTENDING;
+  if (own === EventAttendance.DECLINED) return RsvpStatus.DECLINED;
+  return guest.rsvpStatus;
+}
+
+/** Invited, and their replies so far - for this event where they answered for it. */
 export function eventGuestSummary(event, guests = []) {
   const invited = eventGuests(event, guests);
-  const count = (status) => invited.filter((guest) => guest.rsvpStatus === status).length;
+  const statuses = invited.map((guest) => guestEventStatus(event, guest));
   return {
     invited: invited.length,
-    attending: count(RsvpStatus.ATTENDING),
-    declined: count(RsvpStatus.DECLINED),
-    awaiting: invited.filter(
-      (guest) => guest.rsvpStatus !== RsvpStatus.ATTENDING && guest.rsvpStatus !== RsvpStatus.DECLINED
-    ).length,
+    attending: statuses.filter((status) => status === RsvpStatus.ATTENDING).length,
+    declined: statuses.filter((status) => status === RsvpStatus.DECLINED).length,
+    awaiting: statuses.filter((status) => status !== RsvpStatus.ATTENDING && status !== RsvpStatus.DECLINED).length,
   };
 }
 

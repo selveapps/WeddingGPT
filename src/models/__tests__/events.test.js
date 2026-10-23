@@ -6,6 +6,7 @@ import {
   createGuest,
   createWeddingEvent,
   eventGuestSummary,
+  guestEventStatus,
   eventGuests,
   eventName,
   eventWhen,
@@ -178,5 +179,37 @@ describe('website schedule from events', () => {
     const once = mergeWebsiteSchedule([], [mehndi, ceremony]);
     expect(mergeWebsiteSchedule(once, [mehndi, ceremony])).toEqual(once);
     expect(mergeWebsiteSchedule([{ id: 'item_1', name: 'Mine' }], [mehndi, ceremony], 2)).toHaveLength(2);
+  });
+});
+
+describe('per-event answers (F1)', () => {
+  const going = createGuest({ firstName: 'A', rsvpStatus: RsvpStatus.ATTENDING });
+  const quiet = createGuest({ firstName: 'B' });
+
+  it('prefers the answer for this event over the wedding-wide one', () => {
+    const brunch = event({ attendance: { [going.id]: 'declined', [quiet.id]: 'attending' } });
+    expect(guestEventStatus(brunch, going)).toBe(RsvpStatus.DECLINED);
+    expect(guestEventStatus(brunch, quiet)).toBe(RsvpStatus.ATTENDING);
+    expect(guestEventStatus(event({}), going)).toBe(RsvpStatus.ATTENDING);
+    expect(eventGuestSummary(brunch, [going, quiet])).toEqual({
+      invited: 2,
+      attending: 1,
+      declined: 1,
+      awaiting: 0,
+    });
+  });
+
+  it('ignores answers from guests no longer on the event', () => {
+    const smaller = event({
+      guestScope: GuestScope.INVITED,
+      invitedGuestIds: [quiet.id],
+      attendance: { [going.id]: 'attending' },
+    });
+    expect(eventGuestSummary(smaller, [going, quiet])).toEqual({
+      invited: 1,
+      attending: 0,
+      declined: 0,
+      awaiting: 1,
+    });
   });
 });

@@ -665,4 +665,102 @@ run('sync against the real server', () => {
       code: 'invalid_credentials',
     });
   });
+
+  it('a guest answers each event and the couple’s event counts follow (F1)', async () => {
+    const response = await nodeFetch(`${URL_}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.6.${Date.now() % 250}.1` },
+      body: JSON.stringify({
+        name: 'multi',
+        email: `multi-${Date.now()}@example.com`,
+        password: 'integration-pass',
+      }),
+    });
+    const couple = await response.json();
+    const wedding = await client.createWorkspace(couple.token, 'Several events');
+
+    const collection = (records) => ({
+      byId: Object.fromEntries(records.map((r) => [r.id, r])),
+      allIds: records.map((r) => r.id),
+    });
+    const patchable = (key) => (set, get) => (id, patch) =>
+      set({
+        [key]: { ...get()[key], byId: { ...get()[key].byId, [id]: { ...get()[key].byId[id], ...patch } } },
+      });
+    const guests = create((set, get) => ({
+      guests: collection([{ id: 'g_nina', firstName: 'Nina', rsvpStatus: 'pending' }]),
+      updateGuest: patchable('guests')(set, get),
+    }));
+    const events = create((set, get) => ({
+      events: collection([
+        { id: 'ev_mehndi', name: 'Mehndi', date: '2027-05-07', guestScope: 'everyone' },
+        { id: 'ev_reception', name: 'Reception', date: '2027-05-08', guestScope: 'everyone' },
+      ]),
+      applyAttendance: (byEvent) => {
+        for (const [id, answers] of Object.entries(byEvent)) {
+          const event = get().events.byId[id];
+          if (event)
+            patchable('events')(set, get)(id, { attendance: { ...(event.attendance ?? {}), ...answers } });
+        }
+      },
+    }));
+    const replies = create((set, get) => ({
+      responses: { byId: {}, allIds: [] },
+      applied: {},
+      markApplied: (entries) =>
+        set({
+          applied: { ...get().applied, ...Object.fromEntries(entries.map((e) => [e.id, e.submittedAt])) },
+        }),
+    }));
+    const syncStore = createSyncStore({ persisted: false });
+    const engine = createSyncEngine({
+      client,
+      syncStore,
+      slices: [
+        { collection: 'guests', store: guests, key: 'guests', kind: SliceKind.MANY },
+        { collection: 'events', store: events, key: 'events', kind: SliceKind.MANY },
+        {
+          collection: 'rsvpResponses',
+          store: replies,
+          key: 'responses',
+          kind: SliceKind.MANY,
+          readOnly: true,
+        },
+      ],
+      getSession: () => ({ token: couple.token, workspaceId: wedding.id }),
+      setTimer: () => 0,
+      clearTimer: () => {},
+    });
+    engine.attach();
+    engine.seedAll();
+    await engine.syncNow();
+
+    const [invite] = await client.createRsvpInvites(couple.token, wedding.id, [
+      { type: 'guest', id: 'g_nina' },
+    ]);
+    const path = new URL(invite.url).pathname;
+    const form = await (await nodeFetch(`${URL_}${path}`)).text();
+    expect(form).toContain('name="event_g_nina_ev_mehndi"');
+    const sent = await nodeFetch(`${URL_}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        submit: '1',
+        event_g_nina_ev_mehndi: 'yes',
+        event_g_nina_ev_reception: 'no',
+      }).toString(),
+    });
+    expect(sent.status).toBe(200);
+
+    await engine.syncNow();
+    applyPendingResponses({ rsvpStore: replies, guestStore: guests, eventStore: events });
+    expect(events.getState().events.byId.ev_mehndi.attendance).toEqual({ g_nina: 'attending' });
+    expect(events.getState().events.byId.ev_reception.attendance).toEqual({ g_nina: 'declined' });
+    expect(guests.getState().guests.byId.g_nina.rsvpStatus).toBe('attending');
+
+    // The couple's phone pushes the event changes; the server never wrote them.
+    await engine.syncNow();
+    expect(syncStore.getState().rejected).toEqual([]);
+    expect(syncStore.getState().outbox).toEqual([]);
+  });
 });

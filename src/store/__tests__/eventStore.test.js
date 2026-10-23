@@ -129,3 +129,22 @@ describe('deleteEvent', () => {
     expect(eventLinks(mehndi.id)).toEqual({ tasks: 0, expenses: 0, runOfShow: 0 });
   });
 });
+
+describe('per-event attendance (F1)', () => {
+  it('records answers, skips missing events and does not rewrite unchanged ones', () => {
+    const party = store().addEvent({ name: 'Party' });
+    expect(store().applyAttendance({ [party.id]: { g1: 'attending' }, ev_gone: { g1: 'declined' } })).toBe(1);
+    expect(selectEventById(party.id)(store()).attendance).toEqual({ g1: 'attending' });
+    expect(store().applyAttendance({ [party.id]: { g1: 'attending' } })).toBe(0);
+    store().applyAttendance({ [party.id]: { g2: 'declined' } });
+    expect(selectEventById(party.id)(store()).attendance).toEqual({ g1: 'attending', g2: 'declined' });
+  });
+
+  it('forgets a deleted guest’s answers too', () => {
+    const meera = useGuestStore.getState().addGuest(createGuest({ firstName: 'Meera' }));
+    const party = store().addEvent({ name: 'Party' });
+    store().applyAttendance({ [party.id]: { [meera.id]: 'attending', other: 'declined' } });
+    useGuestStore.getState().deleteGuest(meera.id);
+    expect(selectEventById(party.id)(store()).attendance).toEqual({ other: 'declined' });
+  });
+});

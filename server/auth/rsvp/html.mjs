@@ -83,6 +83,8 @@ const STYLES = raw(`
   legend { font-weight: 600; margin-bottom: 8px; }
   label { display: block; margin: 8px 0 4px; }
   .choice { display: inline-flex; align-items: center; gap: 6px; margin-right: 18px; }
+  .event { margin: 12px 0; padding-top: 10px; border-top: 1px solid #eadfd8; }
+  .event p { margin: 0 0 6px; }
   input[type=text], select, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
   textarea { min-height: 96px; }
   button { background: var(--brand); color: #fff; border: 0; border-radius: 999px; padding: 14px 24px; font: inherit; font-weight: 600; width: 100%; cursor: pointer; }

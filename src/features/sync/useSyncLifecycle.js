@@ -6,6 +6,7 @@ import { useAuthStore, selectAuthStatus, AuthStatus } from '@/store/authStore';
 import { isSyncConfigured, syncEngine, workspaceLink } from '@/services/sync';
 import { useRsvpStore } from '@/store/rsvpStore';
 import { useGuestStore } from '@/store/guestStore';
+import { useEventStore } from '@/store/eventStore';
 import { watchRsvpResponses } from '@/features/rsvp/applyResponses';
 
 const INTERVAL_MS = 5 * 60 * 1000;
@@ -35,7 +36,7 @@ export function useSyncLifecycle() {
 
   useEffect(() => {
     if (!enabled) return undefined;
-    return watchRsvpResponses({ rsvpStore: useRsvpStore, guestStore: useGuestStore });
+    return watchRsvpResponses({ rsvpStore: useRsvpStore, guestStore: useGuestStore, eventStore: useEventStore });
   }, [enabled]);
 
   useEffect(() => {
