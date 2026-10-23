@@ -301,6 +301,11 @@ Two deliberate choices in the generator:
   guests reply in the browser, without the app, and their answers update the
   guest list when the app syncs. Server: `server/auth/rsvp`; app:
   `features/rsvp`.
+- **Wedding party.** *Wedding party* (Guests tab): add people from the guest
+  list (keeping their contact details) or by name, each role arriving with the
+  jobs it usually covers; tick jobs off, add your own, note outfits and sizes,
+  and send each person their open jobs. Members sync (`partyMembers`).
+  Graduated from Labs; members saved there are imported once.
 - **Gifts and thank-yous.** *Gifts and thank-yous* (Guests tab): log each
   gift as it arrives (matched to the guest it came from), see when its note is
   due - two weeks for a gift before the wedding, three months after - write it
