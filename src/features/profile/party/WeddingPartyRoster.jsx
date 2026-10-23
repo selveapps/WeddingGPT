@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Card,
+  Chip,
   EmptyState,
+  Row,
   SectionHeader,
   Stack,
   Text,
@@ -11,14 +13,19 @@ import {
 } from '@/design-system/components';
 import { PartyMemberCard, PartyMemberForm } from './components';
 import { usePartyRoster } from './hooks/usePartyRoster';
-import { searchPartyMembers, summariseParty } from './lib/partyHelpers';
+import { filterPartyMembers, searchPartyMembers, summariseParty } from './lib/partyHelpers';
+import { PARTY_SIDES } from './lib/partyConstants';
 
 export function WeddingPartyRoster() {
   const toast = useToast();
   const { members, addRecord, removeRecord } = usePartyRoster();
   const [query, setQuery] = useState('');
+  const [side, setSide] = useState('all');
   const summary = summariseParty(members);
-  const visibleMembers = useMemo(() => searchPartyMembers(members, query), [members, query]);
+  const visibleMembers = useMemo(
+    () => searchPartyMembers(filterPartyMembers(members, side), query),
+    [members, query, side]
+  );
 
   const addMember = (values) => {
     if (!addRecord(values)) {
@@ -55,6 +62,17 @@ export function WeddingPartyRoster() {
             placeholder="Search names, email, phone or notes"
             icon="search"
           />
+          <Row gap="xs" wrap>
+            <Chip label="Everyone" selected={side === 'all'} onPress={() => setSide('all')} />
+            {PARTY_SIDES.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={side === option.value}
+                onPress={() => setSide(option.value)}
+              />
+            ))}
+          </Row>
           {visibleMembers.length ? (
             visibleMembers.map((member) => (
               <PartyMemberCard key={member.id} member={member} onRemove={removeMember} />
@@ -66,7 +84,10 @@ export function WeddingPartyRoster() {
               title="No people found"
               message="Try another name or contact detail."
               actionLabel="Clear search"
-              onAction={() => setQuery('')}
+              onAction={() => {
+                setQuery('');
+                setSide('all');
+              }}
             />
           )}
         </Stack>

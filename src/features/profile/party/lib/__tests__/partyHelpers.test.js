@@ -1,6 +1,7 @@
 import {
   partyRoleLabel,
   partySideLabel,
+  filterPartyMembers,
   searchPartyMembers,
   sortPartyMembers,
   summariseParty,
@@ -41,6 +42,16 @@ describe('wedding party helpers', () => {
     expect(searchPartyMembers(members, 'MINA')).toEqual([members[0]]);
     expect(searchPartyMembers(members, 'reading')).toEqual([members[1]]);
     expect(searchPartyMembers(members, '  ')).toEqual(members);
+    expect(members).toHaveLength(2);
+  });
+
+  it('filters by partner side and supports the everyone view', () => {
+    const members = [
+      { ...valid, name: 'Mina', side: 'partner-one' },
+      { ...valid, name: 'Ravi', side: 'partner-two' },
+    ];
+    expect(filterPartyMembers(members, 'partner-one')).toEqual([members[0]]);
+    expect(filterPartyMembers(members)).toEqual(members);
     expect(members).toHaveLength(2);
   });
 

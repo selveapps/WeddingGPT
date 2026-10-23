@@ -43,6 +43,10 @@ export function searchPartyMembers(members = [], query = '') {
   );
 }
 
+export function filterPartyMembers(members = [], side = 'all') {
+  return side === 'all' ? [...members] : members.filter((member) => member.side === side);
+}
+
 export function summariseParty(members = []) {
   return {
     total: members.length,
