@@ -2,6 +2,8 @@ import { RSVP_LIMITS, repliesOpen, validateSettings } from './rsvp.mjs';
 import { codePage, confirmationPage, formPage, messagePage } from './pages.mjs';
 import { SITE_LIMITS, Visibility, sanitiseContent, validateSiteSettings } from './site.mjs';
 import { sitePage, sitePasswordPage } from './sitePages.mjs';
+import { publicSheet, validateDaySheet } from './daySheets.mjs';
+import { daySheetPage } from './daySheetPage.mjs';
 
 /**
  * RSVP routes (design E §3, slice E1a).
@@ -20,6 +22,12 @@ import { sitePage, sitePasswordPage } from './sitePages.mjs';
  *   GET|POST /r/:token        the form for one invitation
  *   GET|POST /w/:slug/rsvp    type the code from a paper invitation
  *   GET|POST /w/:slug         the wedding website (POST: its password)
+ *
+ * Day-of sheets for vendors (slice F3):
+ *   GET  /v1/workspaces/:id/daysheets                      -> 200 { sheets }
+ *   POST /v1/workspaces/:id/daysheets  { eventId, label, contactIds } -> 201 { sheet, url }
+ *   POST /v1/workspaces/:id/daysheets/:sheetId/revoke      -> 204
+ *   GET  /d/:token            the sheet a vendor opens
  */
 
 const TARGET_ID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -230,4 +238,50 @@ export function registerRsvpRoutes(router, { db, send, sendHtml, readJson, readF
   };
   router.add('GET', '/w/:slug', site, browser);
   router.add('POST', '/w/:slug', site, browser);
+
+  // --- Day-of sheets for vendors (slice F3) ------------------------------------------
+
+  router.add('GET', '/v1/workspaces/:id/daysheets', (req, res, { workspace }) =>
+    send(res, 200, { sheets: db.daySheets.list(workspace.id).map(publicSheet) })
+  );
+
+  router.add(
+    'POST',
+    '/v1/workspaces/:id/daysheets',
+    async (req, res, { workspace }) => {
+      const body = await readJson(req);
+      const fields = validateDaySheet(body);
+      if (fields) return send(res, 400, { error: 'invalid', fields });
+      const result = db.daySheets.create(workspace.id, body);
+      if (result.error === 'limit_reached') return send(res, 403, { error: 'limit_reached' });
+      if (result.error) return send(res, 400, { error: result.error });
+      // The only time the token is returned; only its hash is kept (D1).
+      return send(res, 201, { sheet: publicSheet(result.sheet), url: `${publicBaseUrl}/d/${result.token}` });
+    },
+    { access: 'member', limited: true }
+  );
+
+  router.add('POST', '/v1/workspaces/:id/daysheets/:sheetId/revoke', (req, res, { workspace, params }) =>
+    db.daySheets.revoke(workspace.id, params.sheetId) ? send(res, 204) : send(res, 404, { error: 'not_found' })
+  );
+
+  router.add(
+    'GET',
+    '/d/:token',
+    (req, res, { params }) => {
+      if (pagePerIp(clientIp(req))) return sendHtml(res, 429, tooMany());
+      const sheet = db.daySheets.findByToken(params.token);
+      const content = sheet ? db.daySheets.content(sheet) : null;
+      if (!content) {
+        return sendHtml(
+          res,
+          404,
+          messagePage({ title: 'This link is no longer active', message: 'Ask the couple for a new one.' })
+        );
+      }
+      db.daySheets.markOpened(sheet);
+      return sendHtml(res, 200, daySheetPage({ content }));
+    },
+    browser
+  );
 }

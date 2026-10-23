@@ -368,6 +368,10 @@ Two deliberate choices in the generator:
   its own; share it as text with vendors and the wedding party. Items sync
   (`runOfShow`); deleting an event deletes its run of show. Graduated from the
   Labs day-of timeline, which is imported once as the wedding day.
+  *Share with a vendor* (once the wedding is synced) makes a read-only link
+  for one vendor: the day's schedule, the place and the contacts you tick,
+  never guests or costs. Links can be turned off and expire a week after the
+  event (slice F3; threats D1-D6 in `docs/planning/F-multi-event-guests.md`).
 - **Packing lists.** *Packing lists* on the Planning tab: the emergency kit,
   the getting-ready bag, the box for the venue and the honeymoon. A list starts
   from the usual things only when the couple asks; tick, add, rename (long

@@ -43,6 +43,7 @@ import { formatMediumDate } from '@/lib/date';
 import { shareText } from '@/services/share';
 
 import { importLabTimeline } from './labsImport';
+import { VendorShareSection } from './VendorShareSection';
 
 /**
  * The run of show (graduated from the Labs day-of timeline): what happens when
@@ -212,6 +213,10 @@ export function RunOfShowScreen({ initialEventId = null }) {
               </Stack>
             </>
           )}
+
+          {dayItems.length ? (
+            <VendorShareSection eventId={event?.id ?? null} dayName={dayName.toLowerCase()} />
+          ) : null}
         </Stack>
 
         {editing ? (

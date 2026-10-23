@@ -19,6 +19,9 @@ export function createRsvpApi({ client, getToken, getWorkspaceId }) {
     revoke: (inviteId) => call((token, ws) => client.revokeRsvpInvite(token, ws, inviteId)),
     getSiteSettings: () => call((token, ws) => client.getSiteSettings(token, ws)),
     saveSiteSettings: (patch) => call((token, ws) => client.saveSiteSettings(token, ws, patch)),
+    listDaySheets: () => call((token, ws) => client.listDaySheets(token, ws)),
+    createDaySheet: (fields) => call((token, ws) => client.createDaySheet(token, ws, fields)),
+    revokeDaySheet: (sheetId) => call((token, ws) => client.revokeDaySheet(token, ws, sheetId)),
 
     /** Create invites in batches the server accepts. */
     async createInvites(targets) {

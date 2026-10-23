@@ -174,6 +174,28 @@ export function createSyncClient({ url, appToken, timeoutMs = 30000, fetchImpl }
       });
     },
 
+    // --- Day-of sheets for vendors (slice F3) ------------------------------------
+
+    async listDaySheets(token, workspaceId) {
+      return (await request(workspacePath(workspaceId, '/daysheets'), { token }))?.sheets ?? [];
+    },
+
+    /** `{ sheet, url }` - the link is only ever returned here. */
+    async createDaySheet(token, workspaceId, { eventId = null, label, contactIds = [] }) {
+      return request(workspacePath(workspaceId, '/daysheets'), {
+        method: 'POST',
+        token,
+        body: { eventId, label, contactIds },
+      });
+    },
+
+    async revokeDaySheet(token, workspaceId, sheetId) {
+      await request(workspacePath(workspaceId, `/daysheets/${encodeURIComponent(sheetId)}/revoke`), {
+        method: 'POST',
+        token,
+      });
+    },
+
     // --- Wedding website (slice E2) -------------------------------------------
 
     async getSiteSettings(token, workspaceId) {
