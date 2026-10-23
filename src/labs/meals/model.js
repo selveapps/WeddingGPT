@@ -6,7 +6,7 @@ import {
   guestFullName,
 } from '@/models';
 
-import { toCsv } from '../shared/csv';
+import { toCsv } from '@/lib/csv';
 
 /**
  * Meals and dietary needs (Labs).

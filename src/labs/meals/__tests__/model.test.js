@@ -1,6 +1,6 @@
 import { RsvpStatus, PlusOneStatus, MealPreference } from '@/models';
 
-import { csvCell, toCsv } from '../../shared/csv';
+import { csvCell, toCsv } from '@/lib/csv';
 import { buildCateringReport, cateringCsv, cateringReportText, detectAllergens } from '../model';
 
 const guest = (firstName, fields = {}) => ({

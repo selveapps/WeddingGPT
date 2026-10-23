@@ -22,3 +22,8 @@ jest.mock('expo-secure-store', () => {
     }),
   };
 });
+
+// Reanimated and Worklets need a native runtime; their own mocks make
+// animated components render synchronously in component tests.
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));

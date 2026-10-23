@@ -20,13 +20,9 @@ import {
   useToast,
   PageHeader,
 } from '@/design-system/components';
-import { useTheme } from '@/design-system/theme';
+import { useTheme, useBreakpoint } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
-import {
-  useGuestStore,
-  selectAllGuests,
-  selectAllHouseholds,
-} from '@/store';
+import { useGuestStore, selectAllGuests, selectAllHouseholds } from '@/store';
 import {
   summariseRsvps,
   guestFullName,
@@ -36,6 +32,8 @@ import {
   INVITATION_STATUS_META,
 } from '@/models';
 import { GuestRow } from '@/features/guests/GuestRow';
+import { GuestTable } from '@/features/guests/GuestTable';
+import { GuestColumn, sortGuests } from '@/features/guests/lib/guestTable';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
 
 /**
@@ -48,6 +46,9 @@ import { NotificationBell } from '@/features/notifications/NotificationBell';
  * Selection mode is entered by long-pressing a guest. Bulk RSVP and bulk
  * invitation updates are the two operations that are genuinely painful one at a
  * time once a list passes about thirty people.
+ *
+ * On a wide screen the list becomes a sortable table with a checkbox column
+ * (`GuestTable`), because there the job is comparing and fixing many guests.
  */
 const RSVP_FILTERS = [
   { key: 'all', label: 'Everyone' },
@@ -61,6 +62,7 @@ export default function GuestsScreen() {
   const router = useRouter();
   const toast = useToast();
   const { spacing } = useTheme();
+  const { isWide } = useBreakpoint();
 
   const guests = useGuestStore(selectAllGuests);
   const households = useGuestStore(selectAllHouseholds);
@@ -72,6 +74,7 @@ export default function GuestsScreen() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [sort, setSort] = useState({ column: GuestColumn.NAME, direction: 'asc' });
 
   const selecting = selectedIds.length > 0;
 
@@ -85,29 +88,30 @@ export default function GuestsScreen() {
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
 
-    return guests
-      .filter((guest) => {
-        if (filter !== 'all' && guest.rsvpStatus !== filter) return false;
-        if (!needle) return true;
-        const haystack = [
-          guestFullName(guest),
-          guest.email ?? '',
-          guest.phone ?? '',
-          householdNameById.get(guest.householdId) ?? '',
-          ...(guest.tags ?? []),
-        ]
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(needle);
-      })
-      .sort((a, b) => guestFullName(a).localeCompare(guestFullName(b)));
+    return guests.filter((guest) => {
+      if (filter !== 'all' && guest.rsvpStatus !== filter) return false;
+      if (!needle) return true;
+      const haystack = [
+        guestFullName(guest),
+        guest.email ?? '',
+        guest.phone ?? '',
+        householdNameById.get(guest.householdId) ?? '',
+        ...(guest.tags ?? []),
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(needle);
+    });
   }, [guests, filter, query, householdNameById]);
+
+  const sorted = useMemo(
+    () => sortGuests(visible, isWide ? sort : { column: GuestColumn.NAME }, householdNameById),
+    [visible, isWide, sort, householdNameById]
+  );
 
   const toggleSelect = (guest) => {
     setSelectedIds((current) =>
-      current.includes(guest.id)
-        ? current.filter((id) => id !== guest.id)
-        : [...current, guest.id]
+      current.includes(guest.id) ? current.filter((id) => id !== guest.id) : [...current, guest.id]
     );
   };
 
@@ -142,6 +146,13 @@ export default function GuestsScreen() {
             onAction={() => router.push(Routes.guestImport)}
             secondaryActionLabel="Add a guest by hand"
             onSecondaryAction={() => router.push(Routes.guestAdd)}
+          />
+
+          <Button
+            label="Import a spreadsheet"
+            variant="ghost"
+            iconLeft="plus"
+            onPress={() => router.push(Routes.guestSpreadsheet)}
           />
         </Stack>
       </Screen>
@@ -270,9 +281,19 @@ export default function GuestsScreen() {
                 setFilter('all');
               }}
             />
+          ) : isWide ? (
+            <GuestTable
+              guests={sorted}
+              householdNameById={householdNameById}
+              sort={sort}
+              onSortChange={setSort}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              onOpen={(guest) => router.push(Routes.guestDetail(guest.id))}
+            />
           ) : (
             <Stack gap="none">
-              {visible.map((guest) => (
+              {sorted.map((guest) => (
                 <GuestRow
                   key={guest.id}
                   guest={guest}
@@ -286,14 +307,23 @@ export default function GuestsScreen() {
           )}
         </Stack>
 
-        {!selecting && visible.length > 1 ? (
+        {!selecting && !isWide && visible.length > 1 ? (
           <Button
             label="Select several"
             variant="ghost"
             iconLeft="check"
-            onPress={() => setSelectedIds([visible[0].id])}
+            onPress={() => setSelectedIds([sorted[0].id])}
           />
         ) : null}
+
+        <Card padding="none">
+          <ListRow
+            icon="note"
+            title="Spreadsheet"
+            subtitle="Import guests from a CSV, or export your list for the caterer"
+            onPress={() => router.push(Routes.guestSpreadsheet)}
+          />
+        </Card>
       </Stack>
 
       {/* --- Bulk actions --------------------------------------------------- */}

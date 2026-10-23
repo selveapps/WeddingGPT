@@ -296,6 +296,14 @@ Two deliberate choices in the generator:
   neighbourhood or suburb). They show on Home, on the plan reveal and on the
   local screen; every venue opens a map search for the real listing. Every
   city also gets style searches (gardens, barns, rooftops...).
+- **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
+  CSV (a download on the web, the share sheet on a phone) and imports one:
+  load a file or paste rows, check which column is which (guessed from the
+  header), preview, then import. Duplicates and rows that need a fix are shown
+  with the reason and skipped; households are matched by name. Logic in
+  `features/guests/lib/guestCsv.js`, CSV reading in `lib/csv.js`.
+- **Wide screens.** At 900 px and wider (`useBreakpoint`) the guest list is a
+  sortable table with a checkbox column (`features/guests/GuestTable.jsx`).
 - **Import guests from contacts.** `app/guests/import.jsx` reads the address
   book via `expo-contacts` (permission asked only on that screen), skips
   people already on the list (phone, email or name match) and bulk-adds the
