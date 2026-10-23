@@ -34,9 +34,10 @@ const initialState = {
 
 /**
  * Build a sync store. The app uses one persisted instance (`useSyncStore`);
- * tests build unpersisted ones to simulate several devices.
+ * tests build their own to simulate several devices, unpersisted or over
+ * their own storage.
  */
-export function createSyncStore({ persisted = true } = {}) {
+export function createSyncStore({ persisted = true, storage = zustandStorage } = {}) {
   const config = (set, get) => ({
     ...initialState,
 
@@ -151,7 +152,7 @@ export function createSyncStore({ persisted = true } = {}) {
   return create()(
     persist(config, {
       name: 'sync:state',
-      storage: zustandStorage,
+      storage,
       version: 1,
       partialize: (state) => ({
         outbox: state.outbox,

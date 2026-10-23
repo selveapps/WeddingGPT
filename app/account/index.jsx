@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 
 import {
@@ -12,19 +12,24 @@ import {
   ListRow,
   ScreenHeader,
   SectionHeader,
+  ConfirmSheet,
   useToast,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { useAuthStore, selectAuthAvailable, selectAuthUser, selectIsSignedIn } from '@/store';
 import { Routes } from '@/navigation/routes';
 import { AuthMode } from '@/features/auth/authValidation';
+import { SyncSection } from '@/features/sync/SyncSection';
+import { signOutWarning } from '@/features/sync/syncStatus';
+import { isSyncConfigured, workspaceLink } from '@/services/sync';
 
 /**
  * Account: who is signed in, and the settings that belong to the person
  * rather than to one wedding screen.
  *
- * Signing out never touches the wedding - it lives on the device, not in the
- * account - so it needs no confirmation, and the copy says so.
+ * Signing out never touches the phone's own wedding. A synced wedding's copy
+ * leaves the phone (decision D6), so signing out asks first when changes have
+ * not synced yet.
  */
 export default function AccountScreen() {
   const router = useRouter();
@@ -35,10 +40,25 @@ export default function AccountScreen() {
   const signedIn = useAuthStore(selectIsSignedIn);
   const user = useAuthStore(selectAuthUser);
   const signOut = useAuthStore((state) => state.signOut);
+  const [confirmSignOut, setConfirmSignOut] = useState(null);
 
-  const handleSignOut = async () => {
+  const finishSignOut = async () => {
+    setConfirmSignOut(null);
+    const linked = workspaceLink.isLinked();
+    // Leave first, while still signed in, so nothing tries to sync mid-way.
+    if (linked) await workspaceLink.leave();
     await signOut();
-    toast.info('Signed out. Your plan is still on this device.');
+    toast.info(
+      linked
+        ? "Signed out. The shared wedding is safe in your account; this phone's own plan is back."
+        : 'Signed out. Your plan is still on this device.'
+    );
+  };
+
+  const handleSignOut = () => {
+    const warning = signOutWarning(workspaceLink.pendingChanges());
+    if (warning) setConfirmSignOut(warning);
+    else finishSignOut();
   };
 
   return (
@@ -95,6 +115,8 @@ export default function AccountScreen() {
           </Card>
         )}
 
+        {signedIn && isSyncConfigured ? <SyncSection /> : null}
+
         <Stack gap="xs">
           <SectionHeader title="Settings" />
           <Card padding="none">
@@ -107,6 +129,17 @@ export default function AccountScreen() {
           </Card>
         </Stack>
       </Stack>
+
+      <ConfirmSheet
+        visible={Boolean(confirmSignOut)}
+        onClose={() => setConfirmSignOut(null)}
+        onConfirm={finishSignOut}
+        title="Sign out anyway?"
+        message={confirmSignOut ?? ''}
+        confirmLabel="Sign out"
+        cancelLabel="Stay signed in"
+        destructive
+      />
     </Screen>
   );
 }

@@ -4,7 +4,7 @@ import { createSyncEngine } from '../syncEngine';
 import { SliceKind } from '../changes';
 import { SyncError, SyncErrorCode } from '../syncClient';
 import { createSyncStore } from '../../../store/syncStore';
-import { createFakeServer } from '../../../test/fakeSyncServer';
+import { createFakeSyncServer } from '../../../test/fakeSyncServer';
 
 const WS = 'ws_1';
 
@@ -70,7 +70,7 @@ function makePhone(server, { token = 'tok', active = true, debounceMs = 0, ...ov
 
 describe('sync engine', () => {
   it('queues a local edit and pushes it', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const phone = makePhone(server);
     phone.engine.attach();
 
@@ -85,7 +85,7 @@ describe('sync engine', () => {
   });
 
   it("brings one phone's changes to the other, without echoing them back", async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server, { token: 'priya' });
     const sam = makePhone(server, { token: 'sam' });
     priya.engine.attach();
@@ -105,7 +105,7 @@ describe('sync engine', () => {
   });
 
   it('syncs deletes', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server);
     const sam = makePhone(server);
     priya.engine.attach();
@@ -123,7 +123,7 @@ describe('sync engine', () => {
   });
 
   it('reports a conflicting edit and can restore the overwritten version', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server, { token: 'priya' });
     const sam = makePhone(server, { token: 'sam' });
     priya.engine.attach();
@@ -153,7 +153,7 @@ describe('sync engine', () => {
   });
 
   it('does not let a pull overwrite a change still waiting to be pushed', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server, { token: 'priya' });
     const sam = makePhone(server, { token: 'sam' });
     priya.engine.attach();
@@ -177,7 +177,7 @@ describe('sync engine', () => {
   });
 
   it('keeps a local edit made while a pull is in flight', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server, { token: 'priya' });
     priya.engine.attach();
     priya.addTask('task_1', { title: 'v1' });
@@ -204,7 +204,7 @@ describe('sync engine', () => {
 
   describe('guards against destroying server data', () => {
     it('does not upload what was already there when it attached (launch)', () => {
-      const server = createFakeServer();
+      const server = createFakeSyncServer();
       const phone = makePhone(server);
       phone.addTask('task_1');
       phone.addTask('task_2');
@@ -217,7 +217,7 @@ describe('sync engine', () => {
     });
 
     it('does not queue deletes when a workspace switch empties the stores', async () => {
-      const server = createFakeServer();
+      const server = createFakeSyncServer();
       const phone = makePhone(server);
       phone.engine.attach();
       phone.addTask('task_1');
@@ -235,7 +235,7 @@ describe('sync engine', () => {
     });
 
     it('queues nothing while there is no synced workspace', () => {
-      const server = createFakeServer();
+      const server = createFakeSyncServer();
       const phone = makePhone(server, { active: false });
       phone.engine.attach();
       phone.addTask('task_1');
@@ -244,7 +244,7 @@ describe('sync engine', () => {
   });
 
   it('seeds every entity for the first upload of a workspace', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const phone = makePhone(server);
     phone.addTask('task_1');
     phone.addTask('task_2');
@@ -258,7 +258,7 @@ describe('sync engine', () => {
   });
 
   it('pushes large outboxes in batches of 100 and pulls every page', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const priya = makePhone(server);
     priya.engine.attach();
     for (let i = 0; i < 250; i += 1) priya.addTask(`task_${i}`);
@@ -280,7 +280,7 @@ describe('sync engine', () => {
   });
 
   it('runs one sync at a time and runs again for changes made meanwhile', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const phone = makePhone(server);
     phone.engine.attach();
     phone.addTask('task_1');
@@ -295,7 +295,7 @@ describe('sync engine', () => {
   });
 
   it('reports unauthorised and gone workspaces to the app', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const onUnauthorised = jest.fn();
     const onGone = jest.fn();
     const phone = makePhone(server, { onUnauthorised, onGone });
@@ -314,14 +314,14 @@ describe('sync engine', () => {
   });
 
   it('skips syncing without a session', async () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const phone = makePhone(server, { active: false });
     expect(await phone.engine.syncNow()).toEqual({ skipped: true });
     expect(server.calls.pull).toBe(0);
   });
 
   it('stops watching after detach', () => {
-    const server = createFakeServer();
+    const server = createFakeSyncServer();
     const phone = makePhone(server);
     phone.engine.attach();
     phone.engine.detach();

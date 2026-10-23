@@ -4,7 +4,7 @@
  * and returns what it overwrote, tombstones without contents, idempotent
  * mutation ids. Lets engine tests run two "phones" against one server.
  */
-export function createFakeServer() {
+export function createFakeSyncServer() {
   const records = new Map();
   const seen = new Map();
   let seq = 0;

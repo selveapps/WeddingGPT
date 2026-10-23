@@ -54,3 +54,21 @@ jobs:
           node-version-file: .nvmrc
       - run: node --test
         working-directory: server/auth
+
+  sync-integration:
+    name: Sync against the real server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Start the API server
+        run: |
+          AUTH_DB_PATH="$RUNNER_TEMP/it.db" PORT=8790 node server/auth/index.mjs &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8790/health && break; sleep 1; done
+      - run: npx jest realServer --ci
+        env:
+          SYNC_SERVER_URL: http://127.0.0.1:8790

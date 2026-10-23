@@ -283,3 +283,18 @@ Details settled while building, which refine sections 4 and 5.
   would otherwise copy one wedding into another. A test fails the build if a
   persisted store is not registered. Nothing switches workspaces yet; sign-in
   will, in A4.
+- **A4 (sync engine).** Changes are detected by comparing entity
+  references between store updates, so no store action changed. Synced:
+  wedding, budget, tasks, task and budget categories, expenses, guests,
+  households, vendors. Not synced, on purpose: reminder preferences (personal
+  to each partner), the user record, onboarding progress, assistant
+  conversations, and per-device state such as today's checklist. The engine
+  attaches only after hydration and pauses during every workspace switch;
+  without those, launch would re-upload the wedding and a switch would push
+  deletes for everything. A change queued while an earlier push of the same
+  record is in flight is rebased, so it does not conflict with itself. Sync
+  runs two seconds after an edit, on sign-in, every five minutes and when the
+  app returns to the foreground. Signing out, by any route, leaves the
+  workspace (D6), warning first if changes have not synced. An integration
+  test runs the real client against the real server in CI, and confirmed the
+  fake server used in unit tests follows the same protocol.
