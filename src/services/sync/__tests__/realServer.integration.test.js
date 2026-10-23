@@ -538,4 +538,36 @@ run('sync against the real server', () => {
     await a.engine.syncNow();
     expect(a.party.getState().members.byId.party_1.todos[0].done).toBe(true);
   });
+
+  it('pushing the run of show back on one phone moves it on the other (run of show)', async () => {
+    const phone = () => {
+      const show = create(() => ({ items: { byId: {}, allIds: [] } }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [{ collection: 'runOfShow', store: show, key: 'items', kind: SliceKind.MANY }],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { show, syncStore, engine };
+    };
+    const a = phone();
+    const b = phone();
+    const dinner = { id: 'ros_1', title: 'Dinner', start: 1080, durationMin: 90, eventId: null, updatedAt: '2027-01-01T00:00:00.000Z' };
+    a.show.setState({ items: { byId: { ros_1: dinner }, allIds: ['ros_1'] } });
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    await b.engine.syncNow();
+    expect(b.show.getState().items.byId.ros_1.start).toBe(1080);
+
+    b.show.setState((state) => ({
+      items: { ...state.items, byId: { ros_1: { ...dinner, start: 1100, updatedAt: '2027-01-02T00:00:00.000Z' } } },
+    }));
+    await b.engine.syncNow();
+    await a.engine.syncNow();
+    expect(a.show.getState().items.byId.ros_1.start).toBe(1100);
+  });
 });

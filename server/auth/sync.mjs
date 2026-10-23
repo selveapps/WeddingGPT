@@ -33,6 +33,7 @@ export const SYNC_COLLECTIONS = [
   'events',
   'gifts',
   'partyMembers',
+  'runOfShow',
 ];
 
 /**
