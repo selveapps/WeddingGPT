@@ -1,9 +1,13 @@
-import { createId } from '@/lib/id';
+import { createEntity } from './base';
+import { guestFullName } from './guests';
+import { createId } from '../lib/id';
+import { rules } from '../lib/validation';
 
 /**
- * Wedding party hub (Labs).
+ * The wedding party (graduated from Labs). Members sync as `partyMembers`.
  *
- * A member is `{ name, roleKey, phone, outfit, size, todos }`. Each role
+ * A member is `{ name, roleKey, guestId, phone, email, outfit, size, todos }`,
+ * where `guestId` links them to the guest list when they are on it. Each role
  * starts with the jobs it traditionally covers, so a new bridesmaid arrives
  * with "attend the dress fitting" already on her list. Roles are named the
  * common US way; couples rename or skip anything that does not fit them.
@@ -26,7 +30,13 @@ export const PARTY_ROLES = [
 const OUTFIT_TODOS = ['Order your outfit', 'Go to the fitting'];
 
 export const ROLE_TODOS = {
-  maid_of_honor: ['Plan the shower', 'Plan the bachelorette', 'Hold the bouquet during the vows', 'Prepare a toast', ...OUTFIT_TODOS],
+  maid_of_honor: [
+    'Plan the shower',
+    'Plan the bachelorette',
+    'Hold the bouquet during the vows',
+    'Prepare a toast',
+    ...OUTFIT_TODOS,
+  ],
   best_man: ['Plan the bachelor party', 'Look after the rings', 'Prepare a toast', ...OUTFIT_TODOS],
   bridesmaid: [...OUTFIT_TODOS, 'Arrive for hair and makeup'],
   groomsman: [...OUTFIT_TODOS, 'Help guests find their seats'],
@@ -38,6 +48,70 @@ export const ROLE_TODOS = {
   parent: ['Send your guest list', 'Plan any family photos'],
   other: [],
 };
+
+export const PARTY_LIMITS = {
+  nameChars: 120,
+  textChars: 200,
+  todosPerMember: 30,
+  members: 60,
+};
+
+export function createPartyMember({
+  weddingId,
+  name = '',
+  roleKey = 'other',
+  guestId = null,
+  phone = '',
+  email = '',
+  outfit = '',
+  size = '',
+  todos = null,
+} = {}) {
+  return createEntity('party', {
+    weddingId,
+    name: name.trim(),
+    roleKey: PARTY_ROLES.some((role) => role.key === roleKey) ? roleKey : 'other',
+    guestId,
+    phone: phone.trim(),
+    email: email.trim(),
+    outfit: outfit.trim(),
+    size: size.trim(),
+    todos: todos ?? starterTodos(roleKey),
+  });
+}
+
+/** A member made from someone on the guest list, keeping their contact details. */
+export function memberFromGuest(guest, { weddingId, roleKey } = {}) {
+  return createPartyMember({
+    weddingId: weddingId ?? guest.weddingId,
+    name: guestFullName(guest),
+    roleKey,
+    guestId: guest.id,
+    phone: guest.phone ?? '',
+    email: guest.email ?? '',
+  });
+}
+
+/** Returns `{ field: message }`. */
+export function validatePartyMember(fields) {
+  const errors = {};
+  if (!fields.name?.trim()) errors.name = 'Add their name.';
+  else if (fields.name.length > PARTY_LIMITS.nameChars) errors.name = 'That name is too long.';
+  for (const key of ['phone', 'email', 'outfit', 'size']) {
+    if ((fields[key] ?? '').length > PARTY_LIMITS.textChars) errors[key] = 'That is too long.';
+  }
+  const emailError = rules.email()(fields.email?.trim());
+  if (emailError) errors.email = emailError;
+  return errors;
+}
+
+/** A new job for a member's list, or null for an empty title. */
+export function createPartyTodo(title) {
+  const text = String(title ?? '')
+    .trim()
+    .slice(0, PARTY_LIMITS.textChars);
+  return text ? { id: createId('todo'), title: text, done: false } : null;
+}
 
 export function roleLabel(key) {
   return PARTY_ROLES.find((role) => role.key === key)?.label ?? 'Wedding party';
