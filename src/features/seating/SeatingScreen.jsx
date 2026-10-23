@@ -28,14 +28,19 @@ import {
   selectAvoidPairs,
   useWeddingStore,
   selectWeddingId,
+  useEventStore,
+  selectEvents,
 } from '@/store';
 import {
   DEFAULT_TABLE_CAPACITY,
+  eventName,
   findConflicts,
   freeSeats,
   guestLabel,
   seatableGuests,
   seatingSummary,
+  sortEvents,
+  tablesForEvent,
   unseatedGuests,
 } from '@/models';
 
@@ -55,7 +60,8 @@ export function SeatingScreen() {
   const { isWide } = useBreakpoint();
   const weddingId = useWeddingStore(selectWeddingId);
   const guests = useGuestStore(selectAllGuests);
-  const tables = useSeatingStore(selectSeatingTables);
+  const allTables = useSeatingStore(selectSeatingTables);
+  const events = useEventStore(selectEvents);
   const avoidPairs = useSeatingStore(selectAvoidPairs);
   const store = useSeatingStore.getState();
 
@@ -64,24 +70,29 @@ export function SeatingScreen() {
   const [seating, setSeating] = useState(null);
   const [editing, setEditing] = useState(null);
   const [pairing, setPairing] = useState(false);
+  const [eventId, setEventId] = useState(null);
 
-  // Bring over a Labs seating plan once, and free the seats of deleted guests.
+  // Bring over a Labs seating plan once. Deleted guests' seats are freed by
+  // the guest store as they are deleted, not by comparing lists here.
   useEffect(() => {
     importLabSeating({ weddingId });
   }, [weddingId]);
-  useEffect(() => {
-    useSeatingStore.getState().releaseMissingGuests(guests.map((guest) => guest.id));
-  }, [guests]);
+
+  // Each event has its own room (F2); one deleted elsewhere falls back to the wedding day.
+  const sortedEvents = useMemo(() => sortEvents(events), [events]);
+  const event = sortedEvents.find((entry) => entry.id === eventId) ?? null;
+  const tables = useMemo(() => tablesForEvent(allTables, event?.id ?? null), [allTables, event]);
 
   const byId = useMemo(() => new Map(guests.map((guest) => [guest.id, guest])), [guests]);
   const name = (id) => (byId.has(id) ? guestLabel(byId.get(id)) : 'Removed guest');
-  const summary = seatingSummary(tables, guests);
-  const unseated = unseatedGuests(tables, guests);
+  const summary = seatingSummary(tables, guests, event);
+  const unseated = unseatedGuests(tables, guests, event);
   const conflicts = findConflicts(tables, avoidPairs);
 
   const addTable = () => {
     store.addTable({
       weddingId,
+      eventId: event?.id ?? null,
       name: tableName.trim() || `Table ${tables.length + 1}`,
       capacity: Number(capacity) || DEFAULT_TABLE_CAPACITY,
     });
@@ -89,7 +100,7 @@ export function SeatingScreen() {
   };
 
   const runAutoSeat = () => {
-    const result = store.autoSeat(guests);
+    const result = store.autoSeat(guests, { event });
     if (result.unplaced.length) {
       toast.warning(
         `Seated ${result.placed}. ${result.unplaced.length} still need a table - add more seats.`
@@ -131,7 +142,7 @@ export function SeatingScreen() {
                 </Row>
                 <Row gap="xs" wrap>
                   {table.guestIds.map((id) => (
-                    <Chip key={id} size="sm" label={name(id)} onRemove={() => store.unassign(id)} />
+                    <Chip key={id} size="sm" label={name(id)} onRemove={() => store.unassign(id, event?.id ?? null)} />
                   ))}
                 </Row>
               </Stack>
@@ -192,6 +203,21 @@ export function SeatingScreen() {
     <Screen bottomInset={spacing.xxl}>
       <Stack gap="lg">
         <ScreenHeader eyebrow="Guests" title="Seating chart" />
+
+        {sortedEvents.length ? (
+          <Row gap="xs" wrap align="flex-start">
+            <Chip label="The wedding day" size="sm" selected={!event} onPress={() => setEventId(null)} />
+            {sortedEvents.map((entry) => (
+              <Chip
+                key={entry.id}
+                label={eventName(entry)}
+                size="sm"
+                selected={event?.id === entry.id}
+                onPress={() => setEventId(entry.id)}
+              />
+            ))}
+          </Row>
+        ) : null}
 
         <Card tone="brand">
           <Row justify="space-between">
