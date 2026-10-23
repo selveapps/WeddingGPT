@@ -373,4 +373,133 @@ describe('RSVP site', () => {
       assert.equal(noToken.status, 401);
     });
   });
+
+  describe('per-event replies (F1)', () => {
+    let multi;
+    let ownerId;
+    before(() => {
+      ownerId = db.createUser({ email: 'multi@example.com', name: 'Multi', passwordHash: 'x' }).id;
+      multi = db.workspaces.create(ownerId, 'Several events');
+      seed(multi.id, ownerId, [
+        ['wedding', { id: 'wed_m', ownerName: 'Asha', partnerName: 'Dev' }],
+        ['households', { id: 'hh_k', name: 'The Kapoors' }],
+        ['guests', { id: 'g_nina', firstName: 'Nina', householdId: 'hh_k' }],
+        ['guests', { id: 'g_omar', firstName: 'Omar', householdId: 'hh_k' }],
+        ['guests', { id: 'g_pia', firstName: 'Pia' }],
+        // Everyone; Nina only; nobody from this household; Kapoors' secret third event.
+        [
+          'events',
+          {
+            id: 'ev_reception',
+            name: 'Reception',
+            date: '2027-05-08',
+            startTime: '19:00',
+            guestScope: 'everyone',
+            venueName: 'The Hall',
+          },
+        ],
+        [
+          'events',
+          {
+            id: 'ev_mehndi',
+            name: '<b>Mehndi</b>',
+            date: '2027-05-07',
+            startTime: '18:00',
+            guestScope: 'invited',
+            invitedGuestIds: ['g_nina'],
+          },
+        ],
+        [
+          'events',
+          {
+            id: 'ev_private',
+            name: 'Family lunch',
+            date: '2027-05-09',
+            guestScope: 'invited',
+            invitedGuestIds: ['g_pia'],
+          },
+        ],
+      ]);
+    });
+
+    const inviteIn = async (targets) => {
+      const ownerSession = db.createSession(ownerId, DAY).token;
+      return inviteFor(targets, multi.id, ownerSession);
+    };
+
+    it('asks a multi-event guest about each event, others the usual question (W2, W3)', async () => {
+      const [invite] = await inviteIn([{ type: 'household', id: 'hh_k' }]);
+      const body = await (await page(`/r/${tokenFrom(invite.url)}`)).text();
+      // Nina: two events, in date order; Omar: just the reception, so one question.
+      assert.match(body, /name="event_g_nina_ev_mehndi"/);
+      assert.match(body, /name="event_g_nina_ev_reception"/);
+      assert.ok(body.indexOf('ev_mehndi') < body.indexOf('ev_reception'));
+      assert.match(body, /name="attending_g_omar"/);
+      assert.doesNotMatch(body, /name="attending_g_nina"/);
+      // Escaped, with time and place; nothing about events they are not in.
+      assert.match(body, /&lt;b&gt;Mehndi&lt;\/b&gt;/);
+      assert.match(body, /6:00 PM/);
+      assert.doesNotMatch(body, /Family lunch|ev_private|invitedGuestIds/);
+    });
+
+    it('needs an answer for each event and records them', async () => {
+      const [invite] = await inviteIn([{ type: 'household', id: 'hh_k' }]);
+      const path = `/r/${tokenFrom(invite.url)}`;
+      const half = await postForm(path, {
+        submit: '1',
+        event_g_nina_ev_mehndi: 'yes',
+        attending_g_omar: 'yes',
+      });
+      assert.equal(half.status, 400);
+      assert.match(await half.text(), /Please answer for each event/);
+
+      const sent = await postForm(path, {
+        submit: '1',
+        event_g_nina_ev_mehndi: 'yes',
+        event_g_nina_ev_reception: 'no',
+        // Not Nina's event, and not this household's: ignored (W2).
+        event_g_nina_ev_private: 'yes',
+        event_g_omar_ev_mehndi: 'yes',
+        attending_g_omar: 'no',
+      });
+      assert.equal(sent.status, 200);
+      assert.match(await sent.text(), /Nina: attending &lt;b&gt;Mehndi&lt;\/b&gt;; not Reception/);
+
+      const record = db.sync.getRecord(multi.id, 'rsvpResponses', `rsvp_${invite.inviteId}`);
+      const [nina, omar] = record.data.guests;
+      assert.deepEqual(nina.events, { ev_mehndi: true, ev_reception: false });
+      assert.equal(nina.attending, true);
+      assert.equal(omar.events, undefined);
+      assert.equal(omar.attending, false);
+      // The server never edits the couple's events (W10).
+      assert.equal(db.sync.getRecord(multi.id, 'events', 'ev_mehndi').version, 1);
+    });
+
+    it('declining every event declines the wedding, and the page remembers each answer', async () => {
+      const [invite] = await inviteIn([{ type: 'guest', id: 'g_nina' }]);
+      const path = `/r/${tokenFrom(invite.url)}`;
+      await postForm(path, { submit: '1', event_g_nina_ev_mehndi: 'no', event_g_nina_ev_reception: 'no' });
+      const record = db.sync.getRecord(multi.id, 'rsvpResponses', `rsvp_${invite.inviteId}`);
+      assert.equal(record.data.guests[0].attending, false);
+      const again = await (await page(path)).text();
+      assert.match(again, /id="no_event_g_nina_ev_mehndi" name="event_g_nina_ev_mehndi" value="no" checked/);
+    });
+
+    it('can be switched off, back to one question', async () => {
+      const ownerSession = db.createSession(ownerId, DAY).token;
+      const saved = await api('PUT', `/v1/workspaces/${multi.id}/rsvp/settings`, {
+        token: ownerSession,
+        body: { questions: { events: false } },
+      });
+      assert.equal(saved.status, 200);
+      const [invite] = await inviteIn([{ type: 'guest', id: 'g_nina' }]);
+      const body = await (await page(`/r/${tokenFrom(invite.url)}`)).text();
+      assert.match(body, /name="attending_g_nina"/);
+      assert.doesNotMatch(body, /event_g_nina/);
+      await api('PUT', `/v1/workspaces/${multi.id}/rsvp/settings`, {
+        token: ownerSession,
+        body: { questions: { events: true } },
+      });
+    });
+  });
 });

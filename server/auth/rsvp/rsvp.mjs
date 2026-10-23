@@ -35,7 +35,8 @@ const RESERVED_SLUGS = new Set([
   'admin', 'api', 'app', 'auth', 'health', 'help', 'login', 'r', 'rsvp', 'support', 'w', 'www', 'weddinggpt',
 ]);
 
-export const DEFAULT_QUESTIONS = { meals: true, dietary: true, plusOnes: true, message: true };
+/** `events`: ask guests invited to several events about each one (slice F1). */
+export const DEFAULT_QUESTIONS = { meals: true, dietary: true, plusOnes: true, message: true, events: true };
 
 /**
  * Meal choices guests may pick. Mirrors MealPreference in src/models/enums.js;
@@ -118,6 +119,37 @@ export function validateSettings({ slug, deadline, questions } = {}) {
     if (!ok) fields.questions = 'invalid';
   }
   return Object.keys(fields).length ? fields : null;
+}
+
+/** The events this guest is invited to: everyone's, and those that list them. */
+export function eventIdsForGuest(events, guestId) {
+  return events
+    .filter((event) => event.guestScope !== 'invited' || (event.invitedGuestIds ?? []).includes(guestId))
+    .map((event) => event.id);
+}
+
+const clock = (value) => (typeof value === 'string' && /^\d{2}:\d{2}$/.test(value) ? value : null);
+
+/** What a guest may see of an event (W2): name, date, time and place - never its guest list. */
+function publicEvent(event) {
+  return {
+    id: event.id,
+    name: String(event.name ?? '').trim() || 'Event',
+    date: typeof event.date === 'string' ? event.date : null,
+    startTime: clock(event.startTime),
+    endTime: clock(event.endTime),
+    venueName: String(event.venueName ?? '').trim(),
+  };
+}
+
+/** By date (undated last), then start time, then the couple's order - as the app sorts them. */
+function byWhen(a, b) {
+  if (a.date !== b.date) {
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return a.date.localeCompare(b.date);
+  }
+  return (clock(a.startTime) ?? '99:99').localeCompare(clock(b.startTime) ?? '99:99') || (a.order ?? 0) - (b.order ?? 0);
 }
 
 /** The last moment a link works: 30 days after the deadline, or a year after it was made. */
@@ -278,9 +310,27 @@ export function createRsvpRepository(db, sync) {
           id: guest.id,
           firstName: guest.firstName || 'Guest',
           plusOneAllowed: guest.plusOneStatus === 'allowed' || guest.plusOneStatus === 'confirmed',
+          eventIds: [],
         }));
+
+      // Per-event questions only for guests invited to two or more events (F1).
+      let events = [];
+      if (settings.questions.events !== false) {
+        const all = sync
+          .liveRecords(invite.workspaceId, 'events')
+          .map((record) => record.data)
+          .filter((event) => event?.id)
+          .sort(byWhen);
+        for (const guest of guests) {
+          const ids = eventIdsForGuest(all, guest.id);
+          guest.eventIds = ids.length >= 2 ? ids : [];
+        }
+        const shown = new Set(guests.flatMap((guest) => guest.eventIds));
+        events = all.filter((event) => shown.has(event.id)).map(publicEvent);
+      }
+
       const previous = sync.getRecord(invite.workspaceId, 'rsvpResponses', `rsvp_${invite.id}`)?.data ?? null;
-      return { wedding, settings, guests, previous };
+      return { wedding, settings, guests, events, previous };
     },
 
     /**
@@ -293,7 +343,19 @@ export function createRsvpRepository(db, sync) {
       const { questions } = settings;
       const errors = {};
       const answers = guests.map((guest) => {
-        const attending = form[`attending_${guest.id}`];
+        // Several events: one answer each, and "attending" means coming to any (F1).
+        // Only this guest's own events are read, so another event's id changes nothing (W2).
+        let eventAnswers = null;
+        let attending = form[`attending_${guest.id}`];
+        if (guest.eventIds.length) {
+          eventAnswers = {};
+          for (const eventId of guest.eventIds) {
+            const answer = form[`event_${guest.id}_${eventId}`];
+            if (answer !== 'yes' && answer !== 'no') errors[guest.id] = 'Please answer for each event.';
+            eventAnswers[eventId] = answer === 'yes';
+          }
+          attending = Object.values(eventAnswers).some(Boolean) ? 'yes' : 'no';
+        }
         if (attending !== 'yes' && attending !== 'no') errors[guest.id] = 'Please choose yes or no.';
         const meal = form[`meal_${guest.id}`] ?? '';
         if (questions.meals && attending === 'yes' && meal && !MEAL_CHOICES.some((choice) => choice.value === meal)) {
@@ -309,6 +371,7 @@ export function createRsvpRepository(db, sync) {
           meal: questions.meals && attending === 'yes' && meal ? meal : null,
           dietary: questions.dietary && attending === 'yes' ? dietary : '',
           plusOneName: questions.plusOnes && guest.plusOneAllowed && attending === 'yes' ? plusOneName : '',
+          ...(eventAnswers ? { events: eventAnswers } : {}),
         };
       });
       const message = questions.message ? String(form.message ?? '').trim() : '';

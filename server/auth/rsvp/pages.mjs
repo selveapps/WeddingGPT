@@ -33,7 +33,35 @@ function weddingHeader(wedding, settings) {
     ${deadline ? html`<p>Please reply by <strong>${deadline}</strong>.</p>` : ''}`;
 }
 
-function guestFields(guest, questions, previous, error) {
+const formatTime = (clock) => {
+  if (!clock) return null;
+  const [hours, minutes] = clock.split(':').map(Number);
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${hours < 12 ? 'AM' : 'PM'}`;
+};
+
+/** "Friday, May 7, 2027 · 6:00 PM · The Courtyard" */
+export function eventLine(event) {
+  return [formatDate(event.date), formatTime(event.startTime), event.venueName || null].filter(Boolean).join(' · ');
+}
+
+/** One yes/no per event, for a guest invited to several (F1). */
+function eventChoices(guest, events, was) {
+  return guest.eventIds.map((eventId) => {
+    const event = events.find((entry) => entry.id === eventId);
+    if (!event) return '';
+    const before = was?.events?.[eventId];
+    const name = `event_${guest.id}_${eventId}`;
+    const line = eventLine(event);
+    return html`
+      <div class="event">
+        <p><strong>${event.name}</strong>${line ? html`<br><span class="muted">${line}</span>` : ''}</p>
+        <span class="choice"><input type="radio" id="yes_${name}" name="${name}" value="yes"${before === true ? html` checked` : ''}><label for="yes_${name}">Will be there</label></span>
+        <span class="choice"><input type="radio" id="no_${name}" name="${name}" value="no"${before === false ? html` checked` : ''}><label for="no_${name}">Cannot make it</label></span>
+      </div>`;
+  });
+}
+
+function guestFields(guest, questions, previous, error, events = []) {
   const was = previous?.guests?.find((answer) => answer.guestId === guest.id) ?? null;
   const yes = was?.attending === true;
   const no = was?.attending === false;
@@ -44,8 +72,10 @@ function guestFields(guest, questions, previous, error) {
     <fieldset>
       <legend>${guest.firstName}</legend>
       ${error ? html`<p class="error" role="alert">${error}</p>` : ''}
-      <span class="choice"><input type="radio" id="yes_${guest.id}" name="attending_${guest.id}" value="yes"${yes ? html` checked` : ''}><label for="yes_${guest.id}">Joyfully accepts</label></span>
-      <span class="choice"><input type="radio" id="no_${guest.id}" name="attending_${guest.id}" value="no"${no ? html` checked` : ''}><label for="no_${guest.id}">Regretfully declines</label></span>
+      ${guest.eventIds?.length
+        ? eventChoices(guest, events, was)
+        : html`<span class="choice"><input type="radio" id="yes_${guest.id}" name="attending_${guest.id}" value="yes"${yes ? html` checked` : ''}><label for="yes_${guest.id}">Joyfully accepts</label></span>
+      <span class="choice"><input type="radio" id="no_${guest.id}" name="attending_${guest.id}" value="no"${no ? html` checked` : ''}><label for="no_${guest.id}">Regretfully declines</label></span>`}
       ${questions.meals
         ? html`<label for="meal_${guest.id}">Meal</label>
             <select id="meal_${guest.id}" name="meal_${guest.id}"><option value="">No preference</option>${mealOptions}</select>`
@@ -63,7 +93,7 @@ function guestFields(guest, questions, previous, error) {
 
 /** The RSVP form. `hidden` carries the short code when the guest came in by code. */
 export function formPage({ context, action, hidden = {}, errors = {}, closed = false }) {
-  const { wedding, settings, guests, previous } = context;
+  const { wedding, settings, guests, previous, events = [] } = context;
   const { questions } = settings;
   const title = `RSVP - ${coupleTitle(wedding)}`;
 
@@ -83,7 +113,7 @@ export function formPage({ context, action, hidden = {}, errors = {}, closed = f
       <form method="post" action="${action}" class="card">
         ${Object.entries(hidden).map(([name, value]) => html`<input type="hidden" name="${name}" value="${value}">`)}
         <input type="hidden" name="submit" value="1">
-        ${guests.map((guest) => guestFields(guest, questions, previous, errors[guest.id]))}
+        ${guests.map((guest) => guestFields(guest, questions, previous, errors[guest.id], events))}
         ${questions.message
           ? html`<label for="message">A note for the couple (optional)</label>
               <textarea id="message" name="message" maxlength="1000">${previous?.message ?? ''}</textarea>
@@ -95,8 +125,16 @@ export function formPage({ context, action, hidden = {}, errors = {}, closed = f
 }
 
 export function confirmationPage({ context, response }) {
-  const { wedding, settings, guests } = context;
+  const { wedding, settings, guests, events = [] } = context;
   const name = (id) => guests.find((guest) => guest.id === id)?.firstName ?? 'Guest';
+  const eventName = (id) => events.find((event) => event.id === id)?.name ?? 'Event';
+  /** "attending the Mehndi and the Reception, not the Brunch" */
+  const perEvent = (answer) => {
+    const going = Object.keys(answer.events).filter((id) => answer.events[id]).map(eventName);
+    const not = Object.keys(answer.events).filter((id) => !answer.events[id]).map(eventName);
+    if (!going.length) return 'not attending';
+    return `attending ${going.join(', ')}${not.length ? `; not ${not.join(', ')}` : ''}`;
+  };
   const coming = response.guests.filter((answer) => answer.attending);
   return page({
     title: `Thank you - ${coupleTitle(wedding)}`,
@@ -106,7 +144,7 @@ export function confirmationPage({ context, response }) {
         <ul>
           ${response.guests.map(
             (answer) =>
-              html`<li>${name(answer.guestId)}: ${answer.attending ? 'attending' : 'not attending'}${answer.plusOneName ? html`, with ${answer.plusOneName}` : ''}</li>`
+              html`<li>${name(answer.guestId)}: ${answer.events ? perEvent(answer) : answer.attending ? 'attending' : 'not attending'}${answer.plusOneName ? html`, with ${answer.plusOneName}` : ''}</li>`
           )}
         </ul>
         <p class="muted">${coming.length ? 'We cannot wait to celebrate with you.' : 'You will be missed.'} You can come back to this page to change your reply until the deadline.</p>
