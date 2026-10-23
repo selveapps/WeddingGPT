@@ -1,6 +1,7 @@
 import {
   partyRoleLabel,
   partySideLabel,
+  normalisePartyMember,
   filterPartyMembers,
   filterPartyMembersByRole,
   searchPartyMembers,
@@ -16,6 +17,23 @@ describe('wedding party helpers', () => {
     expect(validatePartyMember(valid).isValid).toBe(true);
     expect(validatePartyMember({ ...valid, email: 'not-an-email' }).errors.email).toBeTruthy();
     expect(validatePartyMember({ ...valid, role: 'unknown' }).errors.role).toBeTruthy();
+  });
+
+  it('normalises contact strings before saving a roster member', () => {
+    expect(
+      normalisePartyMember({
+        ...valid,
+        name: ' Mina ',
+        email: ' MINA@Example.COM ',
+        phone: ' 555-0100 ',
+        note: ' Reading ',
+      })
+    ).toMatchObject({
+      name: 'Mina',
+      email: 'mina@example.com',
+      phone: '555-0100',
+      note: 'Reading',
+    });
   });
 
   it('sorts a copy by role and name', () => {

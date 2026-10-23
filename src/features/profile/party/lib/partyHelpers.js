@@ -17,6 +17,19 @@ export function validatePartyMember(values = {}) {
   return { isValid: Object.keys(errors).length === 0, errors };
 }
 
+export function normalisePartyMember(values = {}) {
+  return {
+    ...values,
+    name: String(values.name ?? '').trim(),
+    email:
+      String(values.email ?? '')
+        .trim()
+        .toLocaleLowerCase() || '',
+    phone: String(values.phone ?? '').trim(),
+    note: String(values.note ?? '').trim(),
+  };
+}
+
 export function sortPartyMembers(members = []) {
   return [...members].sort((a, b) => {
     const roleCompare = (a.role ?? '').localeCompare(b.role ?? '');
