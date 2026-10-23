@@ -42,6 +42,8 @@ export const LIMITS = {
   // scrypt hashes any length, but an unbounded input is a cheap way to burn CPU.
   passwordMax: 128,
   attemptsPerMinute: 10,
+  /** Password tries to delete one account, whatever address they come from. */
+  deleteAttemptsPerMinute: 5,
 };
 
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -139,6 +141,8 @@ export function createAuthServer({
   log = console,
 } = {}) {
   const rateLimited = createRateLimiter(LIMITS.attemptsPerMinute);
+  // Per account, not per address: the address can be claimed by the caller.
+  const deleteAttemptsLimited = createRateLimiter(LIMITS.deleteAttemptsPerMinute);
 
   function sendHtml(res, status, body, { indexable = false } = {}) {
     res.writeHead(status, pageHeaders({ indexable }));
@@ -297,6 +301,7 @@ export function createAuthServer({
     const body = await readJson(req);
     const password = typeof body.password === 'string' ? body.password : '';
     if (!password || password.length > LIMITS.passwordMax) return send(res, 400, { error: 'invalid' });
+    if (deleteAttemptsLimited(user.id)) return send(res, 429, { error: 'rate_limited' });
     if (!(await verifyPassword(password, user.password_hash))) {
       return send(res, 401, { error: 'invalid_credentials' });
     }

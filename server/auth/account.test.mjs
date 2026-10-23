@@ -272,6 +272,24 @@ describe('account export and deletion (A7, T13)', () => {
       assert.equal(JSON.parse(ravi.data).firstName, 'Ravi');
     });
 
+    it('limits password guesses per account, even from a new address each time', async () => {
+      const statuses = [];
+      for (let i = 0; i < 8; i += 1) {
+        // `call` claims a fresh X-Forwarded-For for every request.
+        const response = await call('DELETE', '/v1/account', {
+          token: priya.token,
+          body: { password: `guess ${i}` },
+        });
+        statuses.push(response.status);
+      }
+      assert.deepEqual(statuses.slice(0, 5), [401, 401, 401, 401, 401]);
+      assert.deepEqual(statuses.slice(5), [429, 429, 429]);
+      // Even the right password waits out the minute.
+      const right = await call('DELETE', '/v1/account', { token: priya.token, body: { password: PASSWORD } });
+      assert.equal(right.status, 429);
+      assert.equal((await call('GET', '/v1/auth/me', { token: priya.token })).status, 200);
+    });
+
     it('is rate limited, so a stolen session cannot guess the password', async () => {
       const statuses = [];
       for (let i = 0; i < 12; i += 1) {

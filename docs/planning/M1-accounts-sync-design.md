@@ -311,8 +311,10 @@ Details settled while building, which refine sections 4 and 5.
   and, for every wedding, its members (names and roles) and live records;
   never a password hash, session or invite token, or website password.
   `DELETE /v1/account` needs the password again and shares the per-IP rate
-  limit with sign-in, so a stolen session cannot erase an account or guess
-  the password. Deletion is one transaction: an owned wedding with a partner
+  limit with sign-in, and has its own limit of 5 tries a minute per account,
+  so a stolen session cannot erase an account or guess the password - even
+  from a new claimed address each time (the per-IP limit trusts
+  `X-Forwarded-For`; see the note in the PR). Deletion is one transaction: an owned wedding with a partner
   passes to the longest-standing partner (D4), who becomes `created_by` too;
   an owned solo wedding is deleted, and records, tombstones, mutations,
   cursors, invites, RSVP settings and links and website settings cascade with
