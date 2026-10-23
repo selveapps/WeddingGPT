@@ -52,9 +52,12 @@ export function searchVisionIdeas(ideas = [], query = '') {
   );
 }
 
-export function sortVisionIdeas(ideas = []) {
+export function sortVisionIdeas(ideas = [], sortBy = 'recent') {
   return [...ideas].sort((a, b) => {
     if (Boolean(a.saved) !== Boolean(b.saved)) return a.saved ? -1 : 1;
+    if (sortBy === 'title') {
+      return (a.title ?? '').localeCompare(b.title ?? '', undefined, { sensitivity: 'base' });
+    }
     return (b.createdAt ?? '').localeCompare(a.createdAt ?? '');
   });
 }

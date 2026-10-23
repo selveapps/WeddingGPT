@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 
 import {
   Card,
+  Chip,
   EmptyState,
+  Row,
   SectionHeader,
   Stack,
   Text,
@@ -19,10 +21,11 @@ export function WeddingVisionBoard() {
   const toast = useToast();
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [query, setQuery] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
   const { ideas, addRecord, updateRecord, removeRecord } = useWeddingVision();
   const visibleIdeas = useMemo(
-    () => sortVisionIdeas(searchVisionIdeas(filterVisionIdeas(ideas, filters), query)),
-    [ideas, filters, query]
+    () => sortVisionIdeas(searchVisionIdeas(filterVisionIdeas(ideas, filters), query), sortBy),
+    [ideas, filters, query, sortBy]
   );
   const summary = summariseVision(ideas);
 
@@ -62,6 +65,14 @@ export function WeddingVisionBoard() {
             placeholder="Search titles, notes, areas or moods"
             icon="search"
           />
+          <Row gap="xs" wrap>
+            <Chip
+              label="Pinned and recent"
+              selected={sortBy === 'recent'}
+              onPress={() => setSortBy('recent')}
+            />
+            <Chip label="Pinned and A–Z" selected={sortBy === 'title'} onPress={() => setSortBy('title')} />
+          </Row>
           <VisionFilters value={filters} onChange={setFilters} />
           {visibleIdeas.length ? (
             <Stack gap="sm">
