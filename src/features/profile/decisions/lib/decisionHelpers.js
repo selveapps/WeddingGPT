@@ -53,6 +53,10 @@ export function sortDecisions(items = []) {
   });
 }
 
+export function filterDecisions(items = [], status = 'all') {
+  return status === 'all' ? [...items] : items.filter((item) => item.status === status);
+}
+
 export function summariseDecisions(items = []) {
   const decided = items.filter((item) => item.status === DECISION_STATUSES.DECIDED).length;
   return { total: items.length, decided, open: items.length - decided };

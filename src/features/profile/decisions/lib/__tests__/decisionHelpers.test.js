@@ -1,5 +1,6 @@
 import {
   decisionCategoryLabel,
+  filterDecisions,
   parseDecisionOptions,
   sortDecisions,
   summariseDecisions,
@@ -34,6 +35,13 @@ describe('wedding decision helpers', () => {
     ];
     expect(sortDecisions(items)).toEqual([items[2], items[1], items[0]]);
     expect(summariseDecisions(items)).toEqual({ total: 3, decided: 1, open: 2 });
+  });
+
+  it('filters open and decided records without mutating the decision log', () => {
+    const items = [{ status: 'open' }, { status: 'decided' }];
+    expect(filterDecisions(items, 'open')).toEqual([items[0]]);
+    expect(filterDecisions(items, 'decided')).toEqual([items[1]]);
+    expect(filterDecisions(items)).toEqual(items);
   });
 
   it('returns a readable category fallback', () => {
