@@ -54,7 +54,8 @@ export function sortDecisions(items = []) {
   });
 }
 
-export function filterDecisions(items = [], status = 'all') {
+export function filterDecisions(items = [], status = 'all', now = new Date()) {
+  if (status === 'overdue') return filterOverdueDecisions(items, now);
   return status === 'all' ? [...items] : items.filter((item) => item.status === status);
 }
 

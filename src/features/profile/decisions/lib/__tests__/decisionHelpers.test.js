@@ -41,10 +41,15 @@ describe('wedding decision helpers', () => {
     expect(summariseDecisions(items)).toEqual({ total: 3, decided: 1, open: 2, overdue: 0 });
   });
 
-  it('filters open and decided records without mutating the decision log', () => {
-    const items = [{ status: 'open' }, { status: 'decided' }];
-    expect(filterDecisions(items, 'open')).toEqual([items[0]]);
-    expect(filterDecisions(items, 'decided')).toEqual([items[1]]);
+  it('filters open, decided, and overdue records without mutating the decision log', () => {
+    const items = [
+      { status: 'open', revisitDate: '2026-10-22' },
+      { status: 'open', revisitDate: '2026-10-23' },
+      { status: 'decided', revisitDate: '2026-10-01' },
+    ];
+    expect(filterDecisions(items, 'open')).toEqual([items[0], items[1]]);
+    expect(filterDecisions(items, 'decided')).toEqual([items[2]]);
+    expect(filterDecisions(items, 'overdue', new Date(2026, 9, 23, 12))).toEqual([items[0]]);
     expect(filterDecisions(items)).toEqual(items);
   });
 
