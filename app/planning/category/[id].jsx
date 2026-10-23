@@ -16,7 +16,7 @@ import {
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
 import { usePlanningStore, selectAllTasks, selectCategoryById } from '@/store';
-import { TaskStatus, calculateProgress, isTaskOpen } from '@/models';
+import { TaskStatus, calculateProgress, isTaskOpen, openPrerequisites } from '@/models';
 import { TaskRow } from '@/features/planning/TaskRow';
 
 /**
@@ -35,6 +35,8 @@ export default function TaskCategoryScreen() {
   const categoryId = String(id);
   const category = usePlanningStore(selectCategoryById(categoryId));
   const allTasks = usePlanningStore(selectAllTasks);
+  // Prerequisites can sit in other categories, so look them up across all tasks.
+  const tasksById = useMemo(() => new Map(allTasks.map((task) => [task.id, task])), [allTasks]);
   const toggleTask = usePlanningStore((state) => state.toggleTask);
 
   const { open, done, progress } = useMemo(() => {
@@ -130,6 +132,7 @@ export default function TaskCategoryScreen() {
               <TaskRow
                 key={task.id}
                 task={task}
+                waitingFor={openPrerequisites(task, tasksById).length}
                 onToggle={handleToggle}
                 onPress={() => router.push(Routes.taskDetail(task.id))}
               />

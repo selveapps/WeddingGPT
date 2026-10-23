@@ -38,6 +38,7 @@ import {
   isSnoozeActive,
   eventName,
   sortEvents,
+  openPrerequisites,
 } from '@/models';
 import { daysUntil } from '@/lib/date';
 import { TaskRow } from '@/features/planning/TaskRow';
@@ -113,6 +114,8 @@ export default function PlanningScreen() {
     () => new Map(categories.map((category) => [category.id, category.name])),
     [categories]
   );
+
+  const tasksById = useMemo(() => new Map(tasks.map((task) => [task.id, task])), [tasks]);
 
   const progress = useMemo(() => calculateProgress(tasks), [tasks]);
   const openCount = useMemo(() => tasks.filter(isTaskOpen).length, [tasks]);
@@ -329,6 +332,7 @@ export default function PlanningScreen() {
                     key={task.id}
                     task={task}
                     categoryName={categoryNameById.get(task.categoryId)}
+                    waitingFor={openPrerequisites(task, tasksById).length}
                     onToggle={handleToggle}
                     onPress={() => router.push(Routes.taskDetail(task.id))}
                   />

@@ -16,7 +16,7 @@ import { formatRelativeDay } from '@/lib/date';
  * Overdue is computed here rather than stored, so a row that was fine last
  * night is red this morning without anything having to run in between.
  */
-export function TaskRow({ task, categoryName, onToggle, onPress }) {
+export function TaskRow({ task, categoryName, waitingFor = 0, onToggle, onPress }) {
   const { colors, spacing, borderWidths } = useTheme();
 
   const done = task.status === TaskStatus.DONE;
@@ -69,9 +69,16 @@ export function TaskRow({ task, categoryName, onToggle, onPress }) {
                 </Text>
               ) : null}
 
+              {waitingFor && !done ? (
+                <Text variant="caption" color="subtle">
+                  {task.dueDate ? '· ' : ''}
+                  {`Waits for ${waitingFor}`}
+                </Text>
+              ) : null}
+
               {categoryName ? (
                 <Text variant="caption" color="subtle">
-                  {task.dueDate && !done ? '· ' : ''}
+                  {(task.dueDate || waitingFor) && !done ? '· ' : ''}
                   {categoryName}
                 </Text>
               ) : null}
