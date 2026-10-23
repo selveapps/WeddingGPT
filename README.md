@@ -384,8 +384,16 @@ through one membership check, and a workspace the caller is not a member of
 answers 404, so its id cannot be probed. Workspaces sync record by record
 through `POST /v1/workspaces/:id/sync/push` and `GET .../sync/pull`: the server
 orders writes, a conflicting push wins but returns the copy it overwrote, and
-deletes are tombstones with their contents removed. The app does not use
-workspaces or sync yet (slices A3-A4).
+deletes are tombstones with their contents removed.
+
+In the app, **Account > Sync** backs up the phone's wedding to the account, or
+opens the account's wedding on another phone (the phone's own wedding stays as
+it is, and comes back on sign-out). Changes sync two seconds after an edit and
+when the app opens; edits made on two phones at once are listed there with the
+option to restore the other version. Engine: `services/sync`; reminder
+preferences and assistant chats stay on each phone. The sync integration test
+runs the real client against a real server in CI
+(`SYNC_SERVER_URL=... npx jest realServer`).
 
 ```bash
 cd server/auth

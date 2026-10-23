@@ -1,3 +1,4 @@
+import { ApiError, NetworkErrorCode, createApiRequest } from '../api/request';
 import { AuthError, AuthErrorCode, fieldMessages } from './AuthError';
 
 /**
@@ -8,9 +9,12 @@ import { AuthError, AuthErrorCode, fieldMessages } from './AuthError';
  * refusal from the server.
  */
 
-const DEFAULT_TIMEOUT_MS = 15000;
-
-function errorForStatus(status, body) {
+/** Turn the shared API error into the auth error screens know how to show. */
+function toAuthError(error) {
+  if (!(error instanceof ApiError)) return error;
+  if (error.code === NetworkErrorCode.OFFLINE) return new AuthError(AuthErrorCode.OFFLINE);
+  if (error.code === NetworkErrorCode.TIMEOUT) return new AuthError(AuthErrorCode.TIMEOUT);
+  const { status, body } = error;
   if (status === 400) return new AuthError(AuthErrorCode.INVALID, { fields: fieldMessages(body?.fields) });
   if (status === 401) {
     return new AuthError(
@@ -22,36 +26,15 @@ function errorForStatus(status, body) {
   return new AuthError(AuthErrorCode.UNAVAILABLE);
 }
 
-export function createAuthClient({ url, appToken, timeoutMs = DEFAULT_TIMEOUT_MS, fetchImpl = fetch }) {
-  const base = url.replace(/\/+$/, '');
+export function createAuthClient({ url, appToken, timeoutMs, fetchImpl }) {
+  const apiRequest = createApiRequest({ url, appToken, timeoutMs, fetchImpl });
 
-  async function request(path, { method = 'GET', body, token } = {}) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    let response;
+  async function request(path, options) {
     try {
-      response = await fetchImpl(`${base}${path}`, {
-        method,
-        headers: {
-          ...(body ? { 'Content-Type': 'application/json' } : {}),
-          ...(appToken ? { 'X-App-Token': appToken } : {}),
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        signal: controller.signal,
-      });
+      return await apiRequest(path, options);
     } catch (error) {
-      throw new AuthError(error?.name === 'AbortError' ? AuthErrorCode.TIMEOUT : AuthErrorCode.OFFLINE);
-    } finally {
-      clearTimeout(timer);
+      throw toAuthError(error);
     }
-
-    if (response.status === 204) return null;
-    const json = await response.json().catch(() => null);
-    if (!response.ok) throw errorForStatus(response.status, json);
-    if (!json) throw new AuthError(AuthErrorCode.UNAVAILABLE);
-    return json;
   }
 
   /** `{ user, token, expiresAt }` from register and login. */

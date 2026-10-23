@@ -1,11 +1,8 @@
 import React from 'react';
-import renderer, { act } from 'react-test-renderer';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from '@/design-system/theme';
-import { ToastProvider } from '@/design-system/components';
 import { useGuestStore, useWeddingStore, selectAllGuests, selectAllHouseholds } from '@/store';
 import { createGuest, createWedding, RsvpStatus } from '@/models';
+import { act, pressable, renderWithProviders, shownTexts } from '@/test/render';
 
 import { GuestSpreadsheetScreen } from '../GuestSpreadsheetScreen';
 
@@ -20,35 +17,9 @@ const CSV = [
   'Existing Guest,,,',
 ].join('\n');
 
-const METRICS = {
-  frame: { x: 0, y: 0, width: 390, height: 844 },
-  insets: { top: 0, left: 0, right: 0, bottom: 0 },
-};
-
-function render() {
-  let tree;
-  act(() => {
-    tree = renderer.create(
-      <SafeAreaProvider initialMetrics={METRICS}>
-        <ThemeProvider>
-          <ToastProvider>
-            <GuestSpreadsheetScreen />
-          </ToastProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    );
-  });
-  return tree;
-}
-
-const pressable = (tree, label) =>
-  tree.root.find(
-    (node) => node.props.accessibilityLabel === label && typeof node.props.onPress === 'function'
-  );
+const render = () => renderWithProviders(<GuestSpreadsheetScreen />);
 const textField = (tree) =>
   tree.root.find((node) => node.props.multiline && typeof node.props.onChangeText === 'function');
-const shownTexts = (tree) =>
-  tree.root.findAll((node) => typeof node.children?.[0] === 'string').map((node) => node.children.join(''));
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -66,8 +37,8 @@ afterEach(() => {
 });
 
 describe('GuestSpreadsheetScreen', () => {
-  it('imports pasted rows, skipping duplicates and rows that need a fix', () => {
-    const tree = render();
+  it('imports pasted rows, skipping duplicates and rows that need a fix', async () => {
+    const tree = await render();
 
     act(() => textField(tree).props.onChangeText(CSV));
     act(() => pressable(tree, 'Read these rows').props.onPress());
@@ -91,8 +62,8 @@ describe('GuestSpreadsheetScreen', () => {
     expect(mockRouter.back).toHaveBeenCalled();
   });
 
-  it('will not import without a name column', () => {
-    const tree = render();
+  it('will not import without a name column', async () => {
+    const tree = await render();
     act(() => textField(tree).props.onChangeText('Email,RSVP\na@example.com,yes'));
     act(() => pressable(tree, 'Read these rows').props.onPress());
 
@@ -101,8 +72,8 @@ describe('GuestSpreadsheetScreen', () => {
     expect(button.props.disabled).toBe(true);
   });
 
-  it('lets a column be remapped, and starting over clears the import', () => {
-    const tree = render();
+  it('lets a column be remapped, and starting over clears the import', async () => {
+    const tree = await render();
     act(() => textField(tree).props.onChangeText('Who,Mail\nMeera Shah,meera@example.com'));
     act(() => pressable(tree, 'Read these rows').props.onPress());
     expect(shownTexts(tree)).toContain("Don't import");

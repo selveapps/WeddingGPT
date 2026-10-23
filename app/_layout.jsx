@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme, appFonts } from '@/design-system/theme';
 import { ToastProvider } from '@/design-system/components';
 import { analytics, AnalyticsEvents } from '@/services/analytics';
 import { useAuthStore } from '@/store/authStore';
+import { useSyncLifecycle } from '@/features/sync/useSyncLifecycle';
 
 // Hold the native splash until fonts are ready, so the first frame the user
 // sees is already branded rather than a flash of fallback type.
@@ -23,6 +24,7 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
  */
 function RootNavigator() {
   const { colors, isDark } = useTheme();
+  useSyncLifecycle();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.canvas }}>
@@ -59,7 +61,10 @@ export default function RootLayout() {
   // Restore a saved sign-in in the background. Nothing waits on it: the app
   // works signed out, and the Account button updates when this lands.
   useEffect(() => {
-    useAuthStore.getState().restore().catch(() => {});
+    useAuthStore
+      .getState()
+      .restore()
+      .catch(() => {});
   }, []);
 
   const onLayoutRootView = useCallback(async () => {
