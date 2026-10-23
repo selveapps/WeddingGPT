@@ -29,13 +29,6 @@ export const LAB_FEATURES = [
     route: '/labs/timeline',
   },
   {
-    key: 'party',
-    title: 'Wedding party',
-    blurb: 'Roles, starter jobs, outfits and a list to send each person.',
-    icon: 'star',
-    route: '/labs/party',
-  },
-  {
     key: 'packing',
     title: 'Packing lists',
     blurb: 'Emergency kit, getting-ready bag, venue box and honeymoon checklists.',

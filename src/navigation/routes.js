@@ -69,6 +69,7 @@ export const Routes = {
   guestSeating: '/guests/seating',
   guestMeals: '/guests/meals',
   guestGifts: '/guests/gifts',
+  guestParty: '/guests/party',
   householdDetail: (id) => `/guests/household/${id}`,
 
   // --- Vendors ------------------------------------------------------------

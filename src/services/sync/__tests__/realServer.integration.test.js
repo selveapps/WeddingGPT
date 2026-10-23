@@ -491,4 +491,51 @@ run('sync against the real server', () => {
     await a.engine.syncNow();
     expect(a.gifts.getState().gifts.byId.gift_1.thankYouStatus).toBe('sent');
   });
+
+  it('a wedding party job ticked on one phone shows on the other (party)', async () => {
+    const partyPhone = () => {
+      const party = create(() => ({ members: { byId: {}, allIds: [] } }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [{ collection: 'partyMembers', store: party, key: 'members', kind: SliceKind.MANY }],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { party, syncStore, engine };
+    };
+    const a = partyPhone();
+    const b = partyPhone();
+    const member = {
+      id: 'party_1',
+      name: 'Meera',
+      roleKey: 'maid_of_honor',
+      todos: [{ id: 'todo_1', title: 'Plan the shower', done: false }],
+      updatedAt: '2027-01-01T00:00:00.000Z',
+    };
+    a.party.setState({ members: { byId: { party_1: member }, allIds: ['party_1'] } });
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    await b.engine.syncNow();
+    expect(b.party.getState().members.byId.party_1.name).toBe('Meera');
+
+    b.party.setState((state) => ({
+      members: {
+        ...state.members,
+        byId: {
+          party_1: {
+            ...state.members.byId.party_1,
+            todos: [{ id: 'todo_1', title: 'Plan the shower', done: true }],
+            updatedAt: '2027-01-02T00:00:00.000Z',
+          },
+        },
+      },
+    }));
+    await b.engine.syncNow();
+    await a.engine.syncNow();
+    expect(a.party.getState().members.byId.party_1.todos[0].done).toBe(true);
+  });
 });
