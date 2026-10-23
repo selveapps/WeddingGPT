@@ -2,6 +2,7 @@ import {
   partyRoleLabel,
   partySideLabel,
   filterPartyMembers,
+  filterPartyMembersByRole,
   searchPartyMembers,
   sortPartyMembers,
   summariseParty,
@@ -53,6 +54,15 @@ describe('wedding party helpers', () => {
     expect(filterPartyMembers(members, 'partner-one')).toEqual([members[0]]);
     expect(filterPartyMembers(members)).toEqual(members);
     expect(members).toHaveLength(2);
+  });
+
+  it('filters by role and returns all roles for the default view', () => {
+    const members = [
+      { ...valid, name: 'Mina', role: 'attendant' },
+      { ...valid, name: 'Ravi', role: 'reader' },
+    ];
+    expect(filterPartyMembersByRole(members, 'reader')).toEqual([members[1]]);
+    expect(filterPartyMembersByRole(members)).toEqual(members);
   });
 
   it('provides friendly labels for recognised and unknown values', () => {

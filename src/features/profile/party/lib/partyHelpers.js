@@ -47,6 +47,10 @@ export function filterPartyMembers(members = [], side = 'all') {
   return side === 'all' ? [...members] : members.filter((member) => member.side === side);
 }
 
+export function filterPartyMembersByRole(members = [], role = 'all') {
+  return role === 'all' ? [...members] : members.filter((member) => member.role === role);
+}
+
 export function summariseParty(members = []) {
   return {
     total: members.length,

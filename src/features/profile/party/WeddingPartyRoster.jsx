@@ -13,18 +13,24 @@ import {
 } from '@/design-system/components';
 import { PartyMemberCard, PartyMemberForm } from './components';
 import { usePartyRoster } from './hooks/usePartyRoster';
-import { filterPartyMembers, searchPartyMembers, summariseParty } from './lib/partyHelpers';
-import { PARTY_SIDES } from './lib/partyConstants';
+import {
+  filterPartyMembers,
+  filterPartyMembersByRole,
+  searchPartyMembers,
+  summariseParty,
+} from './lib/partyHelpers';
+import { PARTY_ROLES, PARTY_SIDES } from './lib/partyConstants';
 
 export function WeddingPartyRoster() {
   const toast = useToast();
   const { members, addRecord, removeRecord } = usePartyRoster();
   const [query, setQuery] = useState('');
   const [side, setSide] = useState('all');
+  const [role, setRole] = useState('all');
   const summary = summariseParty(members);
   const visibleMembers = useMemo(
-    () => searchPartyMembers(filterPartyMembers(members, side), query),
-    [members, query, side]
+    () => searchPartyMembers(filterPartyMembersByRole(filterPartyMembers(members, side), role), query),
+    [members, query, role, side]
   );
 
   const addMember = (values) => {
@@ -73,6 +79,17 @@ export function WeddingPartyRoster() {
               />
             ))}
           </Row>
+          <Row gap="xs" wrap>
+            <Chip label="All roles" selected={role === 'all'} onPress={() => setRole('all')} />
+            {PARTY_ROLES.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={role === option.value}
+                onPress={() => setRole(option.value)}
+              />
+            ))}
+          </Row>
           {visibleMembers.length ? (
             visibleMembers.map((member) => (
               <PartyMemberCard key={member.id} member={member} onRemove={removeMember} />
@@ -87,6 +104,7 @@ export function WeddingPartyRoster() {
               onAction={() => {
                 setQuery('');
                 setSide('all');
+                setRole('all');
               }}
             />
           )}
