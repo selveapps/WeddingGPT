@@ -284,3 +284,15 @@ export {
   checklistDueDate,
   buildEventTasks,
 } from './eventTemplates';
+export {
+  WHOLE_WEDDING,
+  UNCATEGORISED,
+  moneyFigures,
+  categoryReport,
+  reportTotals,
+  eventReport,
+  stillToPay,
+  paymentsDueByMonth,
+  heaviestMonth,
+  financeReportCsv,
+} from './financeReport';
