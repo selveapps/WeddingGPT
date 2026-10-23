@@ -6,6 +6,7 @@ import {
   MAX_DECISION_QUESTION,
 } from './decisionConstants';
 import { isCalendarDate } from '../../keepsakes/lib/keepsakeHelpers';
+import { toISODate } from '@/lib/date';
 
 export function parseDecisionOptions(value) {
   if (Array.isArray(value)) {
@@ -73,9 +74,19 @@ export function filterDecisionsByCategory(items = [], category = 'all') {
   return category === 'all' ? [...items] : items.filter((item) => item.category === category);
 }
 
+export function isDecisionOverdue(item, now = new Date()) {
+  if (item?.status !== DECISION_STATUSES.OPEN || !isCalendarDate(item.revisitDate)) return false;
+  return item.revisitDate < toISODate(now);
+}
+
+export function filterOverdueDecisions(items = [], now = new Date()) {
+  return items.filter((item) => isDecisionOverdue(item, now));
+}
+
 export function summariseDecisions(items = []) {
   const decided = items.filter((item) => item.status === DECISION_STATUSES.DECIDED).length;
-  return { total: items.length, decided, open: items.length - decided };
+  const overdue = filterOverdueDecisions(items).length;
+  return { total: items.length, decided, open: items.length - decided, overdue };
 }
 
 export function decisionCategoryLabel(value) {
