@@ -256,3 +256,21 @@ All six were approved as recommended.
 | D4 | Deleting an account that owns a workspace with a partner | Ownership passes to the partner; a solo workspace is deleted |
 | D5 | Email provider for invites and password reset | Any provider with an API and EU/US data residency options; needed only for A6 |
 | D6 | Signing out on a shared phone | Keep the synced copy encrypted on the device until the next sign-in, or wipe it; recommend wipe, with a warning if the outbox is not empty |
+
+## Implementation notes
+
+Details settled while building, which refine sections 4 and 5.
+
+- **A1 (workspaces).** The owner cannot leave their own workspace; handing
+  it over belongs to account deletion (D4, A7). A user may belong to at most
+  10 workspaces; creating an eleventh returns 403 `limit_reached`. A wrong
+  HTTP method on a known path returns 405.
+- **A2 (sync).** `seq` comes from a dedicated counter, not `MAX(seq) + 1`,
+  so purging the newest tombstone can never reissue a seq that devices have
+  already pulled past. A tombstone keeps no contents (`data` is null), so a
+  deleted guest's contact and dietary details do not stay on the server for
+  90 days. Conflicts also return the overwritten copy's `updatedAt` and
+  `deletedAt`. A new record beyond the 20,000-record quota is rejected with
+  `quota_exceeded`; edits and deletes still apply. Idempotency entries are
+  dropped after 30 days. Pull cursors are stored per member, which is what
+  the tombstone purge waits on.
