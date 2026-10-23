@@ -3,6 +3,7 @@ import http from 'node:http';
 import { publicUser } from './db.mjs';
 import { burnPasswordCheck, hashPassword, verifyPassword } from './passwords.mjs';
 import { createRouter } from './router.mjs';
+import { SYNC_LIMITS, parsePullQuery } from './sync.mjs';
 import { WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './workspaces.mjs';
 
 /**
@@ -17,6 +18,8 @@ import { WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './work
  *   POST   /v1/workspaces                 { name }                  -> 201 { workspace }
  *   GET    /v1/workspaces/:id/members                               -> 200 { members }
  *   DELETE /v1/workspaces/:id/members/:userId                       -> 204
+ *   POST   /v1/workspaces/:id/sync/push   { mutations }             -> 200 { applied, conflicts, rejected }
+ *   GET    /v1/workspaces/:id/sync/pull?since=&limit=               -> 200 { records, cursor, hasMore }
  *   GET    /health                                                  -> 200 { ok: true }
  *
  * Everything except register, login and health needs `Authorization: Bearer
@@ -74,14 +77,14 @@ function createRateLimiter(limit) {
   };
 }
 
-function readBody(req) {
+function readBody(req, limit = LIMITS.bodyBytes) {
   return new Promise((resolve, reject) => {
     let size = 0;
     const chunks = [];
     req.on('data', (chunk) => {
       size += chunk.length;
       // Keep draining rather than destroying the socket, so the 413 reaches the client.
-      if (size > LIMITS.bodyBytes) reject(Object.assign(new Error('too large'), { status: 413 }));
+      if (size > limit) reject(Object.assign(new Error('too large'), { status: 413 }));
       else chunks.push(chunk);
     });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
@@ -89,8 +92,8 @@ function readBody(req) {
   });
 }
 
-async function readJson(req) {
-  const text = await readBody(req);
+async function readJson(req, limit) {
+  const text = await readBody(req, limit);
   const body = JSON.parse(text || '{}');
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('not an object');
   return body;
@@ -208,6 +211,22 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
     return send(res, 204);
   }
 
+  // --- Sync (slice A2) ------------------------------------------------------
+
+  async function syncPush(req, res, { user, workspace }) {
+    const body = await readJson(req, SYNC_LIMITS.requestBytes);
+    const { mutations } = body;
+    if (!Array.isArray(mutations) || mutations.length === 0) return send(res, 400, { error: 'invalid' });
+    if (mutations.length > SYNC_LIMITS.mutationsPerPush) return send(res, 413, { error: 'too_large' });
+    return send(res, 200, db.sync.push(workspace.id, user.id, mutations));
+  }
+
+  function syncPull(req, res, { user, workspace, query }) {
+    const options = parsePullQuery(query);
+    if (!options) return send(res, 400, { error: 'invalid' });
+    return send(res, 200, db.sync.pull(workspace.id, user.id, options));
+  }
+
   // --- Routing ---------------------------------------------------------------
   //
   // `access`: 'public' (no session), 'user' (a valid session) or 'member'
@@ -222,7 +241,9 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
     .add('GET', '/v1/workspaces', listWorkspaces, { access: 'user' })
     .add('POST', '/v1/workspaces', createWorkspace, { access: 'user', limited: true })
     .add('GET', '/v1/workspaces/:id/members', listMembers, { access: 'member' })
-    .add('DELETE', '/v1/workspaces/:id/members/:userId', removeMember, { access: 'member' });
+    .add('DELETE', '/v1/workspaces/:id/members/:userId', removeMember, { access: 'member' })
+    .add('POST', '/v1/workspaces/:id/sync/push', syncPush, { access: 'member' })
+    .add('GET', '/v1/workspaces/:id/sync/pull', syncPull, { access: 'member' });
 
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204);

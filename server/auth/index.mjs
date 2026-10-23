@@ -21,10 +21,13 @@ const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const db = openDatabase(DB_PATH);
 const server = createAuthServer({ db, appToken: APP_TOKEN, allowedOrigin: ALLOWED_ORIGIN });
 
-// Expired sessions are already ignored on read; this just keeps the table small.
+// Expired sessions are already ignored on read, and old tombstones are only
+// purged behind every member's cursor; this just keeps the tables small.
 const prune = () => {
   const removed = db.pruneExpiredSessions();
   if (removed) console.log(`[auth] pruned ${removed} expired sessions`);
+  const { tombstones, mutations } = db.sync.compact();
+  if (tombstones || mutations) console.log(`[sync] purged ${tombstones} tombstones, ${mutations} old mutation ids`);
 };
 prune();
 setInterval(prune, 60 * 60 * 1000).unref();
