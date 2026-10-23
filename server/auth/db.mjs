@@ -7,6 +7,7 @@ import { createAccountRepository } from './account.mjs';
 import { createInviteRepository } from './invites.mjs';
 import { createRsvpRepository } from './rsvp/rsvp.mjs';
 import { createSiteRepository } from './rsvp/site.mjs';
+import { createDaySheetRepository } from './rsvp/daySheets.mjs';
 import { createSyncRepository } from './sync.mjs';
 import { createWorkspaceRepository } from './workspaces.mjs';
 
@@ -103,6 +104,9 @@ export function openDatabase(path) {
 
     /** Wedding website visibility, password and indexing - see rsvp/site.mjs. */
     site: createSiteRepository(db),
+
+    /** Day-of sheet links for vendors - see rsvp/daySheets.mjs. */
+    daySheets: createDaySheetRepository(db, sync),
 
     /** Export and deletion of a whole account - see account.mjs. */
     account: createAccountRepository(db),
