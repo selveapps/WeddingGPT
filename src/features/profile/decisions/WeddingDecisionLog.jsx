@@ -65,7 +65,7 @@ export function WeddingDecisionLog() {
       <SectionHeader
         eyebrow="One choice at a time"
         title="Decision log"
-        subtitle={`${summary.open} open · ${summary.decided} decided`}
+        subtitle={`${summary.open} open · ${summary.decided} decided${summary.overdue ? ` · ${summary.overdue} overdue` : ''}`}
       />
       <Card>
         <DecisionForm onSave={save} />
