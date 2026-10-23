@@ -61,8 +61,9 @@ export const Routes = {
 
   // --- Vendors ------------------------------------------------------------
   vendors: '/vendors',
-  vendorCategory: (key) => `/vendors/category/${key}`,
+  vendorAdd: '/vendors/new',
   vendorDetail: (id) => `/vendors/${id}`,
+  vendorEdit: (id) => `/vendors/${id}/edit`,
 
   // --- Vision -------------------------------------------------------------
   vision: '/vision',

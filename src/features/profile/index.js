@@ -7,7 +7,6 @@
  *  - fields/              form field groups
  *  - hooks/               form & screen state
  *  - lib/                 constants, helpers, validation
- *  - booking/             vendor booking tracker
  */
 
 export { Profile } from './Profile';
@@ -52,30 +51,3 @@ export {
   validateProfileValues,
   validateProfileField,
 } from './lib';
-
-export {
-  Booking,
-  BookingDetail,
-  BookingFormScreen,
-  useBookings,
-  useBookingForm,
-  BookingRow,
-  BookingFilters,
-  BookingPipeline,
-  BookingPaymentPlan,
-  BookingTips,
-  BookingForm,
-  BookingTimeline,
-  BookingCategories,
-  BookingFilter,
-  BOOKING_FILTER_META,
-  BOOKING_STATUS_OPTIONS,
-  BOOKING_CATEGORY_OPTIONS,
-  BOOKING_SORT,
-  BOOKING_SORT_OPTIONS,
-  filterBookings,
-  sortBookings,
-  summariseBookings,
-  validateBookingValues,
-  validateBookingField,
-} from './booking';
