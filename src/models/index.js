@@ -182,6 +182,7 @@ export {
   DEFAULT_TABLE_CAPACITY,
   MAX_TABLE_CAPACITY,
   createSeatingTable,
+  tablesForEvent,
   createSeatingRules,
   withKnownGuests,
   seatableGuests,

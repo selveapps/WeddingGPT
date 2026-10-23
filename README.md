@@ -329,7 +329,8 @@ Two deliberate choices in the generator:
   that keeps households together, keep-apart pairs, and on a wide screen the
   tables in a grid beside the guests still to seat. Tables and pairs sync
   between partners (`seatingTables`, `seatingRules`); a deleted guest frees
-  their seat. *Meals for the caterer* counts plates, meal choices and allergies
+  their seat. Each event has its own tables (slice F2), seating the guests
+  invited to it who have not declined it; keep-apart pairs hold everywhere. *Meals for the caterer* counts plates, meal choices and allergies
   to check, and exports a CSV. Both graduated from Labs; earlier Labs seating
   plans are imported once.
 - **Wedding website.** *Wedding website* on the Guests tab: welcome,

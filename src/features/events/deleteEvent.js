@@ -3,11 +3,13 @@ import {
   usePlanningStore,
   useEventStore,
   useRunOfShowStore,
+  useSeatingStore,
+  selectSeatingTables,
   selectAllExpenses,
   selectAllTasks,
   selectRunOfShow,
 } from '@/store';
-import { itemsForDay } from '@/models';
+import { itemsForDay, tablesForEvent } from '@/models';
 
 /** What deleting an event would touch, for the confirmation message. */
 export function eventLinks(eventId) {
@@ -16,14 +18,15 @@ export function eventLinks(eventId) {
     (expense) => expense.eventId === eventId
   );
   const runOfShow = itemsForDay(selectRunOfShow(useRunOfShowStore.getState()), eventId);
-  return { tasks: tasks.length, expenses: expenses.length, runOfShow: runOfShow.length };
+  const tables = tablesForEvent(selectSeatingTables(useSeatingStore.getState()), eventId);
+  return { tasks: tasks.length, expenses: expenses.length, runOfShow: runOfShow.length, tables: tables.length };
 }
 
 /**
  * Delete an event. Its tasks and costs are not deleted: they go back to "the
  * wedding as a whole", because a deposit paid for the mehndi is still money
- * spent even if the mehndi moves into another event. Its run of show is
- * deleted with it: a mehndi's timings mean nothing on another day.
+ * spent even if the mehndi moves into another event. Its run of show and its
+ * seating tables are deleted with it: they mean nothing on another day.
  */
 export function deleteEvent(eventId) {
   const { updateTask } = usePlanningStore.getState();
@@ -35,5 +38,6 @@ export function deleteEvent(eventId) {
     if (expense.eventId === eventId) updateExpense(expense.id, { eventId: null });
   }
   useRunOfShowStore.getState().clearDay(eventId);
+  useSeatingStore.getState().clearEvent(eventId);
   useEventStore.getState().removeEvent(eventId);
 }

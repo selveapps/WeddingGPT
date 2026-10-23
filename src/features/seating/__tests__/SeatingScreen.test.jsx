@@ -1,7 +1,7 @@
 import React from 'react';
 import { useWindowDimensions } from 'react-native';
 
-import { useGuestStore, useSeatingStore, selectSeatingTables, useWeddingStore } from '@/store';
+import { useEventStore, useGuestStore, useSeatingStore, selectSeatingTables, useWeddingStore } from '@/store';
 import { createGuest, createWedding, RsvpStatus } from '@/models';
 import { act, press, renderWithProviders, shownTexts } from '@/test/render';
 
@@ -22,6 +22,7 @@ const sheetField = (tree, label) => fields(tree, label).at(-1);
 let meera;
 beforeEach(() => {
   useSeatingStore.getState().reset();
+  useEventStore.getState().reset();
   useSeatingStore.setState({ labsImportedAt: 'done' });
   useGuestStore.getState().reset();
   const wedding = createWedding({ ownerName: 'Priya' });
@@ -72,11 +73,49 @@ describe('SeatingScreen', () => {
     expect(tables()).toEqual([]);
   });
 
-  it('frees the seat of a guest who was deleted', async () => {
+  it('frees the seat of a guest who was deleted, but not when the list is merely empty', async () => {
     const table = useSeatingStore.getState().addTable({ name: 'T1' });
-    useSeatingStore.getState().assign(table.id, 'guest_gone');
+    useSeatingStore.getState().assign(table.id, meera.id);
+    // A workspace switch empties the guest list for a moment: seats stay.
+    useGuestStore.setState({ guests: { byId: {}, allIds: [] } });
     await render();
+    expect(tables()[0].guestIds).toEqual([meera.id]);
+
+    useGuestStore.getState().addGuest(meera);
+    useGuestStore.getState().deleteGuest(meera.id);
     expect(tables()[0].guestIds).toEqual([]);
+  });
+
+  it('gives each event its own tables and guests', async () => {
+    const wedding = useWeddingStore.getState().wedding;
+    const jo = useGuestStore.getState().addGuest(createGuest({ weddingId: wedding.id, firstName: 'Jo' }));
+    const mehndi = useEventStore
+      .getState()
+      .addEvent({
+        weddingId: wedding.id,
+        kind: 'mehndi',
+        guestScope: 'invited',
+        invitedGuestIds: [meera.id, jo.id],
+      });
+    useEventStore.getState().applyAttendance({ [mehndi.id]: { [jo.id]: 'declined' } });
+    useSeatingStore.getState().addTable({ name: 'Wedding T1' });
+
+    const tree = await render();
+    await press(tree, 'Mehndi');
+    expect(shownTexts(tree)).toContain('No tables yet');
+    // Meera is invited and has not declined; Jo declined the mehndi; Dec is not invited.
+    expect(shownTexts(tree)).toContain('Need a seat (1)');
+
+    await act(async () => field(tree, 'Table name').props.onChangeText('Henna corner'));
+    await press(tree, 'Add table');
+    await press(tree, 'Auto-seat everyone');
+    const henna = tables().find((t) => t.name === 'Henna corner');
+    expect(henna).toMatchObject({ eventId: mehndi.id, guestIds: [meera.id] });
+    expect(tables().find((t) => t.name === 'Wedding T1').guestIds).toEqual([]);
+
+    // Seated at the mehndi does not mean seated at the wedding.
+    await press(tree, 'The wedding day');
+    expect(shownTexts(tree)).toContain('Need a seat (2)');
   });
 
   it('lays tables and the guest list side by side on a wide screen', async () => {

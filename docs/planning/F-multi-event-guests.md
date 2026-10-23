@@ -44,3 +44,9 @@ after replying no longer counts there; tests on the server, the app and a live
 sync scenario.
 
 Status: F1 done on `feature/rsvp-per-event`.
+
+F2 done on `feature/seating-per-event`: tables carry `eventId`; an event's
+seatable guests are its invited guests who have not declined it; deleting an
+event deletes its tables; deleted guests' seats are freed by the guest store
+at deletion (the seating screen no longer compares lists, which could empty
+every table during a workspace switch).
