@@ -1,10 +1,19 @@
+import { createEntity } from './base';
+
 /**
- * Packing lists and the day-of emergency kit (Labs).
+ * Packing lists and the day-of emergency kit (graduated from Labs). Items
+ * sync as `packingItems`, so whoever is packing the car sees what is in.
  *
- * Each list starts from a template the first time it is opened; after that
- * the couple's own edits are the list. Items are `{ listKey, title, packed,
- * custom }` - `custom` marks things the couple added themselves.
+ * Items are `{ listKey, title, packed, custom }` - `custom` marks things the
+ * couple added themselves. A list starts from its template only when the
+ * couple asks. Template items get ids made from the list and the title, so two
+ * phones starting the same list at once end up with one copy, not two.
  */
+
+export const PACKING_LIMITS = {
+  titleChars: 120,
+  perList: 150,
+};
 
 export const PACKING_LISTS = [
   {
@@ -87,6 +96,41 @@ export function templateItems(listKey) {
   return (listByKey(listKey)?.items ?? []).map((title) => ({ listKey, title, packed: false, custom: false }));
 }
 
+const slug = (text) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '')
+    .slice(0, 60);
+
+/** The id a template item always gets, on every phone. */
+export const templateItemId = (listKey, title) => `pack_${listKey}_${slug(title)}`;
+
+export function createPackingItem({
+  weddingId,
+  listKey,
+  title = '',
+  packed = false,
+  custom = true,
+  id = null,
+} = {}) {
+  const item = createEntity('pack', {
+    weddingId,
+    listKey,
+    title: String(title).trim().slice(0, PACKING_LIMITS.titleChars),
+    packed: Boolean(packed),
+    custom,
+  });
+  return id ? { ...item, id } : item;
+}
+
+/** Template items as entities with their stable ids. */
+export function templatePackingItems(listKey, weddingId) {
+  return templateItems(listKey).map((entry) =>
+    createPackingItem({ ...entry, weddingId, id: templateItemId(listKey, entry.title) })
+  );
+}
+
 export function itemsFor(items = [], listKey) {
   return items.filter((item) => item.listKey === listKey);
 }
@@ -101,6 +145,15 @@ export function listProgress(items = [], listKey) {
 export function missingTemplateItems(items = [], listKey) {
   const have = new Set(itemsFor(items, listKey).map((item) => item.title.trim().toLowerCase()));
   return templateItems(listKey).filter((item) => !have.has(item.title.toLowerCase()));
+}
+
+/** A whole-wedding summary: how much of every started list is packed. */
+export function packingSummary(items = []) {
+  return PACKING_LISTS.map((list) => ({
+    key: list.key,
+    label: list.label,
+    ...listProgress(items, list.key),
+  }));
 }
 
 /** Unpacked first, then packed, each in the order they were added. */

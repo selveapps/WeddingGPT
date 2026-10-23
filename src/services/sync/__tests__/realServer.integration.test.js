@@ -9,6 +9,7 @@ import { createSyncEngine } from '../syncEngine';
 import { SliceKind } from '../changes';
 import { createSyncStore } from '../../../store/syncStore';
 import { applyPendingResponses } from '../../../features/rsvp/applyResponses';
+import { templatePackingItems } from '../../../models/packing';
 
 /**
  * The real client and engine against a running server/auth - the check that
@@ -569,5 +570,39 @@ run('sync against the real server', () => {
     await b.engine.syncNow();
     await a.engine.syncNow();
     expect(a.show.getState().items.byId.ros_1.start).toBe(1100);
+  });
+
+  it('two phones starting the same packing list end up with one copy (packing)', async () => {
+    const phone = () => {
+      const packing = create(() => ({ items: { byId: {}, allIds: [] } }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [{ collection: 'packingItems', store: packing, key: 'items', kind: SliceKind.MANY }],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { packing, syncStore, engine };
+    };
+    const asCollection = (items) => ({
+      byId: Object.fromEntries(items.map((item) => [item.id, item])),
+      allIds: items.map((item) => item.id),
+    });
+    const a = phone();
+    const b = phone();
+    // Both start the list before either has synced.
+    const fromA = templatePackingItems('honeymoon', 'w1');
+    a.packing.setState({ items: asCollection(fromA) });
+    b.packing.setState({ items: asCollection(templatePackingItems('honeymoon', 'w1')) });
+    await a.engine.syncNow();
+    await b.engine.syncNow();
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    expect(b.syncStore.getState().rejected).toEqual([]);
+    expect(a.packing.getState().items.allIds).toHaveLength(fromA.length);
+    expect(b.packing.getState().items.allIds).toHaveLength(fromA.length);
   });
 });
