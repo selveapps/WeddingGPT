@@ -1,10 +1,10 @@
 # E — Web: RSVP site, wedding website and desktop layouts
 
-**Status: draft for team review.** Workstream E in the playbook (§6E) is "only
-if product strategy supports it"; the team decided on 23 October 2026 to
-pursue it as part of reaching 80,000–100,000 production LOC. Like M1, nothing
-here is built until this document is approved. Decisions are collected in
-[Open decisions](#open-decisions).
+**Status: approved 23 October 2026, with every recommendation in
+[Decisions](#decisions) accepted.** Workstream E in the playbook (§6E) is
+"only if product strategy supports it"; the team decided to pursue it as part
+of reaching 80,000–100,000 production LOC. The vendor portal (E4) stays
+undecided until E1–E3 ship.
 
 ## 1. What "web" means for WeddingGPT
 
@@ -172,9 +172,11 @@ health), attendance, the couple's message box, wedding date and location
 | 4 | E2 wedding website | E1a (shared page rendering and slug) |
 | 5 | E4 vendor portal | D11 |
 
-## Open decisions
+## Decisions
 
-| # | Decision | Recommendation |
+All five were approved as recommended.
+
+| # | Decision | Approved |
 | --- | --- | --- |
 | D7 | Domain for public pages | A dedicated domain (e.g. `rsvp.weddinggpt.app`), separate from the API, so cookies and CSP never mix |
 | D8 | What guests may answer | Attending per guest, meal and dietary (each switchable by the couple), plus-one name, message. No song requests or extras in the first version |
