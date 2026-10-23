@@ -54,6 +54,7 @@ describe('wedding party helpers', () => {
       withPhone: 0,
       contactCoverage: 50,
       roles: 2,
+      roleCounts: { attendant: 1, reader: 1 },
     });
     expect(summariseParty([]).contactCoverage).toBe(0);
   });

@@ -110,7 +110,7 @@ export function WeddingPartyRoster() {
             {PARTY_ROLES.map((option) => (
               <Chip
                 key={option.value}
-                label={option.label}
+                label={`${option.label} (${summary.roleCounts[option.value] ?? 0})`}
                 selected={role === option.value}
                 onPress={() => setRole(option.value)}
               />
