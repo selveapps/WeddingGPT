@@ -1,13 +1,6 @@
 import React, { useCallback } from 'react';
 
-import {
-  Screen,
-  Stack,
-  PageHeader,
-  ConfirmSheet,
-  EmptyState,
-  useToast,
-} from '@/design-system/components';
+import { Screen, Stack, PageHeader, ConfirmSheet, EmptyState, useToast } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { buildWorkspace } from '@/features/onboarding/buildWorkspace';
 
@@ -23,6 +16,17 @@ import {
 } from './components';
 import { PROFILE_COPY, PROFILE_SECTIONS } from './lib/profileConstants';
 import { WeddingTimeline } from './timeline';
+import { ProfilePrivacy } from './privacy';
+import { ProfilePreferences } from './preferences';
+import { CoupleJournal } from './journal';
+import { KeepsakeCollection } from './keepsakes';
+import { RelationshipMilestones } from './milestones';
+import { CoupleGoals } from './goals';
+import { ProfileShareSummary } from './sharing';
+import { WeddingDocuments } from './documents';
+import { CoupleCheckIns } from './checkins';
+import { ProfileBudgetSnapshot } from './budget';
+import { WeddingCountdown } from './countdown';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
@@ -35,8 +39,8 @@ import { WeddingTimeline } from './timeline';
  *  5. Settings    - links to other account screens
  *  6. Danger zone - device reset
  *
- * Feature files live in `components/`, `fields/`, `hooks/`, `lib/` and
- * `booking/`. This file is the screen shell only.
+ * Feature files live in `components/`, `fields/`, `hooks/`, `lib/` and the
+ * profile-specific collections. This file is the screen shell only.
  */
 export function Profile() {
   const { spacing } = useTheme();
@@ -143,6 +147,8 @@ export function Profile() {
 
         <ProfileSummaryCard values={form.values} onTilePress={openSection} />
 
+        <WeddingCountdown />
+        <ProfileBudgetSnapshot />
         <WeddingTimeline />
 
         <ProfileForm
@@ -160,6 +166,16 @@ export function Profile() {
           onSectionChange={handleSectionChange}
           showActions={false}
         />
+
+        <ProfilePreferences />
+        <ProfilePrivacy />
+        <CoupleJournal />
+        <KeepsakeCollection />
+        <RelationshipMilestones />
+        <CoupleGoals />
+        <CoupleCheckIns />
+        <WeddingDocuments />
+        <ProfileShareSummary values={form.values} />
 
         <ProfileSettingsLinks />
 
