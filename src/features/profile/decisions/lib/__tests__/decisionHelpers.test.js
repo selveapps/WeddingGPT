@@ -3,6 +3,7 @@ import {
   filterDecisions,
   filterDecisionsByCategory,
   filterOverdueDecisions,
+  isDecisionDueToday,
   isDecisionOverdue,
   searchDecisions,
   parseDecisionOptions,
@@ -38,7 +39,13 @@ describe('wedding decision helpers', () => {
       { status: 'open', revisitDate: '2026-11-01' },
     ];
     expect(sortDecisions(items)).toEqual([items[2], items[1], items[0]]);
-    expect(summariseDecisions(items)).toEqual({ total: 3, decided: 1, open: 2, overdue: 0 });
+    expect(summariseDecisions(items, new Date(2026, 9, 23, 12))).toEqual({
+      total: 3,
+      decided: 1,
+      open: 2,
+      overdue: 0,
+      dueToday: 0,
+    });
   });
 
   it('filters open, decided, and overdue records without mutating the decision log', () => {
@@ -50,6 +57,7 @@ describe('wedding decision helpers', () => {
     expect(filterDecisions(items, 'open')).toEqual([items[0], items[1]]);
     expect(filterDecisions(items, 'decided')).toEqual([items[2]]);
     expect(filterDecisions(items, 'overdue', new Date(2026, 9, 23, 12))).toEqual([items[0]]);
+    expect(filterDecisions(items, 'due-today', new Date(2026, 9, 23, 12))).toEqual([items[1]]);
     expect(filterDecisions(items)).toEqual(items);
   });
 
@@ -83,6 +91,12 @@ describe('wedding decision helpers', () => {
     expect(isDecisionOverdue(today, now)).toBe(false);
     expect(isDecisionOverdue(decided, now)).toBe(false);
     expect(filterOverdueDecisions([overdue, today, decided], now)).toEqual([overdue]);
+  });
+
+  it('identifies open decisions scheduled for today', () => {
+    const now = new Date(2026, 9, 23, 12);
+    expect(isDecisionDueToday({ status: 'open', revisitDate: '2026-10-23' }, now)).toBe(true);
+    expect(isDecisionDueToday({ status: 'decided', revisitDate: '2026-10-23' }, now)).toBe(false);
   });
 
   it('returns a readable category fallback', () => {

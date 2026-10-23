@@ -25,6 +25,7 @@ const DECISION_FILTERS = [
   { value: 'all', label: 'All decisions' },
   { value: DECISION_STATUSES.OPEN, label: 'Open' },
   { value: DECISION_STATUSES.DECIDED, label: 'Decided' },
+  { value: 'due-today', label: 'Due today' },
   { value: 'overdue', label: 'Overdue' },
 ];
 
@@ -85,7 +86,13 @@ export function WeddingDecisionLog() {
           {DECISION_FILTERS.map((filter) => (
             <Chip
               key={filter.value}
-              label={filter.value === 'overdue' ? `${filter.label} (${summary.overdue})` : filter.label}
+              label={
+                filter.value === 'overdue'
+                  ? `${filter.label} (${summary.overdue})`
+                  : filter.value === 'due-today'
+                    ? `${filter.label} (${summary.dueToday})`
+                    : filter.label
+              }
               selected={statusFilter === filter.value}
               onPress={() => setStatusFilter(filter.value)}
             />

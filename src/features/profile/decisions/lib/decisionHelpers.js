@@ -56,6 +56,7 @@ export function sortDecisions(items = []) {
 
 export function filterDecisions(items = [], status = 'all', now = new Date()) {
   if (status === 'overdue') return filterOverdueDecisions(items, now);
+  if (status === 'due-today') return items.filter((item) => isDecisionDueToday(item, now));
   return status === 'all' ? [...items] : items.filter((item) => item.status === status);
 }
 
@@ -80,14 +81,20 @@ export function isDecisionOverdue(item, now = new Date()) {
   return item.revisitDate < toISODate(now);
 }
 
+export function isDecisionDueToday(item, now = new Date()) {
+  if (item?.status !== DECISION_STATUSES.OPEN || !isCalendarDate(item.revisitDate)) return false;
+  return item.revisitDate === toISODate(now);
+}
+
 export function filterOverdueDecisions(items = [], now = new Date()) {
   return items.filter((item) => isDecisionOverdue(item, now));
 }
 
-export function summariseDecisions(items = []) {
+export function summariseDecisions(items = [], now = new Date()) {
   const decided = items.filter((item) => item.status === DECISION_STATUSES.DECIDED).length;
-  const overdue = filterOverdueDecisions(items).length;
-  return { total: items.length, decided, open: items.length - decided, overdue };
+  const overdue = filterOverdueDecisions(items, now).length;
+  const dueToday = items.filter((item) => isDecisionDueToday(item, now)).length;
+  return { total: items.length, decided, open: items.length - decided, overdue, dueToday };
 }
 
 export function decisionCategoryLabel(value) {
