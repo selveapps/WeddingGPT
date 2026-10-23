@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useSyncStore } from '@/store';
+import { useSyncStore, useAuthStore } from '@/store';
 import { press, renderWithProviders, shownTexts } from '@/test/render';
 
 import { SyncSection } from '../SyncSection';
@@ -9,6 +9,10 @@ const mockLink = {
   listAccountWorkspaces: jest.fn(),
   uploadThisWedding: jest.fn(async () => ({ queued: 3 })),
   openAccountWorkspace: jest.fn(async () => ({})),
+  listMembers: jest.fn(async () => []),
+  removePartner: jest.fn(async () => {}),
+  leaveShared: jest.fn(async () => true),
+  createInviteLink: jest.fn(async () => ({ url: 'weddinggpt://invite/abc' })),
 };
 const mockEngine = {
   syncNow: jest.fn(async () => ({ pulled: 0, pending: 0 })),
@@ -98,5 +102,48 @@ describe('SyncSection on a synced wedding', () => {
 
     await press(tree, 'Keep mine', 1);
     expect(useSyncStore.getState().conflicts.map((c) => c.id)).toEqual(['c1']);
+  });
+});
+
+describe('MembersCard, inside a synced wedding', () => {
+  const owner = { userId: 'user_priya', name: 'Priya', role: 'owner' };
+  const partner = { userId: 'user_sam', name: 'Sam', role: 'partner' };
+
+  beforeEach(() => {
+    mockActive = 'ws_1';
+  });
+
+  function signInAs(id) {
+    useAuthStore.setState({ status: 'signedIn', token: 'tok', user: { id, email: `${id}@example.com` } });
+  }
+
+  it('lets the owner invite while there is room', async () => {
+    signInAs('user_priya');
+    mockLink.listMembers.mockResolvedValue([owner]);
+    const tree = await render();
+    expect(texts(tree)).toContain('Priya (you)');
+    await press(tree, 'Invite your partner');
+    expect(texts(tree)).toContain('Plan together');
+  });
+
+  it('lets the owner remove the partner, after confirming', async () => {
+    signInAs('user_priya');
+    mockLink.listMembers.mockResolvedValue([owner, partner]);
+    const tree = await render();
+    expect(texts(tree)).toContain('Tap your partner to remove them from this wedding.');
+    await press(tree, 'Sam');
+    expect(texts(tree)).toContain('Remove Sam?');
+    await press(tree, 'Remove');
+    expect(mockLink.removePartner).toHaveBeenCalledWith('user_sam');
+  });
+
+  it('lets a partner leave, and does not offer invites', async () => {
+    signInAs('user_sam');
+    mockLink.listMembers.mockResolvedValue([owner, partner]);
+    const tree = await render();
+    expect(texts(tree)).not.toContain('Invite your partner');
+    await press(tree, 'Leave this wedding');
+    await press(tree, 'Leave');
+    expect(mockLink.leaveShared).toHaveBeenCalledWith('user_sam');
   });
 });

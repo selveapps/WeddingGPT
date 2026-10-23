@@ -136,4 +136,75 @@ run('sync against the real server', () => {
     expect(await engine.syncNow()).toMatchObject({ error: 'gone' });
     expect(onGone).toHaveBeenCalledWith('ws_not-mine');
   });
+
+  it('two accounts share one wedding through an invite (A5)', async () => {
+    const register = async (name) => {
+      const response = await nodeFetch(`${URL_}/v1/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Forwarded-For': `10.8.${Date.now() % 250}.${name.length}`,
+        },
+        body: JSON.stringify({
+          name,
+          email: `${name}-${Date.now()}@example.com`,
+          password: 'integration-pass',
+        }),
+      });
+      return response.json();
+    };
+    const priya = await register('priya');
+    const sam = await register('sam');
+    const shared = await client.createWorkspace(priya.token, 'Priya and Sam');
+
+    const { url, token: invite } = await client.createInvite(priya.token, shared.id);
+    expect(url).toContain(invite);
+    await expect(client.createInvite(sam.token, shared.id)).rejects.toMatchObject({ code: 'gone' });
+
+    const joined = await client.acceptInvite(sam.token, invite);
+    expect(joined.workspace).toMatchObject({ id: shared.id, role: 'partner' });
+    await expect(client.acceptInvite(sam.token, invite)).rejects.toMatchObject({ code: 'invite_invalid' });
+
+    const members = await client.listMembers(priya.token, shared.id);
+    expect(members.map((m) => [m.name, m.role])).toEqual([
+      ['priya', 'owner'],
+      ['sam', 'partner'],
+    ]);
+
+    // Each phone syncs as its own account.
+    const phoneFor = (account) => {
+      const tasks = create(() => ({ tasks: { byId: {}, allIds: [] } }));
+      const engine = createSyncEngine({
+        client,
+        syncStore: createSyncStore({ persisted: false }),
+        slices: [{ collection: 'tasks', store: tasks, key: 'tasks', kind: SliceKind.MANY }],
+        getSession: () => ({ token: account.token, workspaceId: shared.id }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { tasks, engine };
+    };
+    const priyaPhone = phoneFor(priya);
+    const samPhone = phoneFor(sam);
+
+    priyaPhone.tasks.setState({ tasks: { byId: { t1: { id: 't1', title: 'Book venue' } }, allIds: ['t1'] } });
+    await priyaPhone.engine.syncNow();
+    await samPhone.engine.syncNow();
+    expect(samPhone.tasks.getState().tasks.byId.t1.title).toBe('Book venue');
+
+    samPhone.tasks.setState((st) => ({
+      tasks: {
+        byId: { ...st.tasks.byId, t2: { id: 't2', title: 'Sam adds the DJ' } },
+        allIds: [...st.tasks.allIds, 't2'],
+      },
+    }));
+    await samPhone.engine.syncNow();
+    await priyaPhone.engine.syncNow();
+    expect(priyaPhone.tasks.getState().tasks.allIds).toEqual(['t1', 't2']);
+
+    // Removed, Sam's next sync finds the wedding gone.
+    await client.removeMember(priya.token, shared.id, sam.user.id);
+    expect(await samPhone.engine.syncNow()).toMatchObject({ error: 'gone' });
+  });
 });

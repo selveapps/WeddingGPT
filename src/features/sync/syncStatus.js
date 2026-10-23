@@ -72,6 +72,18 @@ export function describeConflict(conflict) {
   return `${label}${name ? ` (${name})` : ''} was also changed on another phone. Yours was kept.`;
 }
 
+const INVITE_ERROR_COPY = {
+  [SyncErrorCode.INVITE_INVALID]:
+    'This invite link has expired or was already used. Ask your partner to send a new one.',
+  [SyncErrorCode.WORKSPACE_FULL]: 'This wedding already has two people planning it.',
+  [SyncErrorCode.FORBIDDEN]: 'Only the person who set up the shared wedding can invite.',
+};
+
+/** Copy for joining with, or creating, an invite. */
+export function inviteErrorMessage(code) {
+  return INVITE_ERROR_COPY[code] ?? syncErrorMessage(code ?? SyncErrorCode.UNAVAILABLE);
+}
+
 /** The warning before signing out with changes that have not synced. */
 export function signOutWarning(pending) {
   if (!pending) return null;

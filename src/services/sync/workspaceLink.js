@@ -12,6 +12,9 @@ import { LOCAL_WORKSPACE } from '../storage/workspaceStorage';
  *    weddings are never merged.
  *  - Leave (sign-out, removed from the wedding): the synced copy is deleted
  *    from the phone and the local wedding comes back.
+ *  - Invites (A5): the owner makes a link; the partner joins with it, which
+ *    is the same as opening the account's wedding. A partner can also leave
+ *    the shared wedding for good.
  *
  * Every switch runs with sync tracking paused, so emptying the stores is never
  * mistaken for deleting the wedding.
@@ -67,6 +70,33 @@ export function createWorkspaceLink({ client, engine, workspaceStorage, syncStor
 
     pendingChanges() {
       return isLinked() ? syncStore.getState().outbox.length : 0;
+    },
+
+    /** `{ url, expiresAt }` for the partner. Only the owner can make one. */
+    async createInviteLink() {
+      return client.createInvite(getToken(), workspaceStorage.getActive());
+    },
+
+    /** Join with an invite token and open that wedding. Resolves the workspace. */
+    async joinWithInvite(inviteToken) {
+      const { workspace } = await client.acceptInvite(getToken(), inviteToken);
+      if (workspaceStorage.getActive() !== workspace.id) await this.openAccountWorkspace(workspace);
+      return workspace;
+    },
+
+    async listMembers() {
+      return client.listMembers(getToken(), workspaceStorage.getActive());
+    },
+
+    /** Owner only: the partner loses access on their next sync. */
+    async removePartner(userId) {
+      await client.removeMember(getToken(), workspaceStorage.getActive(), userId);
+    },
+
+    /** A partner leaves the shared wedding for good, then this phone goes back to its own. */
+    async leaveShared(myUserId) {
+      await client.removeMember(getToken(), workspaceStorage.getActive(), myUserId);
+      return this.leave();
     },
   };
 }
