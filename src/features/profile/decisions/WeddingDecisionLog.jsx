@@ -8,11 +8,12 @@ import {
   SectionHeader,
   Stack,
   Text,
+  TextField,
   useToast,
 } from '@/design-system/components';
 import { DecisionCard, DecisionForm } from './components';
 import { useDecisionLog } from './hooks/useDecisionLog';
-import { filterDecisions, summariseDecisions } from './lib/decisionHelpers';
+import { filterDecisions, searchDecisions, summariseDecisions } from './lib/decisionHelpers';
 import { DECISION_STATUSES } from './lib/decisionConstants';
 
 const DECISION_FILTERS = [
@@ -24,9 +25,10 @@ const DECISION_FILTERS = [
 export function WeddingDecisionLog() {
   const toast = useToast();
   const [statusFilter, setStatusFilter] = React.useState('all');
+  const [query, setQuery] = React.useState('');
   const { decisions, addRecord, decide, reopen, removeDecision } = useDecisionLog();
   const summary = summariseDecisions(decisions);
-  const visibleDecisions = filterDecisions(decisions, statusFilter);
+  const visibleDecisions = searchDecisions(filterDecisions(decisions, statusFilter), query);
 
   const save = (values) => {
     if (!addRecord(values)) {
@@ -59,6 +61,15 @@ export function WeddingDecisionLog() {
       <Card>
         <DecisionForm onSave={save} />
       </Card>
+      {decisions.length ? (
+        <TextField
+          label="Search decisions"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search questions, options or notes"
+          icon="search"
+        />
+      ) : null}
       {decisions.length ? (
         <Row gap="xs" wrap>
           {DECISION_FILTERS.map((filter) => (
@@ -98,7 +109,10 @@ export function WeddingDecisionLog() {
           title={`No ${statusFilter} decisions`}
           message="Choose another filter to review the rest of your decision log."
           actionLabel="Show all"
-          onAction={() => setStatusFilter('all')}
+          onAction={() => {
+            setStatusFilter('all');
+            setQuery('');
+          }}
         />
       ) : null}
       <Text variant="caption" color="subtle">

@@ -57,6 +57,18 @@ export function filterDecisions(items = [], status = 'all') {
   return status === 'all' ? [...items] : items.filter((item) => item.status === status);
 }
 
+export function searchDecisions(items = [], query = '') {
+  const term = String(query).trim().toLocaleLowerCase();
+  if (!term) return [...items];
+  return items.filter((item) =>
+    [item.question, item.note, item.category, ...(item.options ?? []), item.selectedOption].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(term)
+    )
+  );
+}
+
 export function summariseDecisions(items = []) {
   const decided = items.filter((item) => item.status === DECISION_STATUSES.DECIDED).length;
   return { total: items.length, decided, open: items.length - decided };

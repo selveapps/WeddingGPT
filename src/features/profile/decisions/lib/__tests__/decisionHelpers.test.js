@@ -1,6 +1,7 @@
 import {
   decisionCategoryLabel,
   filterDecisions,
+  searchDecisions,
   parseDecisionOptions,
   sortDecisions,
   summariseDecisions,
@@ -42,6 +43,21 @@ describe('wedding decision helpers', () => {
     expect(filterDecisions(items, 'open')).toEqual([items[0]]);
     expect(filterDecisions(items, 'decided')).toEqual([items[1]]);
     expect(filterDecisions(items)).toEqual(items);
+  });
+
+  it('searches decision questions, notes, options, and chosen option', () => {
+    const items = [
+      {
+        question: 'Pick a reading',
+        note: 'Family story',
+        options: ['Poem', 'Letter'],
+        selectedOption: 'Letter',
+      },
+      { question: 'Choose cake', note: '', options: ['Chocolate', 'Vanilla'] },
+    ];
+    expect(searchDecisions(items, 'FAMILY')).toEqual([items[0]]);
+    expect(searchDecisions(items, 'vanilla')).toEqual([items[1]]);
+    expect(searchDecisions(items, '  ')).toEqual(items);
   });
 
   it('returns a readable category fallback', () => {
