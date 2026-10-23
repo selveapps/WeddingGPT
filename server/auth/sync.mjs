@@ -34,6 +34,7 @@ export const SYNC_COLLECTIONS = [
   'gifts',
   'partyMembers',
   'runOfShow',
+  'packingItems',
 ];
 
 /**

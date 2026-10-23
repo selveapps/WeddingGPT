@@ -253,6 +253,13 @@ export default function PlanningScreen() {
             subtitleLines={1}
             onPress={() => router.push(Routes.runOfShow())}
           />
+          <ListRow
+            icon="checklist"
+            title="Packing lists"
+            subtitle="Emergency kit, getting-ready bag, the venue box, the honeymoon"
+            subtitleLines={1}
+            onPress={() => router.push(Routes.packing)}
+          />
         </Card>
 
         {/* --- Filters ----------------------------------------------------- */}

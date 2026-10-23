@@ -348,6 +348,12 @@ Two deliberate choices in the generator:
   its own; share it as text with vendors and the wedding party. Items sync
   (`runOfShow`); deleting an event deletes its run of show. Graduated from the
   Labs day-of timeline, which is imported once as the wedding day.
+- **Packing lists.** *Packing lists* on the Planning tab: the emergency kit,
+  the getting-ready bag, the box for the venue and the honeymoon. A list starts
+  from the usual things only when the couple asks; tick, add, rename (long
+  press), remove with undo, put back removed defaults, share. Items sync
+  (`packingItems`); template items have stable ids, so two phones starting
+  the same list never double it. Graduated from Labs; imported once.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the
