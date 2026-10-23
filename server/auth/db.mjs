@@ -5,6 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 
 import { createInviteRepository } from './invites.mjs';
 import { createRsvpRepository } from './rsvp/rsvp.mjs';
+import { createSiteRepository } from './rsvp/site.mjs';
 import { createSyncRepository } from './sync.mjs';
 import { createWorkspaceRepository } from './workspaces.mjs';
 
@@ -98,6 +99,9 @@ export function openDatabase(path) {
 
     /** RSVP settings, invites and guest replies - see rsvp/rsvp.mjs. */
     rsvp: createRsvpRepository(db, sync),
+
+    /** Wedding website visibility, password and indexing - see rsvp/site.mjs. */
+    site: createSiteRepository(db),
 
     /** Returns the new user, or null if the email is already registered. */
     createUser({ email, name, passwordHash }) {

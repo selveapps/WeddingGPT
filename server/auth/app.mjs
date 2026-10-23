@@ -3,7 +3,7 @@ import http from 'node:http';
 import { publicUser } from './db.mjs';
 import { burnPasswordCheck, hashPassword, verifyPassword } from './passwords.mjs';
 import { createRouter } from './router.mjs';
-import { PAGE_HEADERS } from './rsvp/html.mjs';
+import { pageHeaders } from './rsvp/html.mjs';
 import { registerRsvpRoutes } from './rsvp/routes.mjs';
 import { AcceptResult } from './invites.mjs';
 import { SYNC_LIMITS, parsePullQuery } from './sync.mjs';
@@ -140,8 +140,8 @@ export function createAuthServer({
 } = {}) {
   const rateLimited = createRateLimiter(LIMITS.attemptsPerMinute);
 
-  function sendHtml(res, status, body) {
-    res.writeHead(status, PAGE_HEADERS);
+  function sendHtml(res, status, body, { indexable = false } = {}) {
+    res.writeHead(status, pageHeaders({ indexable }));
     res.end(String(body));
   }
 
