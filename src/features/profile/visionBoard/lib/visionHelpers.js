@@ -63,10 +63,15 @@ export function sortVisionIdeas(ideas = [], sortBy = 'recent') {
 }
 
 export function summariseVision(ideas = []) {
+  const categoryCounts = ideas.reduce((counts, idea) => {
+    if (idea.category) counts[idea.category] = (counts[idea.category] ?? 0) + 1;
+    return counts;
+  }, {});
   return {
     total: ideas.length,
     saved: ideas.filter((idea) => idea.saved).length,
     categories: new Set(ideas.map((idea) => idea.category).filter(Boolean)).size,
+    categoryCounts,
   };
 }
 

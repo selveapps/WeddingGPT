@@ -73,7 +73,7 @@ export function WeddingVisionBoard() {
             />
             <Chip label="Pinned and A–Z" selected={sortBy === 'title'} onPress={() => setSortBy('title')} />
           </Row>
-          <VisionFilters value={filters} onChange={setFilters} />
+          <VisionFilters value={filters} onChange={setFilters} categoryCounts={summary.categoryCounts} />
           {visibleIdeas.length ? (
             <Stack gap="sm">
               {visibleIdeas.map((idea) => (

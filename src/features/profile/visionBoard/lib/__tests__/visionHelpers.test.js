@@ -58,6 +58,11 @@ describe('wedding vision board helpers', () => {
   });
 
   it('summarises ideas and saved counts', () => {
-    expect(summariseVision(ideas)).toEqual({ total: 2, saved: 1, categories: 2 });
+    expect(summariseVision(ideas)).toEqual({
+      total: 2,
+      saved: 1,
+      categories: 2,
+      categoryCounts: { decor: 1, palette: 1 },
+    });
   });
 });

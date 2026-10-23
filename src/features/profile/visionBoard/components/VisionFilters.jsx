@@ -3,7 +3,7 @@ import React from 'react';
 import { Chip, Row, Stack, Text } from '@/design-system/components';
 import { VISION_CATEGORIES, VISION_MOODS } from '../lib/visionConstants';
 
-export function VisionFilters({ value, onChange }) {
+export function VisionFilters({ value, onChange, categoryCounts = {} }) {
   return (
     <Stack gap="sm">
       <Stack gap="xs">
@@ -17,7 +17,7 @@ export function VisionFilters({ value, onChange }) {
           {VISION_CATEGORIES.map((category) => (
             <Chip
               key={category.value}
-              label={category.label}
+              label={`${category.label} (${categoryCounts[category.value] ?? 0})`}
               selected={value.category === category.value}
               onPress={() => onChange({ ...value, category: category.value })}
             />
