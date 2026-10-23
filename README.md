@@ -342,6 +342,12 @@ Two deliberate choices in the generator:
   best action until its prerequisites are done, and can still be ticked off.
   Loops are refused; deleting a task frees what waited for it; a new plan comes
   with the obvious links. Model in `models/dependencies.js`.
+- **Run of show.** *Run of show* on the Planning tab (and on each event): what
+  happens when on the day, minute by minute, with overlaps flagged. Running
+  late? Push an item and everything after it moves, with undo. Each event has
+  its own; share it as text with vendors and the wedding party. Items sync
+  (`runOfShow`); deleting an event deletes its run of show. Graduated from the
+  Labs day-of timeline, which is imported once as the wedding day.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

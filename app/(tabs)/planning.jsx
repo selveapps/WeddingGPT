@@ -246,6 +246,13 @@ export default function PlanningScreen() {
             subtitleLines={1}
             onPress={() => router.push(Routes.events)}
           />
+          <ListRow
+            icon="clock"
+            title="Run of show"
+            subtitle="What happens when on the day, minute by minute"
+            subtitleLines={1}
+            onPress={() => router.push(Routes.runOfShow())}
+          />
         </Card>
 
         {/* --- Filters ----------------------------------------------------- */}

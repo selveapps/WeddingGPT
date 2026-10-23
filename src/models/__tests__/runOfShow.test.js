@@ -1,12 +1,5 @@
-import {
-  SAMPLE_DAY,
-  findOverlaps,
-  formatDuration,
-  formatTime,
-  parseTime,
-  shiftFrom,
-  timelineText,
-} from '../model';
+import { SAMPLE_DAY, findOverlaps, shiftFrom, runOfShowText } from '../runOfShow';
+import { formatDuration, formatTime, parseTime } from '../../lib/time';
 
 describe('parseTime', () => {
   it.each([
@@ -73,7 +66,7 @@ describe('shiftFrom', () => {
 });
 
 it('writes the run of show in time order', () => {
-  const text = timelineText(
+  const text = runOfShowText(
     [
       { id: 'b', title: 'Dinner', start: 1080, durationMin: 90, owner: 'Caterer' },
       { id: 'a', title: 'Ceremony', start: 960, durationMin: 30, location: 'Garden' },

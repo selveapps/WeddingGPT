@@ -22,13 +22,6 @@ export const LAB_FEATURES = [
     route: '/labs/sync',
   },
   {
-    key: 'timeline',
-    title: 'Day-of timeline',
-    blurb: 'A minute-by-minute run of show with overlap checks and a running-late button.',
-    icon: 'clock',
-    route: '/labs/timeline',
-  },
-  {
     key: 'packing',
     title: 'Packing lists',
     blurb: 'Emergency kit, getting-ready bag, venue box and honeymoon checklists.',

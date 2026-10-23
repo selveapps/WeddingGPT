@@ -51,6 +51,8 @@ export const Routes = {
   eventDetail: (id) => `/planning/events/${id}`,
   /** The suggested checklist for one event (slice C3). */
   eventChecklist: (id) => `/planning/events/${id}/checklist`,
+  /** The run of show for the wedding day, or for one event. */
+  runOfShow: (eventId) => (eventId ? `/planning/run-of-show?event=${eventId}` : '/planning/run-of-show'),
 
   // --- Budget -------------------------------------------------------------
   budgetCategory: (id) => `/budget/category/${id}`,

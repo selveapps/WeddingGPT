@@ -145,7 +145,7 @@ export function EventFormScreen({ eventId }) {
     router.back();
   };
 
-  const links = confirmDelete && existing ? eventLinks(existing.id) : { tasks: 0, expenses: 0 };
+  const links = confirmDelete && existing ? eventLinks(existing.id) : { tasks: 0, expenses: 0, runOfShow: 0 };
   const linkedText = [
     links.tasks ? `${links.tasks} ${links.tasks === 1 ? 'task' : 'tasks'}` : null,
     links.expenses ? `${links.expenses} ${links.expenses === 1 ? 'cost' : 'costs'}` : null,
@@ -298,6 +298,14 @@ export function EventFormScreen({ eventId }) {
 
           <Stack gap="xs">
             <Button label={existing ? 'Save event' : 'Add event'} onPress={submit} />
+            {existing ? (
+              <Button
+                label="Run of show"
+                variant="secondary"
+                iconLeft="clock"
+                onPress={() => router.push(Routes.runOfShow(existing.id))}
+              />
+            ) : null}
             {existing && eventChecklist(existing.kind).length ? (
               <Button
                 label="Suggested tasks"
@@ -338,11 +346,15 @@ export function EventFormScreen({ eventId }) {
               router.replace(Routes.events);
             }}
             title={`Delete ${eventName(existing)}?`}
-            message={
-              linkedText
-                ? `Its ${linkedText} stay, as part of the wedding as a whole. This cannot be undone.`
-                : 'This cannot be undone.'
-            }
+            message={[
+              linkedText ? `Its ${linkedText} stay, as part of the wedding as a whole.` : null,
+              links.runOfShow
+                ? `Its run of show (${links.runOfShow} ${links.runOfShow === 1 ? 'item' : 'items'}) is deleted with it.`
+                : null,
+              'This cannot be undone.',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             confirmLabel="Delete"
             destructive
             icon="trash"

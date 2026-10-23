@@ -234,6 +234,18 @@ export {
   memberBrief,
 } from './weddingParty';
 export {
+  RUN_OF_SHOW_LIMITS,
+  SAMPLE_DAY,
+  createRunOfShowItem,
+  validateRunOfShowItem,
+  itemsForDay,
+  itemEnd,
+  sortRunOfShow,
+  findOverlaps,
+  shiftFrom,
+  runOfShowText,
+} from './runOfShow';
+export {
   EventKind,
   EVENT_KIND_META,
   GuestScope,
