@@ -21,6 +21,7 @@ import { Routes } from '@/navigation/routes';
 import { AuthMode } from '@/features/auth/authValidation';
 import { SyncSection } from '@/features/sync/SyncSection';
 import { AccountDataSection } from '@/features/account/AccountDataSection';
+import { BackupSection } from '@/features/backup/BackupSection';
 import { signOutWarning } from '@/features/sync/syncStatus';
 import { isSyncConfigured, workspaceLink } from '@/services/sync';
 
@@ -119,6 +120,8 @@ export default function AccountScreen() {
         {signedIn && isSyncConfigured ? <SyncSection /> : null}
 
         {signedIn ? <AccountDataSection /> : null}
+
+        <BackupSection />
 
         <Stack gap="xs">
           <SectionHeader title="Settings" />

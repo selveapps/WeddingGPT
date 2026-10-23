@@ -8,24 +8,10 @@
  */
 export const LAB_FEATURES = [
   {
-    key: 'sync',
-    title: 'Partner sync',
-    blurb: 'Share your plan with your partner and merge theirs - latest edit wins.',
-    icon: 'refresh',
-    route: '/labs/sync',
-  },
-  {
     key: 'subscriptions',
     title: 'Plus subscription',
     blurb: 'Paywall, plans, a 7-day trial and feature gating - in test mode.',
     icon: 'lock',
     route: '/labs/subscriptions',
-  },
-  {
-    key: 'backup',
-    title: 'Export and backup',
-    blurb: 'Guest and budget spreadsheets, a plan summary, and a checked full backup.',
-    icon: 'lock',
-    route: '/labs/backup',
   },
 ];

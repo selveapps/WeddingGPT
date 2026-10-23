@@ -290,6 +290,7 @@ export {
   toVendorDraft,
   quotePatchForVendor,
 } from './quoteReader';
+export { BACKUP_FORMAT, BACKUP_VERSION, BACKUP_LIMITS, buildBackup, readBackup } from './backup';
 export {
   EventKind,
   EVENT_KIND_META,
