@@ -25,8 +25,10 @@ import {
   selectWebsite,
   useWeddingStore,
   selectWedding,
+  useEventStore,
+  selectEvents,
 } from '@/store';
-import { WebsiteSection, websiteFilledSections } from '@/models';
+import { WEBSITE_LIMITS, WebsiteSection, mergeWebsiteSchedule, websiteFilledSections } from '@/models';
 import { formatMediumDate } from '@/lib/date';
 import { Routes } from '@/navigation/routes';
 import { isSyncConfigured } from '@/services/sync';
@@ -86,6 +88,7 @@ export function WebsiteScreen() {
   const { spacing } = useTheme();
   const wedding = useWeddingStore(selectWedding);
   const website = useWebsiteStore(selectWebsite);
+  const events = useEventStore(selectEvents);
   const { ensure, update, addItem, updateItem, removeItem } = useWebsiteStore.getState();
   const [editing, setEditing] = useState(null);
 
@@ -102,6 +105,13 @@ export function WebsiteScreen() {
     if (item?.id) updateItem(section, item.id, fields);
     else if (!addItem(section, fields)) toast.error('That section is full.');
     setEditing(null);
+  };
+
+  // Events stay the source: using them again refreshes their items and keeps hand-written ones.
+  const fillFromEvents = () => {
+    const schedule = mergeWebsiteSchedule(website.events ?? [], events, WEBSITE_LIMITS.itemsPerSection);
+    update({ events: schedule });
+    toast.success(`Schedule filled from ${events.length} ${events.length === 1 ? 'event' : 'events'}`);
   };
 
   return (
@@ -146,6 +156,9 @@ export function WebsiteScreen() {
                   numberOfLines={3}
                   placeholder="Nearest airport, trains, parking"
                 />
+              ) : null}
+              {list.section === WebsiteSection.EVENTS && events.length ? (
+                <Button label="Use my events" variant="secondary" iconLeft="calendar" onPress={fillFromEvents} />
               ) : null}
               {(website[list.section] ?? []).length ? (
                 <Card padding="none">

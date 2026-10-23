@@ -17,6 +17,7 @@ import {
 } from '@/models';
 import { rules, validate } from '@/lib/validation';
 import { DateField } from '@/features/shared/DateField';
+import { EventPicker } from '@/features/events/EventPicker';
 
 /**
  * The add/edit form for a task.
@@ -34,6 +35,7 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
   const [description, setDescription] = useState(initial?.description ?? '');
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [categoryId, setCategoryId] = useState(initial?.categoryId ?? null);
+  const [eventId, setEventId] = useState(initial?.eventId ?? null);
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? null);
   const [priority, setPriority] = useState(initial?.priority ?? TaskPriority.NORMAL);
   const [assignee, setAssignee] = useState(initial?.assignee ?? Assignee.UNASSIGNED);
@@ -57,6 +59,7 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
       description: description.trim(),
       notes: notes.trim(),
       categoryId,
+      eventId,
       dueDate,
       priority,
       assignee,
@@ -118,6 +121,8 @@ export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSub
           </Row>
         </Stack>
       ) : null}
+
+      <EventPicker value={eventId} onChange={setEventId} />
 
       <Stack gap="sm">
         <SectionHeader eyebrow="How urgent" title="Priority" />

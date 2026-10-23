@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { useAuthStore, useWebsiteStore, useWeddingStore } from '@/store';
+import { useAuthStore, useEventStore, useWebsiteStore, useWeddingStore } from '@/store';
 import { createWedding } from '@/models';
-import { act, press, renderWithProviders, shownTexts } from '@/test/render';
+import { act, press, pressables, renderWithProviders, shownTexts } from '@/test/render';
 
 import { WebsiteScreen } from '../WebsiteScreen';
 
@@ -25,6 +25,7 @@ beforeEach(() => {
   mockActive = 'ws_1';
   useAuthStore.setState({ status: 'signedIn', token: 'tok', user: { id: 'u1' } });
   useWebsiteStore.getState().reset();
+  useEventStore.getState().reset();
   useWeddingStore.setState({ wedding: createWedding({ ownerName: 'Priya', partnerName: 'Sam' }) });
   mockApi.getSettings.mockResolvedValue({ slug: 'priya-and-sam' });
   mockApi.getSiteSettings.mockResolvedValue({ visibility: 'off', indexable: false, hasPassword: false });
@@ -106,5 +107,24 @@ describe('WebsiteScreen', () => {
     expect(mockApi.getSiteSettings).not.toHaveBeenCalled();
     await act(async () => field(tree, 'Headline').props.onChangeText('Draft'));
     expect(useWebsiteStore.getState().website.welcome.title).toBe('Draft');
+  });
+
+  it('fills the schedule from the wedding events, keeping hand-written items', async () => {
+    const tree = await render();
+    expect(pressables(tree, 'Use my events')).toHaveLength(0);
+
+    useWebsiteStore.getState().addItem('events', { name: 'After-party', place: 'The bar' });
+    await act(async () => {
+      useEventStore.getState().addEvent({ kind: 'reception', date: '2027-05-08', venueName: 'The Hall' });
+      useEventStore.getState().addEvent({ kind: 'mehndi', date: '2027-05-07', dressCode: 'Bright' });
+    });
+    await press(tree, 'Use my events');
+    const schedule = () => useWebsiteStore.getState().website.events;
+    expect(schedule().map((item) => item.name)).toEqual(['After-party', 'Mehndi', 'Reception']);
+    expect(schedule()[2].place).toBe('The Hall');
+
+    // Using it again updates rather than duplicates.
+    await press(tree, 'Use my events');
+    expect(schedule()).toHaveLength(3);
   });
 });
