@@ -10,6 +10,7 @@ export function ProfileBudgetSnapshot() {
   const { summary } = useProfileBudgetSnapshot();
 
   return (
+    // TODO: Remove testID once we have a better way to test this componentq
     <Stack gap="sm" testID="profile-budget-snapshot">
       <SectionHeader
         eyebrow="A quick overview"
