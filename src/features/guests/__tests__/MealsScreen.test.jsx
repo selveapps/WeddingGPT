@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useGuestStore, useWeddingStore } from '@/store';
+import { useEventStore, useGuestStore, useWeddingStore, selectAllGuests } from '@/store';
 import { createGuest, createWedding, MealPreference, PlusOneStatus, RsvpStatus } from '@/models';
 import { press, renderWithProviders, shownTexts } from '@/test/render';
 
@@ -56,5 +56,33 @@ describe('MealsScreen', () => {
     useGuestStore.getState().reset();
     const tree = await renderWithProviders(<MealsScreen />);
     expect(shownTexts(tree)).toContain('No one is attending yet');
+  });
+});
+
+describe('MealsScreen per event (G1)', () => {
+  it('shows one event’s plates and exports its list', async () => {
+    useEventStore.getState().reset();
+    const [meera] = selectAllGuests(useGuestStore.getState());
+    const mehndi = useEventStore
+      .getState()
+      .addEvent({ kind: 'mehndi', guestScope: 'invited', invitedGuestIds: [meera.id] });
+    const tree = await renderWithProviders(<MealsScreen />);
+    await press(tree, 'Mehndi');
+    // Meera and her plus-one, not Ravi, who is not invited to the mehndi.
+    expect(shownTexts(tree)).toContain('2');
+    await press(tree, 'Export as a spreadsheet (CSV)');
+    const [file] = mockExport.mock.calls.at(-1);
+    expect(file.filename).toBe('catering-mehndi-2027-01-04.csv');
+    expect(file.text).toContain('Meera');
+    expect(file.text).not.toContain('Ravi');
+    expect(mehndi.id).toBeTruthy();
+  });
+
+  it('says so when no one is coming to the event yet', async () => {
+    useEventStore.getState().reset();
+    useEventStore.getState().addEvent({ kind: 'brunch', guestScope: 'invited', invitedGuestIds: [] });
+    const tree = await renderWithProviders(<MealsScreen />);
+    await press(tree, 'Farewell brunch');
+    expect(shownTexts(tree)).toContain('No one is attending the farewell brunch yet');
   });
 });

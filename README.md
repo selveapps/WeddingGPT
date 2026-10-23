@@ -331,7 +331,7 @@ Two deliberate choices in the generator:
   between partners (`seatingTables`, `seatingRules`); a deleted guest frees
   their seat. Each event has its own tables (slice F2), seating the guests
   invited to it who have not declined it; keep-apart pairs hold everywhere. *Meals for the caterer* counts plates, meal choices and allergies
-  to check, and exports a CSV. Both graduated from Labs; earlier Labs seating
+  to check, and exports a CSV - for the whole wedding or one event (G1). Both graduated from Labs; earlier Labs seating
   plans are imported once.
 - **Wedding website.** *Wedding website* on the Guests tab: welcome,
   schedule with directions, travel and stays, registry and FAQ, published at the

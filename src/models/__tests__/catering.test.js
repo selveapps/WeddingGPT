@@ -1,7 +1,13 @@
 import { RsvpStatus, PlusOneStatus, MealPreference } from '@/models';
 
 import { csvCell, toCsv } from '@/lib/csv';
-import { buildCateringReport, cateringCsv, cateringReportText, detectAllergens } from '../catering';
+import {
+  attendingGuests,
+  buildCateringReport,
+  cateringCsv,
+  cateringReportText,
+  detectAllergens,
+} from '../catering';
 
 const guest = (firstName, fields = {}) => ({
   id: firstName,
@@ -67,6 +73,47 @@ describe('csv', () => {
     expect(csvCell('a,b')).toBe('"a,b"');
     expect(csvCell('say "hi"')).toBe('"say ""hi"""');
     expect(csvCell('=SUM(A1)')).toBe("'=SUM(A1)");
-    expect(toCsv([[1, null], ['x', 'y']])).toBe('1,\nx,y');
+    expect(
+      toCsv([
+        [1, null],
+        ['x', 'y'],
+      ])
+    ).toBe('1,\nx,y');
+  });
+});
+
+describe('per event (G1)', () => {
+  const guests = [
+    guest('Ana'),
+    guest('Ben', { mealPreference: MealPreference.VEGETARIAN, dietaryNotes: 'nut allergy' }),
+    guest('Cy', { rsvpStatus: RsvpStatus.DECLINED }),
+    guest('Di', { plusOneStatus: PlusOneStatus.CONFIRMED, plusOneName: 'Eve' }),
+  ];
+  // Ana and Ben are invited; Ben said no to this one; Cy said yes to it despite declining the wedding.
+  const mehndi = {
+    id: 'ev_mehndi',
+    guestScope: 'invited',
+    invitedGuestIds: ['Ana', 'Ben', 'Cy'],
+    attendance: { Ben: 'declined', Cy: 'attending' },
+  };
+
+  it('counts the event’s attending guests, their answer for the event first', () => {
+    expect(attendingGuests(guests).map((g) => g.id)).toEqual(['Ana', 'Ben', 'Di']);
+    expect(attendingGuests(guests, mehndi).map((g) => g.id)).toEqual(['Ana', 'Cy']);
+    const report = buildCateringReport(guests, { event: mehndi });
+    expect(report.headcount).toBe(2);
+    expect(report.allergens).toEqual([]);
+    expect(buildCateringReport(guests).headcount).toBe(4);
+  });
+
+  it('exports the event’s list only', () => {
+    const rows = cateringCsv(guests, { event: mehndi }).split('\n');
+    expect(rows).toHaveLength(3);
+    expect(rows.slice(1).map((row) => row.split(',')[0])).toEqual(['Ana Lee', 'Cy Lee']);
+  });
+
+  it('everyone-invited events count everyone attending', () => {
+    const reception = { id: 'ev_reception', guestScope: 'everyone', attendance: { Di: 'declined' } };
+    expect(attendingGuests(guests, reception).map((g) => g.id)).toEqual(['Ana', 'Ben']);
   });
 });

@@ -200,6 +200,7 @@ export {
   detectAllergens,
   buildCateringReport,
   cateringReportText,
+  attendingGuests,
   cateringCsv,
 } from './catering';
 export {

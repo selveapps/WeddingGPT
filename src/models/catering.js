@@ -1,5 +1,6 @@
 import { RsvpStatus, PlusOneStatus, MealPreference, MEAL_PREFERENCE_META } from './enums';
 import { guestFullName } from './guests';
+import { eventGuests, guestEventStatus } from './events';
 import { toCsv } from '../lib/csv';
 
 /**
@@ -12,7 +13,17 @@ import { toCsv } from '../lib/csv';
  *
  * Allergen detection is a keyword scan of the notes - a prompt to double-check
  * with the guest, not a medical record.
+ *
+ * For one event (slice G1), the plates are the guests invited to it who are
+ * attending it - their answer for that event first (F1), then their reply for
+ * the wedding as a whole.
  */
+
+/** Who eats: attending the wedding, or attending this event. */
+export function attendingGuests(guests = [], event = null) {
+  if (!event) return guests.filter((guest) => guest.rsvpStatus === RsvpStatus.ATTENDING);
+  return eventGuests(event, guests).filter((guest) => guestEventStatus(event, guest) === RsvpStatus.ATTENDING);
+}
 
 export const ALLERGENS = [
   { key: 'nuts', label: 'Nuts', pattern: /\b(tree ?nuts?|nuts?|peanuts?|almonds?|cashews?|walnuts?|pecans?|hazelnuts?|pistachios?)\b/i },
@@ -35,8 +46,8 @@ export function detectAllergens(text) {
 
 const mealLabel = (key) => MEAL_PREFERENCE_META[key]?.label ?? 'Not specified';
 
-export function buildCateringReport(guests = []) {
-  const attending = guests.filter((guest) => guest.rsvpStatus === RsvpStatus.ATTENDING);
+export function buildCateringReport(guests = [], { event = null } = {}) {
+  const attending = attendingGuests(guests, event);
   const meals = {};
   const allergens = {};
   const notes = [];
@@ -106,10 +117,9 @@ export function cateringReportText(report, { title = 'Our wedding' } = {}) {
 }
 
 /** One row per attending guest, plus-ones on their own row. */
-export function cateringCsv(guests = []) {
+export function cateringCsv(guests = [], { event = null } = {}) {
   const rows = [['Name', 'Meal', 'Child', 'Dietary notes', 'Allergens', 'Plus one of']];
-  for (const guest of guests) {
-    if (guest.rsvpStatus !== RsvpStatus.ATTENDING) continue;
+  for (const guest of attendingGuests(guests, event)) {
     const name = guestFullName(guest);
     rows.push([
       name,

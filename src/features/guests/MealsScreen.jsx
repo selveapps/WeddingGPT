@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Share } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -11,19 +11,22 @@ import {
   Card,
   Badge,
   Button,
+  Chip,
   ListRow,
   SectionHeader,
   EmptyState,
   useToast,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
-import { useGuestStore, useWeddingStore, selectAllGuests, selectWedding } from '@/store';
+import { useEventStore, useGuestStore, useWeddingStore, selectAllGuests, selectEvents, selectWedding } from '@/store';
 import {
   buildCateringReport,
   cateringCsv,
   cateringReportText,
   coupleDisplayName,
+  eventName,
   guestFullName,
+  sortEvents,
 } from '@/models';
 import { datedFilename, exportTextFile } from '@/services/files';
 import { Routes } from '@/navigation/routes';
@@ -38,7 +41,12 @@ export function MealsScreen() {
   const toast = useToast();
   const guests = useGuestStore(selectAllGuests);
   const wedding = useWeddingStore(selectWedding);
-  const report = useMemo(() => buildCateringReport(guests), [guests]);
+  const events = useEventStore(selectEvents);
+  const sortedEvents = useMemo(() => sortEvents(events), [events]);
+  const [eventId, setEventId] = useState(null);
+  // Each event's caterer needs that event's plates (G1); a deleted event falls back to the wedding.
+  const event = sortedEvents.find((entry) => entry.id === eventId) ?? null;
+  const report = useMemo(() => buildCateringReport(guests, { event }), [guests, event]);
 
   const { spacing } = useTheme();
 
@@ -52,20 +60,35 @@ export function MealsScreen() {
 
   const exportCsv = async () => {
     const result = await exportTextFile({
-      filename: datedFilename('catering'),
-      text: cateringCsv(guests),
+      filename: datedFilename(event ? `catering-${eventName(event).toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : 'catering'),
+      text: cateringCsv(guests, { event }),
       title: 'Catering list',
     });
     if (result === 'downloaded') toast.success('Catering list downloaded');
     else if (result === 'failed') toast.error('Could not export the list');
   };
 
-  const title = wedding ? coupleDisplayName(wedding) : 'Our wedding';
+  const couple = wedding ? coupleDisplayName(wedding) : 'Our wedding';
+  const title = event ? `${couple} - ${eventName(event)}` : couple;
 
   return (
     <Screen bottomInset={spacing.xxl}>
       <Stack gap="lg">
         <ScreenHeader eyebrow="Guests" title="Meals for the caterer" />
+        {sortedEvents.length ? (
+          <Row gap="xs" wrap align="flex-start">
+            <Chip label="The whole wedding" size="sm" selected={!event} onPress={() => setEventId(null)} />
+            {sortedEvents.map((entry) => (
+              <Chip
+                key={entry.id}
+                label={eventName(entry)}
+                size="sm"
+                selected={event?.id === entry.id}
+                onPress={() => setEventId(entry.id)}
+              />
+            ))}
+          </Row>
+        ) : null}
         <Text variant="bodySm" color="muted">
           From the meal choices and notes of attending guests. Allergy flags are a keyword check - always
           confirm with the guest.
@@ -73,8 +96,12 @@ export function MealsScreen() {
         {report.headcount === 0 ? (
           <EmptyState
             icon="guests"
-            title="No one is attending yet"
-            message="Mark guests as attending in the Guests tab and their meals will show up here."
+            title={event ? `No one is attending the ${eventName(event).toLowerCase()} yet` : 'No one is attending yet'}
+            message={
+              event
+                ? 'Guests show up here once they are invited to this event and say they are coming.'
+                : 'Mark guests as attending in the Guests tab and their meals will show up here.'
+            }
           />
         ) : (
           <>
