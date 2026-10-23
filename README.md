@@ -301,6 +301,10 @@ Two deliberate choices in the generator:
   guests reply in the browser, without the app, and their answers update the
   guest list when the app syncs. Server: `server/auth/rsvp`; app:
   `features/rsvp`.
+- **Wedding website.** *Wedding website* on the Guests tab: welcome,
+  schedule with directions, travel and stays, registry and FAQ, published at the
+  RSVP page address as off, public or password-protected, and hidden from
+  search engines unless the couple opts in. Server: `server/auth/rsvp/site*`.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

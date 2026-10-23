@@ -38,6 +38,7 @@ function nodeFetch(url, { method = 'GET', headers = {}, body } = {}) {
           ok: response.statusCode >= 200 && response.statusCode < 300,
           status: response.statusCode,
           json: async () => JSON.parse(text),
+          text: async () => text,
         })
       );
     });
@@ -293,5 +294,49 @@ run('sync against the real server', () => {
     await engine.syncNow();
     expect(syncStore.getState().outbox).toEqual([]);
     expect(syncStore.getState().rejected).toEqual([]);
+  });
+
+  it('the website written on the phone appears at the public address once published (E2)', async () => {
+    const response = await nodeFetch(`${URL_}/v1/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': `10.6.${Date.now() % 250}.1` },
+      body: JSON.stringify({ email: `site-${Date.now()}@example.com`, password: 'integration-pass' }),
+    });
+    const couple = await response.json();
+    const wedding = await client.createWorkspace(couple.token, 'Site wedding');
+    const slug = `site-${Date.now()}`;
+    await client.saveRsvpSettings(couple.token, wedding.id, { slug });
+
+    const website = create(() => ({
+      website: {
+        id: 'site_1',
+        welcome: { title: 'Join us in Austin', body: 'Details below.' },
+        events: [{ id: 'e1', name: 'Ceremony', place: 'Rose Garden' }],
+        registry: [{ id: 'r1', name: 'Our registry', url: 'https://registry.example' }],
+        faq: [],
+        stays: [],
+        travel: '',
+      },
+    }));
+    const engine = createSyncEngine({
+      client,
+      syncStore: createSyncStore({ persisted: false }),
+      slices: [{ collection: 'website', store: website, key: 'website', kind: SliceKind.ONE }],
+      getSession: () => ({ token: couple.token, workspaceId: wedding.id }),
+      setTimer: () => 0,
+      clearTimer: () => {},
+    });
+    engine.attach();
+    engine.seedAll();
+    await engine.syncNow();
+
+    expect((await nodeFetch(`${URL_}/w/${slug}`)).status).toBe(404);
+    await client.saveSiteSettings(couple.token, wedding.id, { visibility: 'public' });
+    const page = await nodeFetch(`${URL_}/w/${slug}`);
+    expect(page.status).toBe(200);
+    const body = await page.text();
+    for (const text of ['Join us in Austin', 'Ceremony', 'Rose Garden', 'Our registry', `/w/${slug}/rsvp`]) {
+      expect(body).toContain(text);
+    }
   });
 });
