@@ -11,6 +11,7 @@ import { useSyncStore } from './syncStore';
 import { useRsvpStore } from './rsvpStore';
 import { useWebsiteStore } from './websiteStore';
 import { useSeatingStore } from './seatingStore';
+import { useEventStore } from './eventStore';
 import { workspaceStorage } from '../services/storage';
 
 export * from './weddingStore';
@@ -24,6 +25,7 @@ export * from './syncStore';
 export * from './rsvpStore';
 export * from './websiteStore';
 export * from './seatingStore';
+export * from './eventStore';
 // Not in STORES below: sign-in is optional, so launch never waits on it.
 export * from './authStore';
 
@@ -39,6 +41,7 @@ const STORES = [
   useRsvpStore,
   useWebsiteStore,
   useSeatingStore,
+  useEventStore,
 ];
 
 // Every persisted store switches with the active workspace (slice A3).
@@ -112,4 +115,5 @@ export function resetAllStores() {
   useRsvpStore.getState().reset();
   useWebsiteStore.getState().reset();
   useSeatingStore.getState().reset();
+  useEventStore.getState().reset();
 }

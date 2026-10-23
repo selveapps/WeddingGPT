@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 
 import { zustandStorage } from '../services/storage';
 import { analytics, AnalyticsEvents } from '../services/analytics';
+import { useEventStore } from './eventStore';
 import {
   createGuest,
   createHousehold,
@@ -89,6 +90,7 @@ export const useGuestStore = create()(
 
       deleteGuest(id) {
         set((state) => ({ guests: removeById(state.guests, id) }));
+        useEventStore.getState().forgetGuests([id]);
         analytics.track(AnalyticsEvents.GUEST_DELETED, { guestId: id });
       },
 
@@ -108,6 +110,7 @@ export const useGuestStore = create()(
 
       bulkDelete(ids = []) {
         set((state) => ({ guests: removeManyById(state.guests, ids) }));
+        useEventStore.getState().forgetGuests(ids);
       },
 
       // --- Households -------------------------------------------------------

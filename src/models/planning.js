@@ -45,6 +45,8 @@ export function createTask({
   isSystemGenerated = false,
   /** Months-before-wedding this task is normally done. Drives plan generation. */
   monthsBefore = null,
+  /** The event this task is for, or null for the wedding as a whole. */
+  eventId = null,
 } = {}) {
   return createEntity('task', {
     weddingId,
@@ -57,6 +59,7 @@ export function createTask({
     assignee,
     notes,
     isSystemGenerated,
+    eventId,
     monthsBefore,
     completedAt: null,
     snoozedUntil: null,
