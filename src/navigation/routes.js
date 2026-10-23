@@ -57,6 +57,7 @@ export const Routes = {
   guestAdd: '/guests/new',
   /** Pick guests from the phone's address book. */
   guestImport: '/guests/import',
+  guestSpreadsheet: '/guests/spreadsheet',
   householdDetail: (id) => `/guests/household/${id}`,
 
   // --- Vendors ------------------------------------------------------------
