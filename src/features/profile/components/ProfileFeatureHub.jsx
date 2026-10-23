@@ -110,6 +110,74 @@ export const PROFILE_FEATURE_CATEGORIES = [
       },
     ],
   },
+  {
+    id: 'more-planning',
+    title: 'More wedding tools',
+    subtitle: 'Guest experiences, details and plans for the celebration.',
+    icon: 'checklist',
+    features: [
+      {
+        id: 'guestRsvp',
+        title: 'Guest RSVPs',
+        subtitle: 'Track replies, party sizes and meal choices.',
+        icon: 'guests',
+      },
+      {
+        id: 'seating',
+        title: 'Seating planner',
+        subtitle: 'Keep table and seat assignments organized.',
+        icon: 'guests',
+      },
+      {
+        id: 'menu',
+        title: 'Menu planner',
+        subtitle: 'Plan courses and capture dietary needs.',
+        icon: 'note',
+      },
+      {
+        id: 'music',
+        title: 'Music requests',
+        subtitle: 'Collect must-play and do-not-play tracks.',
+        icon: 'note',
+      },
+      {
+        id: 'photoShotList',
+        title: 'Photo shot list',
+        subtitle: 'Prioritize the moments you want captured.',
+        icon: 'vision',
+      },
+      {
+        id: 'attire',
+        title: 'Attire & fittings',
+        subtitle: 'Track fittings, alterations and pickups.',
+        icon: 'user',
+      },
+      {
+        id: 'registry',
+        title: 'Gift registry',
+        subtitle: 'Organize registry items and thank-yous.',
+        icon: 'star',
+      },
+      {
+        id: 'honeymoon',
+        title: 'Honeymoon planner',
+        subtitle: 'Keep your trip itinerary and bookings together.',
+        icon: 'calendar',
+      },
+      {
+        id: 'transport',
+        title: 'Guest transport',
+        subtitle: 'Coordinate routes, providers and capacity.',
+        icon: 'vendors',
+      },
+      {
+        id: 'weddingFaq',
+        title: 'Guest FAQ & copy',
+        subtitle: 'Prepare clear answers for your guests.',
+        icon: 'note',
+      },
+    ],
+  },
 ];
 
 export function ProfileFeatureHub({ categoryId, onSelectCategory, onSelectFeature, onBack }) {

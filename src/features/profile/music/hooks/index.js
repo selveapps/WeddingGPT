@@ -1,0 +1,1 @@
+export { useWeddingMusic } from './useWeddingMusic';

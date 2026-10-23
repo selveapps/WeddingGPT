@@ -45,6 +45,16 @@ export { WeddingCountdown } from './countdown';
 export { WeddingPartyRoster } from './party';
 export { WeddingDecisionLog } from './decisions';
 export { WeddingVisionBoard } from './visionBoard';
+export { GuestRsvpTracker } from './guestRsvp';
+export { WeddingSeatingPlanner } from './seating';
+export { WeddingMenuPlanner } from './menu';
+export { WeddingMusicPlanner } from './music';
+export { WeddingPhotoShotList } from './photoShotList';
+export { WeddingAttireTracker } from './attire';
+export { GiftRegistryTracker } from './registry';
+export { HoneymoonPlanner } from './honeymoon';
+export { GuestTransportPlanner } from './transport';
+export { WeddingGuestFaq } from './weddingFaq';
 
 export {
   PROFILE_SECTIONS,

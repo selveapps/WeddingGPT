@@ -1,0 +1,1 @@
+export { useWeddingPhotoShots } from './useWeddingPhotoShots';

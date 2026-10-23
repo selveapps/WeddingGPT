@@ -1,0 +1,1 @@
+export { useWeddingSeating } from './useWeddingSeating';

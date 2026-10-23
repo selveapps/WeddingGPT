@@ -33,6 +33,16 @@ import { WeddingPartyRoster } from './party';
 import { WeddingDecisionLog } from './decisions';
 import { WeddingVisionBoard } from './visionBoard';
 import { Contact } from './contact';
+import { GuestRsvpTracker } from './guestRsvp';
+import { WeddingSeatingPlanner } from './seating';
+import { WeddingMenuPlanner } from './menu';
+import { WeddingMusicPlanner } from './music';
+import { WeddingPhotoShotList } from './photoShotList';
+import { WeddingAttireTracker } from './attire';
+import { GiftRegistryTracker } from './registry';
+import { HoneymoonPlanner } from './honeymoon';
+import { GuestTransportPlanner } from './transport';
+import { WeddingGuestFaq } from './weddingFaq';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
@@ -259,6 +269,26 @@ function renderProfileFeature(feature, handlers) {
       return <WeddingDecisionLog />;
     case 'vision':
       return <WeddingVisionBoard />;
+    case 'guestRsvp':
+      return <GuestRsvpTracker />;
+    case 'seating':
+      return <WeddingSeatingPlanner />;
+    case 'menu':
+      return <WeddingMenuPlanner />;
+    case 'music':
+      return <WeddingMusicPlanner />;
+    case 'photoShotList':
+      return <WeddingPhotoShotList />;
+    case 'attire':
+      return <WeddingAttireTracker />;
+    case 'registry':
+      return <GiftRegistryTracker />;
+    case 'honeymoon':
+      return <HoneymoonPlanner />;
+    case 'transport':
+      return <GuestTransportPlanner />;
+    case 'weddingFaq':
+      return <WeddingGuestFaq />;
     case 'sharing':
       return <ProfileShareSummary values={form.values} />;
     case 'accountSettings':

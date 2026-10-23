@@ -1,0 +1,1 @@
+export { useWeddingMenu } from './useWeddingMenu';
