@@ -26,16 +26,22 @@ export {
   ProfileChipField,
 } from './components';
 
-export {
-  PersonalFields,
-  PartnerFields,
-  WeddingDetailsFields,
-  VisionFields,
-} from './fields';
+export { PersonalFields, PartnerFields, WeddingDetailsFields, VisionFields } from './fields';
 
 export { useProfileForm } from './hooks';
 
 export { WeddingTimeline } from './timeline';
+export { ProfilePrivacy } from './privacy';
+export { ProfilePreferences } from './preferences';
+export { CoupleJournal } from './journal';
+export { KeepsakeCollection } from './keepsakes';
+export { RelationshipMilestones } from './milestones';
+export { CoupleGoals } from './goals';
+export { ProfileShareSummary } from './sharing';
+export { WeddingDocuments } from './documents';
+export { CoupleCheckIns } from './checkins';
+export { ProfileBudgetSnapshot } from './budget';
+export { WeddingCountdown } from './countdown';
 
 export {
   PROFILE_SECTIONS,
