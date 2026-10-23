@@ -84,6 +84,8 @@ export const Routes = {
   vendorAdd: '/vendors/new',
   vendorDetail: (id) => `/vendors/${id}`,
   vendorEdit: (id) => `/vendors/${id}/edit`,
+  /** Read a pasted quote; with a vendor id, save it as that vendor's quote. */
+  quoteReader: (vendorId) => (vendorId ? `/vendors/quote?vendor=${vendorId}` : '/vendors/quote'),
 
   // --- Vision -------------------------------------------------------------
   vision: '/vision',
