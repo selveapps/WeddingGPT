@@ -87,10 +87,13 @@ describe('wedding party helpers', () => {
   it('filters people who have missing or known contact methods', () => {
     const members = [
       { ...valid, name: 'Mina', email: 'mina@example.com' },
-      { ...valid, name: 'Ravi', email: '', phone: '' },
+      { ...valid, name: 'Ravi', email: '', phone: '555-0100' },
+      { ...valid, name: 'Asha', email: '', phone: '' },
     ];
-    expect(filterPartyByContact(members, 'with-contact')).toEqual([members[0]]);
-    expect(filterPartyByContact(members, 'missing-contact')).toEqual([members[1]]);
+    expect(filterPartyByContact(members, 'with-contact')).toEqual([members[0], members[1]]);
+    expect(filterPartyByContact(members, 'with-email')).toEqual([members[0]]);
+    expect(filterPartyByContact(members, 'with-phone')).toEqual([members[1]]);
+    expect(filterPartyByContact(members, 'missing-contact')).toEqual([members[2]]);
     expect(filterPartyByContact(members)).toEqual(members);
   });
 

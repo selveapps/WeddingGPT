@@ -92,6 +92,8 @@ export function WeddingPartyRoster() {
             {[
               { value: 'all', label: 'Any contact status' },
               { value: 'with-contact', label: 'Has contact' },
+              { value: 'with-email', label: 'Has email' },
+              { value: 'with-phone', label: 'Has phone' },
               { value: 'missing-contact', label: 'Needs contact' },
             ].map((option) => (
               <Chip
