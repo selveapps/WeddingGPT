@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 
+import { createInviteRepository } from './invites.mjs';
 import { createSyncRepository } from './sync.mjs';
 import { createWorkspaceRepository } from './workspaces.mjs';
 
@@ -80,9 +81,14 @@ export function openDatabase(path) {
     deleteExpired: db.prepare('DELETE FROM sessions WHERE expires_at <= ?'),
   };
 
+  const workspaces = createWorkspaceRepository(db);
+
   return {
     /** Workspaces and memberships - see workspaces.mjs. */
-    workspaces: createWorkspaceRepository(db),
+    workspaces,
+
+    /** Partner invites - see invites.mjs. */
+    invites: createInviteRepository(db, workspaces),
 
     /** Push, pull and tombstones - see sync.mjs. Created after workspaces, whose tables it references. */
     sync: createSyncRepository(db),

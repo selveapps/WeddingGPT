@@ -3,8 +3,9 @@ import http from 'node:http';
 import { publicUser } from './db.mjs';
 import { burnPasswordCheck, hashPassword, verifyPassword } from './passwords.mjs';
 import { createRouter } from './router.mjs';
+import { AcceptResult } from './invites.mjs';
 import { SYNC_LIMITS, parsePullQuery } from './sync.mjs';
-import { WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './workspaces.mjs';
+import { Role, WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './workspaces.mjs';
 
 /**
  * WeddingGPT API server: accounts, and the workspaces a couple shares.
@@ -20,6 +21,9 @@ import { WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from './work
  *   DELETE /v1/workspaces/:id/members/:userId                       -> 204
  *   POST   /v1/workspaces/:id/sync/push   { mutations }             -> 200 { applied, conflicts, rejected }
  *   GET    /v1/workspaces/:id/sync/pull?since=&limit=               -> 200 { records, cursor, hasMore }
+ *   POST   /v1/workspaces/:id/invites                               -> 201 { token, url, expiresAt } (owner)
+ *   DELETE /v1/workspaces/:id/invites                               -> 204 (owner)
+ *   POST   /v1/invites/accept            { token }                 -> 200 { workspace }
  *   GET    /health                                                  -> 200 { ok: true }
  *
  * Everything except register, login and health needs `Authorization: Bearer
@@ -111,7 +115,13 @@ function bearerToken(req) {
  * Build the HTTP server. Nothing is read from the environment here, so tests
  * can run it against an in-memory database on a random port.
  */
-export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log = console } = {}) {
+export function createAuthServer({
+  db,
+  appToken = null,
+  allowedOrigin = '*',
+  inviteUrlBase = 'weddinggpt://invite/',
+  log = console,
+} = {}) {
   const rateLimited = createRateLimiter(LIMITS.attemptsPerMinute);
 
   function send(res, status, body) {
@@ -227,6 +237,31 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
     return send(res, 200, db.sync.pull(workspace.id, user.id, options));
   }
 
+  // --- Invites (slice A5) ----------------------------------------------------
+
+  function createInvite(req, res, { user, workspace }) {
+    if (workspace.role !== Role.OWNER) return send(res, 403, { error: 'forbidden' });
+    const { token, expiresAt } = db.invites.create(workspace.id, user.id);
+    log.info?.(`[invites] ${user.id} created an invite for ${workspace.id}`);
+    return send(res, 201, { token, url: `${inviteUrlBase}${token}`, expiresAt });
+  }
+
+  function revokeInvites(req, res, { workspace }) {
+    if (workspace.role !== Role.OWNER) return send(res, 403, { error: 'forbidden' });
+    db.invites.revokeOpen(workspace.id);
+    return send(res, 204);
+  }
+
+  async function acceptInvite(req, res, { user }) {
+    const body = await readJson(req);
+    const { result, workspace } = db.invites.accept(body.token, user.id);
+    // Unknown, used, expired and revoked all look the same from outside.
+    if (result === AcceptResult.INVALID) return send(res, 404, { error: 'not_found' });
+    if (result === AcceptResult.FULL) return send(res, 409, { error: 'workspace_full' });
+    if (result === AcceptResult.JOINED) log.info?.(`[invites] ${user.id} joined ${workspace.id}`);
+    return send(res, 200, { workspace, alreadyMember: result === AcceptResult.ALREADY_MEMBER });
+  }
+
   // --- Routing ---------------------------------------------------------------
   //
   // `access`: 'public' (no session), 'user' (a valid session) or 'member'
@@ -243,7 +278,10 @@ export function createAuthServer({ db, appToken = null, allowedOrigin = '*', log
     .add('GET', '/v1/workspaces/:id/members', listMembers, { access: 'member' })
     .add('DELETE', '/v1/workspaces/:id/members/:userId', removeMember, { access: 'member' })
     .add('POST', '/v1/workspaces/:id/sync/push', syncPush, { access: 'member' })
-    .add('GET', '/v1/workspaces/:id/sync/pull', syncPull, { access: 'member' });
+    .add('GET', '/v1/workspaces/:id/sync/pull', syncPull, { access: 'member' })
+    .add('POST', '/v1/workspaces/:id/invites', createInvite, { access: 'member', limited: true })
+    .add('DELETE', '/v1/workspaces/:id/invites', revokeInvites, { access: 'member' })
+    .add('POST', '/v1/invites/accept', acceptInvite, { access: 'user', limited: true });
 
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return send(res, 204);
