@@ -7,6 +7,7 @@ import { useGuestStore } from './guestStore';
 import { useAIStore } from './aiStore';
 import { useNotificationStore } from './notificationStore';
 import { useVendorStore } from './vendorStore';
+import { useSyncStore } from './syncStore';
 import { workspaceStorage } from '../services/storage';
 
 export * from './weddingStore';
@@ -16,6 +17,7 @@ export * from './guestStore';
 export * from './aiStore';
 export * from './notificationStore';
 export * from './vendorStore';
+export * from './syncStore';
 // Not in STORES below: sign-in is optional, so launch never waits on it.
 export * from './authStore';
 
@@ -27,6 +29,7 @@ const STORES = [
   useAIStore,
   useNotificationStore,
   useVendorStore,
+  useSyncStore,
 ];
 
 // Every persisted store switches with the active workspace (slice A3).
@@ -96,4 +99,5 @@ export function resetAllStores() {
   useAIStore.getState().reset();
   useNotificationStore.getState().reset();
   useVendorStore.getState().reset();
+  useSyncStore.getState().reset();
 }
