@@ -27,6 +27,7 @@ const DOCUMENT_FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'open', label: 'To do' },
   { value: 'complete', label: 'Ready' },
+  { value: 'overdue', label: 'Overdue' },
 ];
 
 export function WeddingDocuments() {
@@ -84,7 +85,7 @@ export function WeddingDocuments() {
           {DOCUMENT_FILTERS.map((filter) => (
             <Chip
               key={filter.value}
-              label={filter.label}
+              label={filter.value === 'overdue' ? `${filter.label} (${summary.overdue})` : filter.label}
               selected={statusFilter === filter.value}
               onPress={() => setStatusFilter(filter.value)}
             />

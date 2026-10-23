@@ -24,7 +24,10 @@ export function sortDocuments(documents = []) {
   });
 }
 
-export function filterDocuments(documents = [], status = 'all') {
+export function filterDocuments(documents = [], status = 'all', now = new Date()) {
+  if (status === 'overdue') {
+    return documents.filter((document) => isDocumentReviewOverdue(document, now));
+  }
   if (status === 'complete') return documents.filter((document) => Boolean(document.completed));
   if (status === 'open') return documents.filter((document) => !document.completed);
   return [...documents];

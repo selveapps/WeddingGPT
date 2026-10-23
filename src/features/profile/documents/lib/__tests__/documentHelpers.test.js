@@ -41,6 +41,16 @@ describe('wedding document checklist helpers', () => {
     expect(filterDocuments(items)).toEqual(items);
   });
 
+  it('filters only incomplete paperwork with a past review date', () => {
+    const now = new Date(2026, 9, 23, 12);
+    const rows = [
+      { completed: false, reviewDate: '2026-10-22' },
+      { completed: false, reviewDate: '2026-10-23' },
+      { completed: true, reviewDate: '2026-10-01' },
+    ];
+    expect(filterDocuments(rows, 'overdue', now)).toEqual([rows[0]]);
+  });
+
   it('filters checklist entries by document type', () => {
     const items = [{ type: 'venue' }, { type: 'insurance' }];
     expect(filterDocumentsByType(items, 'venue')).toEqual([items[0]]);
