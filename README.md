@@ -291,6 +291,13 @@ Two deliberate choices in the generator:
   in `store/vendorStore.js` (in the launch hydration gate), the screens in
   `features/vendors`. This graduated the Labs vendor manager; anything saved
   there is imported once, the first time Vendors opens.
+- **Read a quote.** *Read a quote* in Vendors (and on each vendor): paste a
+  quote or contract and get the total, deposit, balance, line items, due
+  dates and fine print to look at twice (non-refundable money, cancellation,
+  overtime, minimums), plus questions to ask when the numbers do not add up.
+  Save it as a new vendor, or as an existing vendor's quote and payment plan
+  (payments already made are kept). Model in `models/quoteReader.js`.
+  Graduated from Labs.
 - **Famous venues.** `models/venues.js` holds a hand-picked list of
   well-known wedding venues for about 20 major US metros (matched by city,
   neighbourhood or suburb). They show on Home, on the plan reveal and on the

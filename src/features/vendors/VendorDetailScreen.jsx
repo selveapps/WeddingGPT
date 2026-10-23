@@ -139,6 +139,12 @@ export function VendorDetailScreen() {
               {VENDOR_COPY.budgetLinked}
             </Text>
           ) : null}
+          <Button
+            label={vendor.quotedAmount ? 'Read a new quote' : 'Read their quote'}
+            variant="secondary"
+            iconLeft="note"
+            onPress={() => router.push(Routes.quoteReader(vendor.id))}
+          />
           {canAddToBudget ? (
             <Button
               label={VENDOR_COPY.budgetLabel}

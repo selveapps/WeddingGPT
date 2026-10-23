@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 
 import {
+  Button,
   Card,
   Chip,
   EmptyState,
@@ -87,6 +88,13 @@ export function VendorListScreen() {
           actionIcon="plus"
           actionLabel={VENDOR_COPY.addLabel}
           onActionPress={() => router.push(Routes.vendorAdd)}
+        />
+
+        <Button
+          label="Read a quote"
+          variant="secondary"
+          iconLeft="note"
+          onPress={() => router.push(Routes.quoteReader())}
         />
 
         <VendorPipeline summary={summary} currency={currency} />

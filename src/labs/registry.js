@@ -15,13 +15,6 @@ export const LAB_FEATURES = [
     route: '/labs/sync',
   },
   {
-    key: 'quotes',
-    title: 'Quote reader',
-    blurb: 'Paste a vendor quote to pull out totals, deposits, due dates and fine print.',
-    icon: 'note',
-    route: '/labs/quotes',
-  },
-  {
     key: 'subscriptions',
     title: 'Plus subscription',
     blurb: 'Paywall, plans, a 7-day trial and feature gating - in test mode.',

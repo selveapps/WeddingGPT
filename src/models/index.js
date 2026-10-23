@@ -281,6 +281,16 @@ export {
   deviceActionReply,
 } from './assistantActions';
 export {
+  FINE_PRINT,
+  SAMPLE_QUOTE,
+  extractQuote,
+  hasFindings,
+  quoteSummary,
+  quoteScopeText,
+  toVendorDraft,
+  quotePatchForVendor,
+} from './quoteReader';
+export {
   EventKind,
   EVENT_KIND_META,
   GuestScope,
