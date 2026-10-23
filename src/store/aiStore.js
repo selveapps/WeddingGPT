@@ -23,6 +23,7 @@ import {
   MessageStatus,
   SuggestionStatus,
   SuggestionType,
+  deviceActionReply,
 } from '../models';
 import { useWeddingStore } from './weddingStore';
 import { usePlanningStore } from './planningStore';
@@ -42,7 +43,9 @@ import { useGuestStore } from './guestStore';
  *     the app closing is marked failed on the next launch, so it can be retried
  *     rather than sitting on "thinking" forever.
  *  3. **Context, not the database.** Each turn sends `buildWeddingContext` -
- *     counts and totals - never raw guest records.
+ *     counts and totals - never raw guest records. Requests like "mark the
+ *     Smiths as attending" need the guest list, so they are understood on the
+ *     phone (`deviceActionReply`) and never reach a provider at all.
  *
  * While a reply is being revealed, its growing text lives in `streaming`, which
  * is not persisted: writing to disk on every word would be wasteful, and the
@@ -72,6 +75,17 @@ function gatherContext() {
     budgetTotal: budget.budget?.total ?? 0,
     guests: denormalise(guests.guests),
   });
+}
+
+/** A reply for a plain request ("add a $2,000 florist expense"), made on the phone, or null. */
+function deviceReply(history) {
+  const latest = history.at(-1);
+  if (latest?.role !== MessageRole.USER) return null;
+  const reply = deviceActionReply(latest.content, {
+    guests: denormalise(useGuestStore.getState().guests),
+    categories: denormalise(useBudgetStore.getState().categories),
+  });
+  return reply ? { ...reply, metadata: { provider: 'device', intent: 'action', latencyMs: 0 } } : null;
 }
 
 /** The conversation as the provider sees it: completed turns only, oldest first. */
@@ -120,7 +134,7 @@ export const useAIStore = create()(
         const context = gatherContext();
 
         try {
-          const reply = await aiService.reply({ messages: history, context });
+          const reply = deviceReply(history) ?? (await aiService.reply({ messages: history, context }));
 
           let suggestionIds = [];
           if (reply.proposal) {
@@ -273,6 +287,29 @@ export const useAIStore = create()(
             tasks.forEach((task) =>
               analytics.track(AnalyticsEvents.TASK_CREATED, { categoryId: task.categoryId, source: 'ai' })
             );
+          } else if (suggestion.type === SuggestionType.ADD_EXPENSE) {
+            const amount = Math.max(0, Math.round(Number(payload.amount) || 0));
+            if (!payload.title?.trim() || !amount) return { ok: false, count: 0 };
+            useBudgetStore.getState().addExpense({
+              weddingId: useWeddingStore.getState().wedding?.id ?? null,
+              title: payload.title.trim(),
+              amount,
+              paidAmount: Math.min(amount, Math.max(0, Math.round(Number(payload.paidAmount) || 0))),
+              paymentStatus: payload.paymentStatus,
+              commitment: payload.commitment,
+              budgetCategoryId: payload.budgetCategoryId ?? null,
+              date: payload.date ?? null,
+              dueDate: payload.dueDate ?? null,
+              notes: 'Added from the assistant',
+            });
+            count = 1;
+          } else if (suggestion.type === SuggestionType.UPDATE_GUEST) {
+            const guests = useGuestStore.getState();
+            // Only guests still on the list: one may have been deleted since the proposal.
+            const ids = (payload.guestIds ?? []).filter((guestId) => guests.guests.byId[guestId]);
+            if (!ids.length || !payload.rsvpStatus) return { ok: false, count: 0 };
+            ids.forEach((guestId) => guests.setRsvp(guestId, payload.rsvpStatus));
+            count = ids.length;
           }
 
           set((state) => ({

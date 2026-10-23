@@ -1,6 +1,14 @@
 import { RsvpStatus, PaymentStatus, ExpenseCommitment } from '@/models';
 
-import { ActionKind, EXAMPLES, matchGuests, parseCommand } from '../model';
+import {
+  ActionKind,
+  EXAMPLES,
+  actionReply,
+  deviceActionReply,
+  matchGuests,
+  parseCommand,
+} from '../assistantActions';
+import { SuggestionType } from '../enums';
 
 const FROM = new Date(2027, 0, 10);
 
@@ -40,7 +48,7 @@ describe('parseCommand', () => {
       ready: true,
     });
     expect(parse('Jane Doe declined').payload.rsvpStatus).toBe(RsvpStatus.DECLINED);
-    expect(parse("The Smiths are not coming").payload.rsvpStatus).toBe(RsvpStatus.DECLINED);
+    expect(parse('The Smiths are not coming').payload.rsvpStatus).toBe(RsvpStatus.DECLINED);
     expect(parse('Mark Bob as maybe')).toMatchObject({ ready: false });
   });
 
@@ -95,5 +103,43 @@ describe('parseCommand', () => {
 
   it('understands every example it suggests', () => {
     for (const example of EXAMPLES) expect(parse(example).kind).not.toBe(ActionKind.UNKNOWN);
+  });
+});
+
+describe('deviceActionReply', () => {
+  const reply = (text) => deviceActionReply(text, { guests, categories, from: FROM });
+
+  it('proposes expenses, RSVPs and reminders in the chat suggestion shape', () => {
+    expect(reply('Add a $2,000 florist expense').proposal).toMatchObject({
+      type: SuggestionType.ADD_EXPENSE,
+      payload: { amount: 200000, budgetCategoryId: 'c-decor' },
+    });
+    expect(reply('Mark the Smiths as attending').proposal).toMatchObject({
+      type: SuggestionType.UPDATE_GUEST,
+      payload: { guestIds: ['g1', 'g2'], rsvpStatus: RsvpStatus.ATTENDING },
+    });
+    expect(reply('Remind me to call the DJ by March 3').proposal).toMatchObject({
+      type: SuggestionType.CREATE_TASKS,
+      payload: { tasks: [{ title: 'Call the DJ', dueDate: '2027-03-03' }] },
+    });
+  });
+
+  it('leaves questions and chat to the assistant', () => {
+    expect(reply('How much have we spent on the cake? $450')).toBeNull();
+    expect(reply('We need to pick a venue, any ideas?')).toBeNull();
+    expect(reply('Tell me about save the dates')).toBeNull();
+    expect(reply('')).toBeNull();
+  });
+
+  it('answers an unknown guest only when the RSVP was explicit', () => {
+    expect(reply('The weather is coming')).toBeNull();
+    const explicit = reply('Mark the Joneses as attending');
+    expect(explicit.proposal).toBeNull();
+    expect(explicit.content).toMatch(/No guest called "the Joneses"/);
+  });
+
+  it('turns nothing that was not understood into a proposal', () => {
+    expect(actionReply(null)).toBeNull();
+    expect(actionReply({ kind: ActionKind.UNKNOWN })).toBeNull();
   });
 });

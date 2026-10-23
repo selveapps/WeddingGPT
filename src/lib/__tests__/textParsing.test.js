@@ -1,5 +1,5 @@
-import { findDate, findDates } from '../dates';
-import { findAmounts, findPercents } from '../money';
+import { findDate, findDates } from '../textDates';
+import { findAmounts, findPercents } from '../textMoney';
 
 const FROM = new Date(2027, 0, 10); // Jan 10 2027
 

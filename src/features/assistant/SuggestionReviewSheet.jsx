@@ -19,6 +19,8 @@ import { effectivePayload, SuggestionType } from '@/models';
 import { formatMediumDate } from '@/lib/date';
 import { Routes } from '@/navigation/routes';
 
+import { ExpenseReview, RsvpReview } from './ActionReview';
+
 /**
  * Review, edit, then confirm - the confirmation step PRD s.13 requires.
  *
@@ -28,6 +30,8 @@ import { Routes } from '@/navigation/routes';
  *  - A drafted message opens as editable text. "Share" hands it to the system
  *    share sheet, so the couple sends it from their own WhatsApp, email or
  *    messages - the assistant never sends anything itself.
+ *  - An expense or an RSVP change (understood on the phone) opens as an
+ *    editable preview; only its confirm button records it.
  */
 export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
   const router = useRouter();
@@ -38,6 +42,7 @@ export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
 
   const [tasks, setTasks] = useState([]);
   const [body, setBody] = useState('');
+  const [action, setAction] = useState({});
 
   // Re-seed the editable copy each time the sheet opens, from the latest edit.
   useEffect(() => {
@@ -45,11 +50,32 @@ export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
     const payload = effectivePayload(suggestion);
     setTasks((payload.tasks ?? []).map((task, i) => ({ ...task, key: `${i}` })));
     setBody(payload.body ?? '');
+    setAction(payload);
   }, [visible, suggestion]);
 
   if (!suggestion) return null;
   const isTasks = suggestion.type === SuggestionType.CREATE_TASKS;
+  const isExpense = suggestion.type === SuggestionType.ADD_EXPENSE;
+  const isRsvp = suggestion.type === SuggestionType.UPDATE_GUEST;
   const kept = tasks.filter((task) => task.title.trim());
+  const rsvpCount = (action.guestIds ?? []).length;
+
+  const confirmAction = () => {
+    const { ok, count } = confirmSuggestion(suggestion.id, action);
+    if (!ok) {
+      toast.error(isExpense ? 'Add a description and an amount first.' : 'There is no one left to update.');
+      return;
+    }
+    onClose();
+    if (isExpense) {
+      toast.success('Expense recorded', { actionLabel: 'View', onAction: () => router.push(Routes.budget) });
+    } else {
+      toast.success(`${count} ${count === 1 ? 'guest' : 'guests'} updated`, {
+        actionLabel: 'View',
+        onAction: () => router.push(Routes.guests),
+      });
+    }
+  };
 
   const addTasks = () => {
     const { ok, count } = confirmSuggestion(suggestion.id, {
@@ -89,7 +115,11 @@ export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
       subtitle={
         isTasks
           ? 'Rename or remove anything, then add what is left to your plan.'
-          : 'Edit anything you like. Nothing is sent until you share it.'
+          : isExpense
+            ? 'Change anything, then record it. Nothing is added to your budget before that.'
+            : isRsvp
+              ? 'Leave anyone out or change the answer, then confirm.'
+              : 'Edit anything you like. Nothing is sent until you share it.'
       }
       footer={
         <Stack gap="xs">
@@ -100,6 +130,20 @@ export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
               onPress={addTasks}
               disabled={kept.length === 0}
             />
+          ) : isExpense ? (
+            <Button
+              label="Record expense"
+              iconLeft="check"
+              onPress={confirmAction}
+              disabled={!action.title?.trim() || !action.amount}
+            />
+          ) : isRsvp ? (
+            <Button
+              label={rsvpCount ? `Update ${rsvpCount} ${rsvpCount === 1 ? 'guest' : 'guests'}` : 'No one to update'}
+              iconLeft="check"
+              onPress={confirmAction}
+              disabled={!rsvpCount}
+            />
           ) : (
             <Button label="Share or copy" iconLeft="send" onPress={share} disabled={!body.trim()} />
           )}
@@ -107,7 +151,11 @@ export function SuggestionReviewSheet({ suggestion, visible, onClose }) {
         </Stack>
       }
     >
-      {isTasks ? (
+      {isExpense ? (
+        <ExpenseReview value={action} onChange={setAction} />
+      ) : isRsvp ? (
+        <RsvpReview value={action} onChange={setAction} />
+      ) : isTasks ? (
         <Stack gap="sm">
           {tasks.map((task) => (
             <Row key={task.key} gap="xs" align="flex-start">

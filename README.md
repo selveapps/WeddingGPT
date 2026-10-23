@@ -364,6 +364,13 @@ Two deliberate choices in the generator:
   field the profile edits) and a brief for vendors that includes the vision
   board's ideas. Saved on the wedding, so it syncs. Graduated from the Labs
   style studio; its moodboard notes and links move into the vision board once.
+- **Assistant actions.** Ask the assistant in plain words - "add a $2,000
+  florist expense", "spent $450 on the cake", "mark the Smiths as attending",
+  "remind me to call the DJ by March 3" - and it answers with a proposal you
+  edit and confirm; nothing changes before that. These are understood on the
+  phone (`models/assistantActions.js`), because they need the guest list,
+  which is never sent to the assistant. Questions still go to the assistant.
+  Graduated from Labs.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

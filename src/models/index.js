@@ -272,6 +272,15 @@ export {
   styleBrief,
 } from './styleQuiz';
 export {
+  ActionKind,
+  EXAMPLES as ACTION_EXAMPLES,
+  matchGuests,
+  matchCategory,
+  parseCommand,
+  actionReply,
+  deviceActionReply,
+} from './assistantActions';
+export {
   EventKind,
   EVENT_KIND_META,
   GuestScope,
