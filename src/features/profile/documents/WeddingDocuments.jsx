@@ -9,11 +9,12 @@ import {
   SectionHeader,
   Stack,
   Text,
+  TextField,
   useToast,
 } from '@/design-system/components';
 import { DocumentForm, DocumentRow } from './components';
 import { useWeddingDocuments } from './hooks/useWeddingDocuments';
-import { filterDocuments, summariseDocuments } from './lib/documentHelpers';
+import { filterDocuments, searchDocuments, summariseDocuments } from './lib/documentHelpers';
 
 const DOCUMENT_FILTERS = [
   { value: 'all', label: 'All' },
@@ -24,9 +25,10 @@ const DOCUMENT_FILTERS = [
 export function WeddingDocuments() {
   const toast = useToast();
   const [statusFilter, setStatusFilter] = useState('all');
+  const [query, setQuery] = useState('');
   const { documents, addRecord, removeRecord, toggleComplete } = useWeddingDocuments();
   const summary = summariseDocuments(documents);
-  const visibleDocuments = filterDocuments(documents, statusFilter);
+  const visibleDocuments = searchDocuments(filterDocuments(documents, statusFilter), query);
 
   const save = (values) => {
     if (!addRecord(values)) {
@@ -52,6 +54,15 @@ export function WeddingDocuments() {
             : 'Track contracts and paperwork without storing sensitive document files here.'
         }
       />
+      {summary.total ? (
+        <TextField
+          label="Search checklist"
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search document types, notes or dates"
+          icon="search"
+        />
+      ) : null}
       {summary.total ? (
         <Card padding="md">
           <ProgressBar value={summary.ratio} label="Checklist progress" />
@@ -93,7 +104,10 @@ export function WeddingDocuments() {
           title="No paperwork reminders in this view"
           message="Switch filters to see the rest of your checklist."
           actionLabel="Show all"
-          onAction={() => setStatusFilter('all')}
+          onAction={() => {
+            setStatusFilter('all');
+            setQuery('');
+          }}
         />
       ) : null}
       <Text variant="caption" color="subtle">

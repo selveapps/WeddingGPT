@@ -29,6 +29,18 @@ export function filterDocuments(documents = [], status = 'all') {
   return [...documents];
 }
 
+export function searchDocuments(documents = [], query = '') {
+  const term = String(query).trim().toLocaleLowerCase();
+  if (!term) return [...documents];
+  return documents.filter((document) =>
+    [document.title, document.note, documentTypeLabel(document.type), document.reviewDate].some((value) =>
+      String(value ?? '')
+        .toLocaleLowerCase()
+        .includes(term)
+    )
+  );
+}
+
 export function summariseDocuments(documents = []) {
   const completed = documents.filter((document) => document.completed).length;
   return {

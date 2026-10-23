@@ -1,4 +1,10 @@
-import { filterDocuments, sortDocuments, summariseDocuments, validateDocument } from '../documentHelpers';
+import {
+  filterDocuments,
+  searchDocuments,
+  sortDocuments,
+  summariseDocuments,
+  validateDocument,
+} from '../documentHelpers';
 
 describe('wedding document checklist helpers', () => {
   it('validates custom names and review dates', () => {
@@ -25,5 +31,16 @@ describe('wedding document checklist helpers', () => {
     expect(filterDocuments(items, 'open')).toEqual([items[0]]);
     expect(filterDocuments(items, 'complete')).toEqual([items[1]]);
     expect(filterDocuments(items)).toEqual(items);
+  });
+
+  it('searches document titles, notes, dates, and readable types', () => {
+    const rows = [
+      { type: 'venue', title: '', note: 'Call Alex', reviewDate: '2026-11-01' },
+      { type: 'insurance', title: 'Policy renewal', note: '', reviewDate: '2027-01-01' },
+    ];
+    expect(searchDocuments(rows, 'venue')).toEqual([rows[0]]);
+    expect(searchDocuments(rows, 'Alex')).toEqual([rows[0]]);
+    expect(searchDocuments(rows, '2027')).toEqual([rows[1]]);
+    expect(searchDocuments(rows, '')).toEqual(rows);
   });
 });
