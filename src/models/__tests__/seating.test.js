@@ -1,6 +1,6 @@
 import { RsvpStatus } from '@/models';
 
-import { assignGuest, autoSeat, findConflicts, seatingSummary, unseatedGuests } from '../model';
+import { assignGuest, autoSeat, findConflicts, seatingSummary, unseatedGuests } from '../seating';
 
 const table = (id, capacity, guestIds = []) => ({ id, name: `T${id}`, capacity, guestIds });
 const guest = (id, householdId = null, rsvpStatus = RsvpStatus.ATTENDING) => ({

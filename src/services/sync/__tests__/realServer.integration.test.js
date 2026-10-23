@@ -339,4 +339,38 @@ run('sync against the real server', () => {
       expect(body).toContain(text);
     }
   });
+
+  it('seating tables and keep-apart rules sync between phones (D)', async () => {
+    const seatingPhone = () => {
+      const seating = create(() => ({ tables: { byId: {}, allIds: [] }, rules: null }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [
+          { collection: 'seatingTables', store: seating, key: 'tables', kind: SliceKind.MANY },
+          { collection: 'seatingRules', store: seating, key: 'rules', kind: SliceKind.ONE },
+        ],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { seating, syncStore, engine };
+    };
+    const a = seatingPhone();
+    const b = seatingPhone();
+    a.seating.setState({
+      tables: {
+        byId: { table_1: { id: 'table_1', name: 'Family', capacity: 8, guestIds: ['g1'] } },
+        allIds: ['table_1'],
+      },
+      rules: { id: 'seatrules_1', avoidPairs: [['g1', 'g2']] },
+    });
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    await b.engine.syncNow();
+    expect(b.seating.getState().tables.byId.table_1.guestIds).toEqual(['g1']);
+    expect(b.seating.getState().rules.avoidPairs).toEqual([['g1', 'g2']]);
+  });
 });

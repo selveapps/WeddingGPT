@@ -22,20 +22,6 @@ export const LAB_FEATURES = [
     route: '/labs/sync',
   },
   {
-    key: 'seating',
-    title: 'Seating chart',
-    blurb: 'Tables, auto-seating that keeps households together, and keep-apart pairs.',
-    icon: 'guests',
-    route: '/labs/seating',
-  },
-  {
-    key: 'meals',
-    title: 'Meals and dietary',
-    blurb: 'Caterer numbers, allergy flags and a CSV export from your guest list.',
-    icon: 'note',
-    route: '/labs/meals',
-  },
-  {
     key: 'gifts',
     title: 'Gifts and thank-yous',
     blurb: 'Log gifts, see when each thank-you is due, and draft the note.',

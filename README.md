@@ -301,6 +301,13 @@ Two deliberate choices in the generator:
   guests reply in the browser, without the app, and their answers update the
   guest list when the app syncs. Server: `server/auth/rsvp`; app:
   `features/rsvp`.
+- **Seating chart and meals.** *Seating chart* (Guests tab): tables, auto-seating
+  that keeps households together, keep-apart pairs, and on a wide screen the
+  tables in a grid beside the guests still to seat. Tables and pairs sync
+  between partners (`seatingTables`, `seatingRules`); a deleted guest frees
+  their seat. *Meals for the caterer* counts plates, meal choices and allergies
+  to check, and exports a CSV. Both graduated from Labs; earlier Labs seating
+  plans are imported once.
 - **Wedding website.** *Wedding website* on the Guests tab: welcome,
   schedule with directions, travel and stays, registry and FAQ, published at the
   RSVP page address as off, public or password-protected, and hidden from

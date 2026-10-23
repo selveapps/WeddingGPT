@@ -60,6 +60,8 @@ export const Routes = {
   guestSpreadsheet: '/guests/spreadsheet',
   guestRsvp: '/guests/rsvp',
   guestWebsite: '/guests/website',
+  guestSeating: '/guests/seating',
+  guestMeals: '/guests/meals',
   householdDetail: (id) => `/guests/household/${id}`,
 
   // --- Vendors ------------------------------------------------------------

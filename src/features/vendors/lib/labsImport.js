@@ -1,4 +1,5 @@
 import { zustandStorage } from '@/services/storage';
+import { labsCollectionFromPersisted, takeLabsCollection } from '@/services/storage/labsData';
 import { vendorFieldsFromLab } from '@/models';
 import { useVendorStore } from '@/store/vendorStore';
 
@@ -17,17 +18,7 @@ export const LABS_VENDOR_KEY = 'labs:vendors';
 
 /** The lab vendors inside a persisted `labs:vendors` value, in order. */
 export function labVendorsFromPersisted(value) {
-  let persisted = value;
-  if (typeof persisted === 'string') {
-    try {
-      persisted = JSON.parse(persisted);
-    } catch {
-      return [];
-    }
-  }
-  const items = persisted?.state?.items;
-  if (!items?.byId || !Array.isArray(items.allIds)) return [];
-  return items.allIds.map((id) => items.byId[id]).filter(Boolean);
+  return labsCollectionFromPersisted(value).items;
 }
 
 /** Resolves with how many vendors were imported. Never throws. */
@@ -37,22 +28,9 @@ export async function importLabVendors({
   storage = zustandStorage,
 } = {}) {
   if (store.getState().labsImportedAt) return 0;
-
-  let labVendors = [];
-  try {
-    labVendors = labVendorsFromPersisted(await storage.getItem(LABS_VENDOR_KEY));
-  } catch {
-    // Unreadable Labs data is not worth blocking the real list over.
-  }
-
+  const { items: labVendors } = await takeLabsCollection(storage, LABS_VENDOR_KEY);
   const { importVendors, markLabsImported } = store.getState();
   if (labVendors.length) importVendors(labVendors.map((lab) => vendorFieldsFromLab(lab, weddingId)));
   markLabsImported();
-
-  try {
-    await storage.removeItem(LABS_VENDOR_KEY);
-  } catch {
-    // Harmless: labsImportedAt already stops a second import.
-  }
   return labVendors.length;
 }

@@ -1,15 +1,44 @@
-import { RsvpStatus, guestFullName } from '@/models';
+import { createEntity } from './base';
+import { RsvpStatus } from './enums';
+import { guestFullName } from './guests';
 
 /**
- * Seating chart (Labs).
+ * Seating chart.
  *
- * Tables are `{ id, name, capacity, guestIds }`. Guests come from the real
- * guest store and are only ever referenced by ID, so editing a guest's name
- * shows up on the chart immediately. Everything here is pure; the store just
- * persists what these functions return.
+ * Tables are `{ id, name, capacity, guestIds }`. Guests are only ever
+ * referenced by ID, so editing a guest's name shows up on the chart
+ * immediately. Everything here is pure; the seating store persists (and
+ * syncs) what these functions return.
+ *
+ * Keep-apart pairs live in one rules record per wedding: `{ avoidPairs }`.
  */
 
 export const DEFAULT_TABLE_CAPACITY = 8;
+export const MAX_TABLE_CAPACITY = 40;
+
+export function createSeatingTable({ weddingId, name, capacity = DEFAULT_TABLE_CAPACITY, guestIds = [] } = {}) {
+  const seats = Math.min(MAX_TABLE_CAPACITY, Math.max(1, Math.round(Number(capacity) || DEFAULT_TABLE_CAPACITY)));
+  return createEntity('table', { weddingId, name, capacity: seats, guestIds });
+}
+
+export function createSeatingRules({ weddingId, avoidPairs = [] } = {}) {
+  return createEntity('seatrules', { weddingId, avoidPairs });
+}
+
+/**
+ * Tables with any guest who no longer exists taken off, so a deleted guest
+ * never holds a seat. Returns the same array when nothing changed.
+ */
+export function withKnownGuests(tables, knownIds) {
+  let changed = false;
+  const next = tables.map((table) => {
+    const guestIds = table.guestIds.filter((id) => knownIds.has(id));
+    if (guestIds.length === table.guestIds.length) return table;
+    changed = true;
+    return { ...table, guestIds };
+  });
+  return changed ? next : tables;
+}
 
 /** Anyone not declined still needs a seat on the plan. */
 export function seatableGuests(guests = []) {

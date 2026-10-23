@@ -1,15 +1,9 @@
-import {
-  RsvpStatus,
-  PlusOneStatus,
-  MealPreference,
-  MEAL_PREFERENCE_META,
-  guestFullName,
-} from '@/models';
-
-import { toCsv } from '@/lib/csv';
+import { RsvpStatus, PlusOneStatus, MealPreference, MEAL_PREFERENCE_META } from './enums';
+import { guestFullName } from './guests';
+import { toCsv } from '../lib/csv';
 
 /**
- * Meals and dietary needs (Labs).
+ * Meals and dietary needs: the caterer's report.
  *
  * Guests already carry `mealPreference` and free-text `dietaryNotes`; this
  * turns them into the report a caterer actually asks for. Only attending
