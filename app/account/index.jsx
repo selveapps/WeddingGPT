@@ -20,6 +20,7 @@ import { useAuthStore, selectAuthAvailable, selectAuthUser, selectIsSignedIn } f
 import { Routes } from '@/navigation/routes';
 import { AuthMode } from '@/features/auth/authValidation';
 import { SyncSection } from '@/features/sync/SyncSection';
+import { AccountDataSection } from '@/features/account/AccountDataSection';
 import { signOutWarning } from '@/features/sync/syncStatus';
 import { isSyncConfigured, workspaceLink } from '@/services/sync';
 
@@ -116,6 +117,8 @@ export default function AccountScreen() {
         )}
 
         {signedIn && isSyncConfigured ? <SyncSection /> : null}
+
+        {signedIn ? <AccountDataSection /> : null}
 
         <Stack gap="xs">
           <SectionHeader title="Settings" />

@@ -61,6 +61,18 @@ export function createAuthClient({ url, appToken, timeoutMs, fetchImpl }) {
     async logout(token) {
       await request('/v1/auth/logout', { method: 'POST', token });
     },
+
+    /** Everything the server holds for this account (slice A7). */
+    async exportAccount(token) {
+      const json = await request('/v1/account/export', { token });
+      if (!json?.user?.id || !Array.isArray(json.workspaces)) throw new AuthError(AuthErrorCode.UNAVAILABLE);
+      return json;
+    },
+
+    /** Delete the account for good. Needs the password again. */
+    async deleteAccount(token, password) {
+      await request('/v1/account', { method: 'DELETE', token, body: { password } });
+    },
   };
 }
 

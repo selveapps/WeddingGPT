@@ -80,6 +80,31 @@ export function createAuthStore({ client, storage, track = () => {} }) {
       return session.user;
     },
 
+    /** Everything the server holds for this account, as JSON for a file. */
+    async exportAccount() {
+      const { token } = get();
+      if (!client) throw new AuthError(AuthErrorCode.NOT_CONFIGURED);
+      if (!token) throw new AuthError(AuthErrorCode.UNAUTHORISED);
+      const data = await client.exportAccount(token);
+      track(AnalyticsEvents.ACCOUNT_DATA_EXPORTED);
+      return data;
+    },
+
+    /**
+     * Delete the account on the server, then sign this device out. A wrong
+     * password throws and changes nothing. The caller leaves the synced
+     * wedding on this phone (see the Account screen).
+     */
+    async deleteAccount(password) {
+      const { token } = get();
+      if (!client) throw new AuthError(AuthErrorCode.NOT_CONFIGURED);
+      if (!token) throw new AuthError(AuthErrorCode.UNAUTHORISED);
+      await client.deleteAccount(token, password);
+      set(signedOut);
+      await storage.clear();
+      track(AnalyticsEvents.ACCOUNT_DELETED);
+    },
+
     /** Always signs the device out, even if the server cannot be reached. */
     async signOut() {
       const { token } = get();

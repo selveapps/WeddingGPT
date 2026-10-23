@@ -140,3 +140,53 @@ describe('authStore', () => {
     expect(store.getState().status).toBe(AuthStatus.SIGNED_IN);
   });
 });
+
+describe('account export and deletion', () => {
+  const signedIn = async (client) => {
+    const ctx = setup({ client, storage: memoryStorage(session) });
+    await ctx.store.getState().restore();
+    return ctx;
+  };
+
+  it('exports with the session token', async () => {
+    const data = { user, workspaces: [] };
+    const { store, client, track } = await signedIn(fakeClient({ exportAccount: jest.fn(async () => data) }));
+    await expect(store.getState().exportAccount()).resolves.toBe(data);
+    expect(client.exportAccount).toHaveBeenCalledWith('tok');
+    expect(track).toHaveBeenCalledWith(AnalyticsEvents.ACCOUNT_DATA_EXPORTED);
+  });
+
+  it('deletes, then signs this device out', async () => {
+    const { store, client, storage, track } = await signedIn(
+      fakeClient({ deleteAccount: jest.fn(async () => {}) })
+    );
+    await store.getState().deleteAccount('a good password');
+    expect(client.deleteAccount).toHaveBeenCalledWith('tok', 'a good password');
+    expect(store.getState()).toMatchObject({ status: AuthStatus.SIGNED_OUT, token: null });
+    expect(storage.peek()).toBeNull();
+    expect(track).toHaveBeenCalledWith(AnalyticsEvents.ACCOUNT_DELETED);
+  });
+
+  it('a wrong password changes nothing', async () => {
+    const deleteAccount = jest.fn(async () => {
+      throw new AuthError(AuthErrorCode.INVALID_CREDENTIALS);
+    });
+    const { store, storage } = await signedIn(fakeClient({ deleteAccount }));
+    await expect(store.getState().deleteAccount('nope')).rejects.toMatchObject({
+      code: AuthErrorCode.INVALID_CREDENTIALS,
+    });
+    expect(store.getState().status).toBe(AuthStatus.SIGNED_IN);
+    expect(storage.peek()).toEqual(session);
+  });
+
+  it('needs to be signed in', async () => {
+    const { store } = setup();
+    await store.getState().restore();
+    await expect(store.getState().deleteAccount('x')).rejects.toMatchObject({
+      code: AuthErrorCode.UNAUTHORISED,
+    });
+    await expect(store.getState().exportAccount()).rejects.toMatchObject({
+      code: AuthErrorCode.UNAUTHORISED,
+    });
+  });
+});
