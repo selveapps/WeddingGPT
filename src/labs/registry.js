@@ -15,13 +15,6 @@ export const LAB_FEATURES = [
     route: '/labs/sync',
   },
   {
-    key: 'actions',
-    title: 'Assistant actions',
-    blurb: 'Say "add a $2,000 florist expense" and confirm the change before it happens.',
-    icon: 'sparkle',
-    route: '/labs/actions',
-  },
-  {
     key: 'quotes',
     title: 'Quote reader',
     blurb: 'Paste a vendor quote to pull out totals, deposits, due dates and fine print.',
