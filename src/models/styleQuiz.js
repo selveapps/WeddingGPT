@@ -1,12 +1,16 @@
-import { WEDDING_STYLES, COLOR_PALETTES, scoreStyleQuiz } from '@/models';
+import { COLOR_PALETTES, scoreStyleQuiz } from './vision';
 
 /**
- * Style quiz and moodboard (Labs).
+ * The style quiz and palette (graduated from the Labs style studio).
  *
  * Five quick questions weight the eight styles in `WEDDING_STYLES`; the
- * scoring itself is the existing `scoreStyleQuiz`. The moodboard holds notes,
- * links and palette picks - no bundled photography, per the PRD's originality
- * rule, so a link out to the couple's own Pinterest board stands in for images.
+ * scoring itself is `scoreStyleQuiz`. Answers and the chosen palette live on
+ * the wedding (`styleQuizAnswers`, `paletteKey`), so they sync; "save as our
+ * style" writes the top styles to `styleTags`, the field the profile edits.
+ *
+ * Ideas live in the profile's vision board (`profileVisionIdeas`), not here,
+ * so there is one moodboard. The Labs moodboard's notes and links are moved
+ * there once (`moodItemsToVisionIdeas`).
  */
 
 export const STYLE_QUIZ = [
@@ -96,6 +100,14 @@ export function rankPalettes(styleKey) {
     .sort((a, b) => Number(b.suggested) - Number(a.suggested));
 }
 
+/** The style keys to save as the couple's style: the top one, and the runner-up if it is close. */
+export function topStyleKeys(answers = {}) {
+  const [first, second] = quizResult(answers);
+  if (!first) return [];
+  return second && second.share >= first.share * 0.75 ? [first.key, second.key] : [first.key];
+}
+
+/** Kinds of item the Labs moodboard held, for moving them to the vision board. */
 export const MoodItemKind = {
   NOTE: 'note',
   LINK: 'link',
@@ -112,14 +124,53 @@ export function normaliseLink(text) {
   return /^https?:\/\/[^/.\s]+\.[^/\s]+/i.test(withScheme) ? withScheme : null;
 }
 
-/** A plain-text brief the couple can send a planner, florist or designer. */
-export function styleBrief({ answers = {}, paletteKey = null, items = [] } = {}) {
+const VISION_TITLE_CHARS = 90;
+const VISION_NOTE_CHARS = 600;
+
+/**
+ * Labs moodboard items as profile vision ideas (`{ title, category, moods,
+ * note }`). A note's first words become the title; a link keeps its address
+ * in the note.
+ */
+export function moodItemsToVisionIdeas(items = []) {
+  return items
+    .filter((item) => typeof item?.text === 'string' && item.text.trim())
+    .map((item) => {
+      const text = item.text.trim();
+      if (item.kind === MoodItemKind.LINK) {
+        return {
+          title: 'Inspiration link',
+          category: 'other',
+          moods: [],
+          note: text.slice(0, VISION_NOTE_CHARS),
+        };
+      }
+      const title =
+        text.length > VISION_TITLE_CHARS ? `${text.slice(0, VISION_TITLE_CHARS - 1).trimEnd()}…` : text;
+      return {
+        title,
+        category: 'other',
+        moods: [],
+        note: text.length > VISION_TITLE_CHARS ? text.slice(0, VISION_NOTE_CHARS) : '',
+      };
+    });
+}
+
+/**
+ * A plain-text brief the couple can send a planner, florist or designer.
+ * `ideas` are vision board ideas; `items` are Labs-style notes and links.
+ */
+export function styleBrief({ answers = {}, paletteKey = null, items = [], ideas = [] } = {}) {
   const [top, second] = quizResult(answers);
   const palette = COLOR_PALETTES.find((entry) => entry.key === paletteKey);
   const lines = ['Our wedding style'];
 
   if (top) {
-    lines.push('', `${top.name}${second ? `, with a touch of ${second.name.toLowerCase()}` : ''}.`, top.blurb);
+    lines.push(
+      '',
+      `${top.name}${second ? `, with a touch of ${second.name.toLowerCase()}` : ''}.`,
+      top.blurb
+    );
   }
   if (palette) lines.push('', `Palette: ${palette.name} (${palette.colors.join(', ')})`);
 
@@ -127,8 +178,13 @@ export function styleBrief({ answers = {}, paletteKey = null, items = [] } = {})
   const links = items.filter((item) => item.kind === MoodItemKind.LINK);
   if (notes.length) lines.push('', 'What we love:', ...notes.map((item) => `- ${item.text}`));
   if (links.length) lines.push('', 'Inspiration:', ...links.map((item) => `- ${item.text}`));
+  if (ideas.length) {
+    lines.push(
+      '',
+      'Ideas we have saved:',
+      ...ideas.map((idea) => `- ${idea.title}${idea.note ? `: ${idea.note}` : ''}`)
+    );
+  }
 
   return lines.join('\n');
 }
-
-export { WEDDING_STYLES };

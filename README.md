@@ -330,6 +330,11 @@ Two deliberate choices in the generator:
   sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
   leaves every event's list. Model in `models/events.js`, times in
   `lib/time.js`, screens in `features/events`.
+- **Budget reports.** *Reports* on the Budget tab: each category's plan
+  against what is paid, committed and estimated, with overspends flagged; the
+  same split by event; and what is still to pay in each of the next twelve
+  months, with overdue payments first. *Export as CSV* gives all three for a
+  spreadsheet. Model in `models/financeReport.js`.
 - **Checklists for each event.** Adding a mehndi, sangeet, haldi, rehearsal
   dinner, welcome party, brunch, ceremony or reception offers that event's
   usual tasks, dated back from the event and linked in order; the couple
@@ -354,6 +359,11 @@ Two deliberate choices in the generator:
   press), remove with undo, put back removed defaults, share. Items sync
   (`packingItems`); template items have stable ids, so two phones starting
   the same list never double it. Graduated from Labs; imported once.
+- **Your style.** *Your style* on the Planning tab: a five-tap style quiz, the
+  palettes that suit the result, *Save as our style* (writes `styleTags`, the
+  field the profile edits) and a brief for vendors that includes the vision
+  board's ideas. Saved on the wedding, so it syncs. Graduated from the Labs
+  style studio; its moodboard notes and links move into the vision board once.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

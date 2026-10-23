@@ -261,6 +261,17 @@ export {
   packingText,
 } from './packing';
 export {
+  STYLE_QUIZ,
+  quizProgress,
+  quizResult,
+  topStyleKeys,
+  rankPalettes,
+  MoodItemKind,
+  normaliseLink,
+  moodItemsToVisionIdeas,
+  styleBrief,
+} from './styleQuiz';
+export {
   EventKind,
   EVENT_KIND_META,
   GuestScope,
@@ -284,3 +295,15 @@ export {
   checklistDueDate,
   buildEventTasks,
 } from './eventTemplates';
+export {
+  WHOLE_WEDDING,
+  UNCATEGORISED,
+  moneyFigures,
+  categoryReport,
+  reportTotals,
+  eventReport,
+  stillToPay,
+  paymentsDueByMonth,
+  heaviestMonth,
+  financeReportCsv,
+} from './financeReport';

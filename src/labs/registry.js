@@ -8,13 +8,6 @@
  */
 export const LAB_FEATURES = [
   {
-    key: 'style',
-    title: 'Style studio',
-    blurb: 'A five-question style quiz, palette picks and a shareable moodboard.',
-    icon: 'vision',
-    route: '/labs/style',
-  },
-  {
     key: 'sync',
     title: 'Partner sync',
     blurb: 'Share your plan with your partner and merge theirs - latest edit wins.',
