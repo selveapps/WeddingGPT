@@ -330,6 +330,12 @@ Two deliberate choices in the generator:
   sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
   leaves every event's list. Model in `models/events.js`, times in
   `lib/time.js`, screens in `features/events`.
+- **Run of show.** *Run of show* on the Planning tab (and on each event): what
+  happens when on the day, minute by minute, with overlaps flagged. Running
+  late? Push an item and everything after it moves, with undo. Each event has
+  its own; share it as text with vendors and the wedding party. Items sync
+  (`runOfShow`); deleting an event deletes its run of show. Graduated from the
+  Labs day-of timeline, which is imported once as the wedding day.
 - **Checklists for each event.** Adding a mehndi, sangeet, haldi, rehearsal
   dinner, welcome party, brunch, ceremony or reception offers that event's
   usual tasks, dated back from the event and linked in order; the couple
