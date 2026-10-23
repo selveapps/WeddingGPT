@@ -45,6 +45,10 @@ export const Routes = {
   taskEdit: (id) => `/planning/task/${id}/edit`,
   taskAdd: '/planning/task/new',
   taskCategory: (id) => `/planning/category/${id}`,
+  /** The wedding's events: mehndi, ceremony, reception... */
+  events: '/planning/events',
+  eventAdd: '/planning/events/new',
+  eventDetail: (id) => `/planning/events/${id}`,
 
   // --- Budget -------------------------------------------------------------
   budgetCategory: (id) => `/budget/category/${id}`,

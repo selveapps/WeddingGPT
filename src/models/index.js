@@ -190,3 +190,19 @@ export {
   cateringReportText,
   cateringCsv,
 } from './catering';
+export {
+  EventKind,
+  EVENT_KIND_META,
+  GuestScope,
+  EVENT_LIMITS,
+  createWeddingEvent,
+  eventName,
+  sortEvents,
+  eventGuests,
+  eventGuestSummary,
+  clockFromInput,
+  validateEvent,
+  eventWhen,
+  eventsToWebsiteSchedule,
+  mergeWebsiteSchedule,
+} from './events';

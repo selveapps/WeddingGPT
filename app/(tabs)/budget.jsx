@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 
 import {
@@ -16,6 +16,7 @@ import {
   SectionHeader,
   EmptyState,
   PageHeader,
+  Chip,
 } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { Routes } from '@/navigation/routes';
@@ -27,8 +28,16 @@ import {
   selectAllBudgetCategories,
   selectHasBudget,
   selectWedding,
+  useEventStore,
+  selectEvents,
 } from '@/store';
-import { summariseBudget, summariseCategory, PAYMENT_STATUS_META } from '@/models';
+import {
+  summariseBudget,
+  summariseCategory,
+  PAYMENT_STATUS_META,
+  eventName,
+  sortEvents,
+} from '@/models';
 import { formatMoney, formatMoneyCompact, percentOf } from '@/lib/currency';
 import { formatMediumDate } from '@/lib/date';
 import { NotificationBell } from '@/features/notifications/NotificationBell';
@@ -50,6 +59,11 @@ export default function BudgetScreen() {
   const expenses = useBudgetStore(selectAllExpenses);
   const categories = useBudgetStore(selectAllBudgetCategories);
   const wedding = useWeddingStore(selectWedding);
+  const events = useEventStore(selectEvents);
+  const sortedEvents = useMemo(() => sortEvents(events), [events]);
+  const [eventId, setEventId] = useState(null);
+  // A filter on an event deleted elsewhere falls back to all events.
+  const activeEvent = sortedEvents.find((event) => event.id === eventId) ?? null;
 
   const currency = budget?.currency ?? wedding?.currency;
   const total = budget?.total ?? 0;
@@ -61,13 +75,16 @@ export default function BudgetScreen() {
     [categories, expenses]
   );
 
-  // Show the five newest expenses without mutating the store's array.
-  const recent = useMemo(
-    () =>
-      [...expenses]
-        .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-        .slice(0, 5),
-    [expenses]
+  // The five newest expenses, or every cost of the chosen event.
+  const recent = useMemo(() => {
+    const newest = [...expenses].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    return activeEvent
+      ? newest.filter((expense) => expense.eventId === activeEvent.id)
+      : newest.slice(0, 5);
+  }, [expenses, activeEvent]);
+  const eventTotal = useMemo(
+    () => recent.reduce((sum, expense) => sum + (expense.amount ?? 0), 0),
+    [recent]
   );
 
   // --- No budget yet --------------------------------------------------------
@@ -207,14 +224,48 @@ export default function BudgetScreen() {
 
         {/* --- Recent expenses ---------------------------------------------- */}
         <Stack gap="sm">
-          <SectionHeader eyebrow="Latest" title="Recent expenses" />
+          <SectionHeader
+            eyebrow={activeEvent ? 'By event' : 'Latest'}
+            title={activeEvent ? `${eventName(activeEvent)} costs` : 'Recent expenses'}
+            subtitle={
+              activeEvent
+                ? `${formatMoney(eventTotal, currency)} across ${recent.length} ${
+                    recent.length === 1 ? 'cost' : 'costs'
+                  }`
+                : undefined
+            }
+          />
+
+          {sortedEvents.length ? (
+            <Row gap="xs" wrap align="flex-start">
+              <Chip
+                label="All events"
+                size="sm"
+                selected={!activeEvent}
+                onPress={() => setEventId(null)}
+              />
+              {sortedEvents.map((event) => (
+                <Chip
+                  key={event.id}
+                  label={eventName(event)}
+                  size="sm"
+                  selected={activeEvent?.id === event.id}
+                  onPress={() => setEventId(event.id)}
+                />
+              ))}
+            </Row>
+          ) : null}
 
           {recent.length === 0 ? (
             <EmptyState
               compact
               icon="budget"
-              title="Nothing recorded yet"
-              message="Add the first payment or quote and the figures above start meaning something."
+              title={activeEvent ? 'No costs for this event yet' : 'Nothing recorded yet'}
+              message={
+                activeEvent
+                  ? 'Choose this event when you add or edit an expense.'
+                  : 'Add the first payment or quote and the figures above start meaning something.'
+              }
               actionLabel="Add an expense"
               onAction={() => router.push(Routes.expenseAdd)}
             />

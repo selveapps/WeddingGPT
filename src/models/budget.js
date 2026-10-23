@@ -59,6 +59,8 @@ export function createExpense({
   date = null,
   dueDate = null,
   notes = '',
+  /** The event this cost is for, or null for the wedding as a whole. */
+  eventId = null,
 } = {}) {
   return createEntity('exp', {
     budgetCategoryId,
@@ -73,6 +75,7 @@ export function createExpense({
     date,
     dueDate,
     notes,
+    eventId,
   });
 }
 

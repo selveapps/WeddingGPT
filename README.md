@@ -312,6 +312,14 @@ Two deliberate choices in the generator:
   schedule with directions, travel and stays, registry and FAQ, published at the
   RSVP page address as off, public or password-protected, and hidden from
   search engines unless the couple opts in. Server: `server/auth/rsvp/site*`.
+- **Events.** *Events* on the Planning tab: the mehndi, ceremony, reception,
+  brunch, each with its own date, times, place, dress code and guest list
+  (everyone, or chosen guests with invited and attending counts). Tasks and
+  expenses can belong to an event, Planning and Budget filter by one, and the
+  wedding website can fill its schedule from them (*Use my events*). Events
+  sync (`events`); deleting one keeps its tasks and costs, and a deleted guest
+  leaves every event's list. Model in `models/events.js`, times in
+  `lib/time.js`, screens in `features/events`.
 - **Guest spreadsheets.** *Spreadsheet* on the Guests tab exports the list as
   CSV (a download on the web, the share sheet on a phone) and imports one:
   load a file or paste rows, check which column is which (guessed from the

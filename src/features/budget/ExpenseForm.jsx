@@ -17,6 +17,7 @@ import {
 import { rules, validate } from '@/lib/validation';
 import { DateField } from '@/features/shared/DateField';
 import { MoneyField } from '@/features/shared/MoneyField';
+import { EventPicker } from '@/features/events/EventPicker';
 
 /**
  * The add/edit form for an expense.
@@ -40,6 +41,7 @@ export function ExpenseForm({
   const [amount, setAmount] = useState(initial?.amount ?? null);
   const [paidAmount, setPaidAmount] = useState(initial?.paidAmount ?? null);
   const [budgetCategoryId, setBudgetCategoryId] = useState(initial?.budgetCategoryId ?? null);
+  const [eventId, setEventId] = useState(initial?.eventId ?? null);
   const [commitment, setCommitment] = useState(initial?.commitment ?? ExpenseCommitment.ESTIMATED);
   const [paymentStatus, setPaymentStatus] = useState(initial?.paymentStatus ?? PaymentStatus.UNPAID);
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? null);
@@ -94,6 +96,7 @@ export function ExpenseForm({
       amount: amount ?? 0,
       paidAmount: paid,
       budgetCategoryId,
+      eventId,
       commitment,
       paymentStatus: derivedStatus,
       dueDate,
@@ -177,6 +180,8 @@ export function ExpenseForm({
           </Row>
         </Stack>
       ) : null}
+
+      <EventPicker value={eventId} onChange={setEventId} />
 
       <Stack gap="sm">
         <SectionHeader

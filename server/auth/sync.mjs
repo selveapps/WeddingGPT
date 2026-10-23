@@ -30,6 +30,7 @@ export const SYNC_COLLECTIONS = [
   'website',
   'seatingTables',
   'seatingRules',
+  'events',
 ];
 
 /**

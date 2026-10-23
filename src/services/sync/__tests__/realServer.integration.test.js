@@ -373,4 +373,68 @@ run('sync against the real server', () => {
     expect(b.seating.getState().tables.byId.table_1.guestIds).toEqual(['g1']);
     expect(b.seating.getState().rules.avoidPairs).toEqual([['g1', 'g2']]);
   });
+
+  it('events, and the tasks and costs that belong to them, sync between phones (C1)', async () => {
+    const planningPhone = () => {
+      const wedding = create(() => ({
+        events: { byId: {}, allIds: [] },
+        tasks: { byId: {}, allIds: [] },
+        expenses: { byId: {}, allIds: [] },
+      }));
+      const syncStore = createSyncStore({ persisted: false });
+      const engine = createSyncEngine({
+        client,
+        syncStore,
+        slices: [
+          { collection: 'events', store: wedding, key: 'events', kind: SliceKind.MANY },
+          { collection: 'tasks', store: wedding, key: 'tasks', kind: SliceKind.MANY },
+          { collection: 'expenses', store: wedding, key: 'expenses', kind: SliceKind.MANY },
+        ],
+        getSession: () => ({ token, workspaceId }),
+        setTimer: () => 0,
+        clearTimer: () => {},
+      });
+      engine.attach();
+      return { wedding, syncStore, engine };
+    };
+    const a = planningPhone();
+    const b = planningPhone();
+    const mehndi = {
+      id: 'event_1',
+      name: 'Mehndi',
+      kind: 'mehndi',
+      date: '2027-05-07',
+      startTime: '18:00',
+      guestScope: 'invited',
+      invitedGuestIds: ['g1', 'g2'],
+      updatedAt: '2027-01-01T00:00:00.000Z',
+    };
+    a.wedding.setState({
+      events: { byId: { event_1: mehndi }, allIds: ['event_1'] },
+      tasks: { byId: { task_1: { id: 'task_1', title: 'Book henna', eventId: 'event_1' } }, allIds: ['task_1'] },
+      expenses: {
+        byId: { exp_1: { id: 'exp_1', title: 'Henna artist', amount: 300, eventId: 'event_1' } },
+        allIds: ['exp_1'],
+      },
+    });
+    await a.engine.syncNow();
+    expect(a.syncStore.getState().rejected).toEqual([]);
+    await b.engine.syncNow();
+    expect(b.wedding.getState().events.byId.event_1).toMatchObject({ name: 'Mehndi', invitedGuestIds: ['g1', 'g2'] });
+    expect(b.wedding.getState().tasks.byId.task_1.eventId).toBe('event_1');
+    expect(b.wedding.getState().expenses.byId.exp_1.eventId).toBe('event_1');
+
+    // Phone B deletes the event and unassigns its task; phone A follows.
+    b.wedding.setState((state) => ({
+      events: { byId: {}, allIds: [] },
+      tasks: {
+        ...state.tasks,
+        byId: { task_1: { ...state.tasks.byId.task_1, eventId: null, updatedAt: '2027-01-02T00:00:00.000Z' } },
+      },
+    }));
+    await b.engine.syncNow();
+    await a.engine.syncNow();
+    expect(a.wedding.getState().events.allIds).toEqual([]);
+    expect(a.wedding.getState().tasks.byId.task_1.eventId).toBeNull();
+  });
 });

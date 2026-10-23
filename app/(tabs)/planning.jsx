@@ -26,6 +26,8 @@ import {
   selectAllTasks,
   selectAllCategories,
   selectWedding,
+  useEventStore,
+  selectEvents,
 } from '@/store';
 import { analytics, AnalyticsEvents } from '@/services/analytics';
 import {
@@ -34,6 +36,8 @@ import {
   isTaskOverdue,
   isTaskOpen,
   isSnoozeActive,
+  eventName,
+  sortEvents,
 } from '@/models';
 import { daysUntil } from '@/lib/date';
 import { TaskRow } from '@/features/planning/TaskRow';
@@ -94,9 +98,14 @@ export default function PlanningScreen() {
   const categories = usePlanningStore(selectAllCategories);
   const toggleTask = usePlanningStore((state) => state.toggleTask);
   const wedding = useWeddingStore(selectWedding);
+  const events = useEventStore(selectEvents);
+  const sortedEvents = useMemo(() => sortEvents(events), [events]);
 
   const [filter, setFilter] = useState('open');
   const [categoryId, setCategoryId] = useState(null);
+  const [eventId, setEventId] = useState(null);
+  // A filter on an event deleted elsewhere falls back to all events.
+  const activeEventId = sortedEvents.some((event) => event.id === eventId) ? eventId : null;
   const [sort, setSort] = useState('due');
   const [sortOpen, setSortOpen] = useState(false);
 
@@ -113,6 +122,7 @@ export default function PlanningScreen() {
     let list = tasks;
 
     if (categoryId) list = list.filter((task) => task.categoryId === categoryId);
+    if (activeEventId) list = list.filter((task) => task.eventId === activeEventId);
 
     switch (filter) {
       case 'overdue':
@@ -149,7 +159,7 @@ export default function PlanningScreen() {
           : byDue;
 
     return [...list].sort(comparator);
-  }, [tasks, filter, categoryId, sort]);
+  }, [tasks, filter, categoryId, activeEventId, sort]);
 
   const grouped = useMemo(() => {
     const buckets = new Map(GROUPS.map((group) => [group.key, []]));
@@ -221,6 +231,20 @@ export default function PlanningScreen() {
           </Stack>
         </Card>
 
+        <Card padding="none">
+          <ListRow
+            icon="calendar"
+            title="Events"
+            subtitle={
+              sortedEvents.length
+                ? sortedEvents.map(eventName).join(', ')
+                : 'More than one day? Add the mehndi, the brunch, the rest.'
+            }
+            subtitleLines={1}
+            onPress={() => router.push(Routes.events)}
+          />
+        </Card>
+
         {/* --- Filters ----------------------------------------------------- */}
         <Stack gap="xs">
           <Row gap="xs" wrap align="flex-start">
@@ -251,6 +275,26 @@ export default function PlanningScreen() {
               />
             ))}
           </Row>
+
+          {sortedEvents.length ? (
+            <Row gap="xs" wrap align="flex-start">
+              <Chip
+                label="All events"
+                selected={activeEventId === null}
+                onPress={() => setEventId(null)}
+                size="sm"
+              />
+              {sortedEvents.map((event) => (
+                <Chip
+                  key={event.id}
+                  label={eventName(event)}
+                  size="sm"
+                  selected={activeEventId === event.id}
+                  onPress={() => setEventId(event.id)}
+                />
+              ))}
+            </Row>
+          ) : null}
         </Stack>
 
         {/* --- The list ---------------------------------------------------- */}
@@ -264,6 +308,7 @@ export default function PlanningScreen() {
             onAction={() => {
               setFilter('all');
               setCategoryId(null);
+              setEventId(null);
             }}
           />
         ) : (

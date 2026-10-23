@@ -6,6 +6,7 @@ import { useVendorStore } from '../../store/vendorStore';
 import { useRsvpStore } from '../../store/rsvpStore';
 import { useWebsiteStore } from '../../store/websiteStore';
 import { useSeatingStore } from '../../store/seatingStore';
+import { useEventStore } from '../../store/eventStore';
 import { SliceKind } from './changes';
 
 /**
@@ -34,6 +35,7 @@ export const SYNCED_SLICES = [
   { collection: 'website', store: useWebsiteStore, key: 'website', kind: SliceKind.ONE },
   { collection: 'seatingTables', store: useSeatingStore, key: 'tables', kind: SliceKind.MANY },
   { collection: 'seatingRules', store: useSeatingStore, key: 'rules', kind: SliceKind.ONE },
+  { collection: 'events', store: useEventStore, key: 'events', kind: SliceKind.MANY },
   {
     collection: 'rsvpResponses',
     store: useRsvpStore,
