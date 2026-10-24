@@ -1,7 +1,5 @@
-import React from 'react';
-
-import { Profile } from '@/features/profile';
+import { Redirect } from 'expo-router';
 
 export default function ProfileSettingsScreen() {
-  return <Profile />;
+  return <Redirect href="/profile" />;
 }

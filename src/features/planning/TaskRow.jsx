@@ -1,59 +1,74 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 
-/**
- * planning · TaskRow
- * Task with due date
- */
-export default function TaskRow({ title, items = [], stats, onPress, onAdd, children, style }) {
+import { Badge, Checkbox, Icon, Row, Stack, Text, Touchable } from '@/design-system/components';
+import { useTheme } from '@/design-system/theme';
+import { isTaskOpen, isTaskOverdue, TASK_PRIORITY_META, TaskPriority } from '@/models';
+import { formatRelativeDay } from '@/lib/date';
+
+export function TaskRow({ task, categoryName, waitingFor = 0, onToggle, onPress }) {
+  const { spacing } = useTheme();
+  const open = isTaskOpen(task);
+  const overdue = isTaskOverdue(task);
+  const dueLabel = task.dueDate ? formatRelativeDay(task.dueDate) : null;
+  const priority = TASK_PRIORITY_META[task.priority];
+
   return (
-    <View style={[styles.wrap, style]}>
-      {title ? <Text style={styles.title}>{title}</Text> : null}
-      {stats ? (
-        <View style={styles.stats}>
-          {Object.entries(stats).map(([k, v]) => (
-            <View key={k} style={styles.stat}>
-              <Text style={styles.statVal}>{String(v)}</Text>
-              <Text style={styles.statLab}>{k}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-      {items.length > 0 ? (
-        <View style={styles.list}>
-          {items.map((item) => (
-            <Pressable key={item.id || item.key || String(item)} onPress={() => onPress?.(item)} style={styles.row}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.title || item.name || item.label || 'Item'}
-              </Text>
-              {item.subtitle || item.description ? (
-                <Text style={styles.rowSub} numberOfLines={2}>{item.subtitle || item.description}</Text>
+    <Row gap="md" style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm }}>
+      <Checkbox
+        checked={!open}
+        onChange={() => onToggle(task)}
+        label={open ? `Mark ${task.title} as done` : `Mark ${task.title} as not done`}
+      />
+      <Touchable
+        onPress={onPress}
+        scaleOnPress={false}
+        haptic="light"
+        accessibilityLabel={task.title}
+        accessibilityHint="Opens this task"
+        style={{ flex: 1 }}
+      >
+        <Row gap="sm" align="center">
+          <Stack gap="xs" style={{ flex: 1 }}>
+            <Text
+              variant="body"
+              color={open ? 'default' : 'subtle'}
+              numberOfLines={2}
+              style={open ? null : { textDecorationLine: 'line-through' }}
+            >
+              {task.title}
+            </Text>
+            <Row gap="xs" wrap align="center">
+              {categoryName ? (
+                <Text variant="caption" color="subtle" numberOfLines={1}>
+                  {categoryName}
+                </Text>
               ) : null}
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      {children}
-      {onAdd ? (
-        <Pressable onPress={onAdd} style={styles.add}>
-          <Text style={styles.addText}>Add</Text>
-        </Pressable>
-      ) : null}
-    </View>
+              {categoryName && dueLabel && open ? (
+                <Text variant="caption" color="subtle">
+                  ·
+                </Text>
+              ) : null}
+              {dueLabel && open ? (
+                <Text variant="caption" color={overdue ? 'danger' : 'muted'}>
+                  {overdue ? dueLabel : `Due ${dueLabel.toLowerCase()}`}
+                </Text>
+              ) : null}
+              {waitingFor > 0 ? (
+                <Badge
+                  label={`Waiting on ${waitingFor} ${waitingFor === 1 ? 'task' : 'tasks'}`}
+                  tone="warning"
+                />
+              ) : null}
+              {task.priority === TaskPriority.HIGH && priority ? (
+                <Badge label={priority.label} tone={priority.tone} />
+              ) : null}
+            </Row>
+          </Stack>
+          <Icon name="chevronRight" size="sm" color="inkSubtle" />
+        </Row>
+      </Touchable>
+    </Row>
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
-  title: { fontSize: 13, fontWeight: '700', color: '#6B5E5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stat: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#EDE6E3', minWidth: 72, alignItems: 'center' },
-  statVal: { fontSize: 16, fontWeight: '700', color: '#C93862' },
-  statLab: { fontSize: 11, color: '#8A7E7A', marginTop: 2 },
-  list: { gap: 8 },
-  row: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE6E3' },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
-  rowSub: { fontSize: 13, color: '#6B5E5A', marginTop: 2 },
-  add: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#C93862', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
-  addText: { color: '#FFF', fontWeight: '600' },
-});
+export default TaskRow;

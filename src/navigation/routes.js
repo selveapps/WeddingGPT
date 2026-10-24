@@ -32,10 +32,10 @@ export const Routes = {
   assistantChat: (id) => `/assistant/${id}`,
 
   // --- Home details -------------------------------------------------------
-  countdown: '/home/countdown',
-  progress: '/home/progress',
+  countdown: '/(tabs)/home',
+  progress: '/(tabs)/planning',
   /** Vendor recommendations near the wedding city. */
-  local: '/home/local',
+  local: '/local',
 
   // --- Notifications ------------------------------------------------------
   /** The in-app feed of what is coming up. Settings live at `notifications`. */
@@ -43,68 +43,68 @@ export const Routes = {
 
   // --- Planning -----------------------------------------------------------
   taskDetail: (id) => `/planning/task/${id}`,
-  taskEdit: (id) => `/planning/task/${id}/edit`,
+  taskEdit: (id) => `/planning/task/${id}`,
   taskAdd: '/planning/task/new',
-  taskCategory: (id) => `/planning/category/${id}`,
+  taskCategory: () => '/(tabs)/planning',
   /** The wedding's events: mehndi, ceremony, reception... */
-  events: '/planning/events',
-  eventAdd: '/planning/events/new',
-  eventDetail: (id) => `/planning/events/${id}`,
+  events: '/events',
+  eventAdd: '/events',
+  eventDetail: () => '/events',
   /** The suggested checklist for one event (slice C3). */
-  eventChecklist: (id) => `/planning/events/${id}/checklist`,
-  packing: '/planning/packing',
+  eventChecklist: () => '/events',
+  packing: '/packing',
   /** The style quiz and palette (graduated from the Labs style studio). */
-  style: '/planning/style',
+  style: '/style',
   /** The run of show for the wedding day, or for one event. */
-  runOfShow: (eventId) => (eventId ? `/planning/run-of-show?event=${eventId}` : '/planning/run-of-show'),
+  runOfShow: (eventId) => (eventId ? `/run-of-show?event=${eventId}` : '/run-of-show'),
 
   // --- Budget -------------------------------------------------------------
-  budgetCategory: (id) => `/budget/category/${id}`,
-  expenseAdd: '/budget/expense/new',
-  expenseDetail: (id) => `/budget/expense/${id}`,
-  budgetSetup: '/budget/setup',
+  budgetCategory: () => '/(tabs)/budget',
+  expenseAdd: '/(tabs)/budget',
+  expenseDetail: () => '/(tabs)/budget',
+  budgetSetup: '/(tabs)/budget',
   /** Planned against actual, by category and event, and payments due (slice C4). */
-  budgetReport: '/budget/report',
+  budgetReport: '/(tabs)/budget',
 
   // --- Guests -------------------------------------------------------------
-  guestDetail: (id) => `/guests/${id}`,
-  guestAdd: '/guests/new',
+  guestDetail: () => '/(tabs)/guests',
+  guestAdd: '/(tabs)/guests',
   /** Pick guests from the phone's address book. */
-  guestImport: '/guests/import',
-  guestSpreadsheet: '/guests/spreadsheet',
-  guestRsvp: '/guests/rsvp',
-  guestWebsite: '/guests/website',
-  guestSeating: '/guests/seating',
-  guestMeals: '/guests/meals',
-  guestGifts: '/guests/gifts',
-  guestParty: '/guests/party',
-  householdDetail: (id) => `/guests/household/${id}`,
+  guestImport: '/(tabs)/guests',
+  guestSpreadsheet: '/(tabs)/guests',
+  guestRsvp: '/rsvp',
+  guestWebsite: '/website',
+  guestSeating: '/seating',
+  guestMeals: '/(tabs)/guests',
+  guestGifts: '/gifts',
+  guestParty: '/party',
+  householdDetail: () => '/(tabs)/guests',
 
   // --- Vendors ------------------------------------------------------------
   vendors: '/vendors',
-  vendorAdd: '/vendors/new',
-  vendorDetail: (id) => `/vendors/${id}`,
-  vendorEdit: (id) => `/vendors/${id}/edit`,
+  vendorAdd: '/vendors',
+  vendorDetail: () => '/vendors',
+  vendorEdit: () => '/vendors',
   /** Read a pasted quote; with a vendor id, save it as that vendor's quote. */
-  quoteReader: (vendorId) => (vendorId ? `/vendors/quote?vendor=${vendorId}` : '/vendors/quote'),
-  vendorCompare: '/vendors/compare',
+  quoteReader: '/vendors',
+  vendorCompare: '/vendors',
 
   // --- Vision -------------------------------------------------------------
-  vision: '/vision',
-  styleQuiz: '/vision/quiz',
-  moodboard: '/vision/moodboard',
-  inspirationDetail: (id) => `/vision/inspiration/${id}`,
+  vision: '/labs',
+  styleQuiz: '/labs',
+  moodboard: '/labs',
+  inspirationDetail: '/labs',
 
   // --- Monetisation and account -------------------------------------------
-  paywall: '/paywall',
+  paywall: '/account',
   account: '/account',
   signIn: '/account/sign-in',
   invite: (token) => `/invite/${token}`,
-  weddingDetails: '/account/wedding',
+  weddingDetails: '/account',
   notifications: '/account/notifications',
-  profile: '/account/profile',
-  subscription: '/account/subscription',
-  privacy: '/account/privacy',
+  profile: '/profile',
+  subscription: '/labs/subscriptions',
+  privacy: '/account/settings/privacy',
 
   // --- Settings -----------------------------------------------------------
   settings: '/account/settings',
@@ -127,4 +127,3 @@ export const TAB_ITEMS = [
   { name: 'guests', label: 'Guests', icon: 'guests', route: Routes.guests },
   { name: 'budget', label: 'Budget', icon: 'budget', route: Routes.budget },
 ];
-

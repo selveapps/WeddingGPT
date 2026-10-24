@@ -1,0 +1,1 @@
+export function filterItems(items=[],q={}){let list=[...items];if(q.status&&q.status!=='all')list=list.filter(i=>i.status===q.status);if(q.query&&String(q.query).trim()){const s=String(q.query).trim().toLowerCase();list=list.filter(i=>[i.title,i.name,i.label,i.notes].some(v=>String(v||'').toLowerCase().includes(s)));}return list;}

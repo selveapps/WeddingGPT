@@ -10,7 +10,6 @@ import {
   Chip,
   Button,
   Icon,
-  Touchable,
   ProgressBar,
   EmptyState,
   BottomSheet,
@@ -222,7 +221,7 @@ export default function PlanningScreen() {
         <Header overdueCount={overdueCount} onSortPress={() => setSortOpen(true)} />
 
         {/* --- Progress ---------------------------------------------------- */}
-        <Card tone="muted" onPress={() => router.push(Routes.progress)}>
+        <Card tone="muted">
           <Stack gap="xs">
             <Row justify="space-between" align="baseline">
               <Text variant="h4">{Math.round(progress * 100)}% done</Text>
