@@ -1,144 +1,193 @@
 /**
- * Pure model helpers for the Wedding Day Emergency Plan.
- *
- * This module intentionally has no React Native or storage dependency so its
- * validation and progress calculations can be tested in a plain Jest test.
+ * Day-of emergency / contingency plan — scenarios, owners, contacts, checklists.
  */
 
-export const EMERGENCY_PLAN_LIMITS = Object.freeze({
-  maxItems: 80,
-  titleLength: 120,
-  ownerLength: 80,
+export const EMERGENCY_PLAN_KEY = 'tools:emergency-plan:v2';
+
+export const ScenarioSeverity = Object.freeze({
+  LOW: 'low',
+  MEDIUM: 'medium',
+  HIGH: 'high',
+  CRITICAL: 'critical',
 });
 
-export const DEFAULT_EMERGENCY_ITEMS = Object.freeze([
-  { title: 'Confirm all vendors have the venue address and arrival time', owner: 'Wedding coordinator' },
-  { title: 'Keep vendor phone numbers and booking confirmations accessible', owner: 'Point person' },
-  { title: 'Pack a small first-aid kit and basic medication', owner: 'Family helper' },
-  { title: 'Prepare a sewing kit, safety pins, tape, and stain remover', owner: 'Wedding party' },
-  { title: 'Keep water and quick snacks available for the couple', owner: 'Family helper' },
-  { title: 'Confirm transport and a backup ride', owner: 'Transport contact' },
-  { title: 'Choose one person to handle guest questions', owner: 'Usher' },
-  { title: 'Set aside copies of important documents and payment receipts', owner: 'Couple' },
-  { title: 'Confirm rain / heat / power contingency with the venue', owner: 'Venue contact' },
-  { title: 'Pack phone chargers and a power bank', owner: 'Wedding party' },
-  { title: 'Label envelopes, gifts, and personal belongings', owner: 'Family helper' },
-  { title: 'Agree who keeps rings and other valuables before the ceremony', owner: 'Trusted person' },
-]);
+export const DEFAULT_SCENARIOS = [
+  {
+    id: 'sc-weather',
+    title: 'Bad weather',
+    severity: ScenarioSeverity.HIGH,
+    triggers: 'Rain, extreme heat, wind',
+    plan: 'Move ceremony to indoor backup; notify guests via WhatsApp group; delay photos 30 min.',
+    owner: 'Coordinator',
+    contactRole: 'venue',
+    checklist: [
+      { id: 'w1', text: 'Confirm indoor backup space', done: false },
+      { id: 'w2', text: 'Umbrellas / fans staged', done: false },
+      { id: 'w3', text: 'Guest message template ready', done: false },
+    ],
+  },
+  {
+    id: 'sc-vendor-no-show',
+    title: 'Vendor no-show',
+    severity: ScenarioSeverity.CRITICAL,
+    triggers: 'Vendor unreachable 2h before',
+    plan: 'Call backup list; reassign tasks to party; inform couple only if needed.',
+    owner: 'Best person',
+    contactRole: 'vendor',
+    checklist: [
+      { id: 'v1', text: 'Backup vendor numbers saved', done: false },
+      { id: 'v2', text: 'Payment terms for emergency hire known', done: false },
+    ],
+  },
+  {
+    id: 'sc-medical',
+    title: 'Medical issue',
+    severity: ScenarioSeverity.CRITICAL,
+    triggers: 'Guest or couple unwell',
+    plan: 'Call local emergency; first-aid kit location; designate calm point person.',
+    owner: 'Assigned family',
+    contactRole: 'medical',
+    checklist: [
+      { id: 'm1', text: 'First-aid kit location marked', done: false },
+      { id: 'm2', text: 'Nearest hospital route saved offline', done: false },
+      { id: 'm3', text: 'Emergency number confirmed for city', done: false },
+    ],
+  },
+  {
+    id: 'sc-power',
+    title: 'Power / AV failure',
+    severity: ScenarioSeverity.MEDIUM,
+    triggers: 'Outage during ceremony or reception',
+    plan: 'Battery speakers; unplugged ceremony option; venue generator status.',
+    owner: 'Venue tech',
+    contactRole: 'venue',
+    checklist: [
+      { id: 'p1', text: 'Battery speaker charged', done: false },
+      { id: 'p2', text: 'Acoustic ceremony plan agreed', done: false },
+    ],
+  },
+  {
+    id: 'sc-traffic',
+    title: 'Traffic / late VIP',
+    severity: ScenarioSeverity.MEDIUM,
+    triggers: 'Processional delayed 15+ min',
+    plan: 'Stretch cocktail hour; text ushers; hold food service.',
+    owner: 'Coordinator',
+    contactRole: 'transport',
+    checklist: [
+      { id: 't1', text: 'Buffer built into timeline', done: false },
+      { id: 't2', text: 'Driver numbers in day-of pack', done: false },
+    ],
+  },
+];
 
-function safeText(value, maxLength) {
-  return String(value ?? '').trim().slice(0, maxLength);
+export function createId(prefix = 'em') {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function createId() {
-  return `emergency-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-/**
- * Create a valid item. IDs are generated here so UI code cannot accidentally
- * create a checklist row without a stable key.
- */
-export function createEmergencyItem(input = {}) {
+export function emptyEmergencyState() {
   return {
-    id: safeText(input.id, 100) || createId(),
-    title: safeText(input.title, EMERGENCY_PLAN_LIMITS.titleLength) || 'Untitled task',
-    owner: safeText(input.owner, EMERGENCY_PLAN_LIMITS.ownerLength),
-    done: Boolean(input.done),
-    custom: input.custom !== false,
-    createdAt: safeText(input.createdAt, 40) || new Date().toISOString(),
-  };
-}
-
-/** Create the suggested plan used on first open. */
-export function createDefaultEmergencyPlan() {
-  return {
-    version: 1,
-    items: DEFAULT_EMERGENCY_ITEMS.map((item) => createEmergencyItem({ ...item, custom: false })),
-    venue: '',
-    primaryContact: '',
-    backupContact: '',
-    notes: '',
+    version: 2,
+    scenarios: DEFAULT_SCENARIOS.map((s) => ({
+      ...s,
+      checklist: s.checklist.map((c) => ({ ...c })),
+    })),
+    generalNotes: '',
+    assemblyPoint: '',
+    hospitalName: '',
+    hospitalPhone: '',
+    hospitalAddress: '',
+    emergencyNumber: '',
     updatedAt: null,
   };
 }
 
-/**
- * Normalize persisted JSON defensively. Invalid rows are discarded, duplicate
- * IDs are regenerated, text is bounded, and a missing items array is replaced
- * with the suggested defaults.
- */
-export function normaliseEmergencyPlan(value) {
-  const source = value && typeof value === 'object' ? value : {};
-  const rawItems = Array.isArray(source.items) ? source.items : null;
-  const items = (rawItems ?? createDefaultEmergencyPlan().items)
-    .slice(0, EMERGENCY_PLAN_LIMITS.maxItems)
-    .filter((item) => item && typeof item === 'object')
-    .map((item) => createEmergencyItem(item));
-
-  const seen = new Set();
-  const uniqueItems = items.map((item) => {
-    if (!seen.has(item.id)) {
-      seen.add(item.id);
-      return item;
-    }
-    const replacement = createEmergencyItem({ ...item, id: '' });
-    seen.add(replacement.id);
-    return replacement;
-  });
-
+export function normaliseEmergencyState(raw) {
+  const base = emptyEmergencyState();
+  if (!raw || typeof raw !== 'object') return base;
   return {
-    version: 1,
-    items: uniqueItems,
-    venue: safeText(source.venue, 240),
-    primaryContact: safeText(source.primaryContact, 160),
-    backupContact: safeText(source.backupContact, 160),
-    notes: String(source.notes ?? '').slice(0, 4000),
-    updatedAt: safeText(source.updatedAt, 40) || null,
+    ...base,
+    ...raw,
+    scenarios: Array.isArray(raw.scenarios) && raw.scenarios.length ? raw.scenarios : base.scenarios,
   };
 }
 
-/** Toggle an item without mutating the original array. Unknown IDs are ignored. */
-export function toggleEmergencyItem(items, id) {
-  if (!Array.isArray(items)) return [];
-  return items.map((item) => (item.id === id ? { ...item, done: !item.done } : item));
-}
-
-/** Summarise completion; an empty list is 0% rather than NaN. */
-export function getEmergencyProgress(items) {
-  const list = Array.isArray(items) ? items : [];
+export function scenarioProgress(scenario) {
+  const list = scenario.checklist || [];
   const total = list.length;
-  const done = list.filter((item) => item?.done).length;
+  const done = list.filter((c) => c.done).length;
+  return { total, done, percent: total ? Math.round((done / total) * 100) : 0 };
+}
+
+export function planReadiness(state) {
+  const scenarios = state.scenarios || [];
+  let score = 0;
+  let max = 0;
+  max += 2;
+  if (state.assemblyPoint?.trim()) score += 2;
+  max += 2;
+  if (state.hospitalName?.trim() || state.hospitalPhone?.trim()) score += 2;
+  max += 1;
+  if (state.emergencyNumber?.trim()) score += 1;
+  for (const sc of scenarios) {
+    max += 2;
+    const p = scenarioProgress(sc);
+    if (p.percent >= 100) score += 2;
+    else if (p.percent >= 50) score += 1;
+  }
+  return { score, max, percent: max ? Math.round((score / max) * 100) : 0 };
+}
+
+export function createScenario(partial = {}) {
   return {
-    total,
-    done,
-    remaining: total - done,
-    percent: total === 0 ? 0 : Math.round((done / total) * 100),
+    id: createId('sc'),
+    title: '',
+    severity: ScenarioSeverity.MEDIUM,
+    triggers: '',
+    plan: '',
+    owner: '',
+    contactRole: '',
+    checklist: [],
+    ...partial,
   };
 }
 
-/** Restore missing suggested tasks without replacing custom items or completion. */
-export function appendMissingDefaults(items) {
-  const current = Array.isArray(items) ? items : [];
-  const existingTitles = new Set(current.map((item) => safeText(item?.title, 200).toLowerCase()));
-  const missing = DEFAULT_EMERGENCY_ITEMS
-    .filter((item) => !existingTitles.has(item.title.toLowerCase()))
-    .map((item) => createEmergencyItem({ ...item, custom: false }));
-  return [...current, ...missing].slice(0, EMERGENCY_PLAN_LIMITS.maxItems);
+export function toggleChecklistItem(scenario, itemId) {
+  return {
+    ...scenario,
+    checklist: (scenario.checklist || []).map((c) =>
+      c.id === itemId ? { ...c, done: !c.done } : c
+    ),
+  };
 }
 
-/** Produce plain text that can be shared with a coordinator or trusted helper. */
-export function formatEmergencyPlanForSharing(plan) {
-  const safePlan = normaliseEmergencyPlan(plan);
-  const progress = getEmergencyProgress(safePlan.items);
-  return [
-    'WEDDING DAY EMERGENCY PLAN',
-    `Venue: ${safePlan.venue || 'Not added'}`,
-    `Primary contact: ${safePlan.primaryContact || 'Not added'}`,
-    `Backup contact: ${safePlan.backupContact || 'Not added'}`,
-    `Checklist: ${progress.done}/${progress.total} complete`,
+export function exportEmergencyText(state) {
+  const lines = [
+    'WEDDING EMERGENCY PLAN',
+    `Assembly: ${state.assemblyPoint || '—'}`,
+    `Hospital: ${state.hospitalName || '—'} ${state.hospitalPhone || ''}`,
+    `Emergency #: ${state.emergencyNumber || '—'}`,
     '',
-    ...safePlan.items.map((item) => `${item.done ? '[x]' : '[ ]'} ${item.title}${item.owner ? ` — ${item.owner}` : ''}`),
-    '',
-    `Notes: ${safePlan.notes || 'None'}`,
-  ].join('\n');
+  ];
+  for (const sc of state.scenarios || []) {
+    lines.push(`## ${sc.title} (${sc.severity})`);
+    lines.push(`Triggers: ${sc.triggers}`);
+    lines.push(`Plan: ${sc.plan}`);
+    lines.push(`Owner: ${sc.owner}`);
+    for (const c of sc.checklist || []) {
+      lines.push(`  [${c.done ? 'x' : ' '}] ${c.text}`);
+    }
+    lines.push('');
+  }
+  if (state.generalNotes) lines.push(`Notes: ${state.generalNotes}`);
+  return lines.join('\n');
 }
+
+export default {
+  EMERGENCY_PLAN_KEY,
+  emptyEmergencyState,
+  normaliseEmergencyState,
+  planReadiness,
+  exportEmergencyText,
+  DEFAULT_SCENARIOS,
+};
