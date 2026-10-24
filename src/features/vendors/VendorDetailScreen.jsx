@@ -22,6 +22,8 @@ import { formatMediumDate } from '@/lib/date';
 import { Routes } from '@/navigation/routes';
 
 import { VendorPaymentPlan } from './components/VendorPaymentPlan';
+import { VendorMeetingHistory } from './components/VendorMeetingHistory';
+import { VendorFollowUpEditor } from './components/VendorFollowUpEditor';
 import { VENDOR_COPY, QUICK_ACTION_DEFS } from './lib/vendorConstants';
 import { contactUrl, vendorCategory } from './lib/vendorHelpers';
 import { useVendors } from './hooks/useVendors';
@@ -33,7 +35,18 @@ export function VendorDetailScreen() {
   const { spacing } = useTheme();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmBudget, setConfirmBudget] = useState(false);
-  const { allVendors, currency, setStatus, removeVendor, togglePaymentPaid, addToBudget } = useVendors();
+  const {
+    allVendors,
+    currency,
+    setStatus,
+    removeVendor,
+    togglePaymentPaid,
+    addMeeting,
+    removeMeeting,
+    setFollowUp,
+    clearFollowUp,
+    addToBudget,
+  } = useVendors();
 
   const vendor = allVendors.find((item) => item.id === String(id));
 
@@ -201,6 +214,23 @@ export function VendorDetailScreen() {
             <Text variant="body">{formatMediumDate(vendor.meetingAt)}</Text>
           </Card>
         ) : null}
+
+        <VendorMeetingHistory
+          meetings={vendor.meetings}
+          onAdd={(meeting) => addMeeting(vendor.id, meeting)}
+          onRemove={(meetingId) => removeMeeting(vendor.id, meetingId)}
+        />
+
+        <Stack gap="sm" testID="vendor-follow-up-editor">
+          <SectionHeader eyebrow="Next step" title="Follow-up" />
+          <VendorFollowUpEditor
+            key={vendor.id}
+            date={vendor.followUpAt}
+            note={vendor.followUpNote}
+            onSave={(followUp) => setFollowUp(vendor.id, followUp)}
+            onClear={() => clearFollowUp(vendor.id)}
+          />
+        </Stack>
 
         {vendor.notes ? (
           <Stack gap="sm">

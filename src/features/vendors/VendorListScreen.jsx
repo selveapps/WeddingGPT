@@ -26,8 +26,10 @@ import { VendorTips } from './components/VendorTips';
 import { VendorCategories } from './components/VendorCategories';
 import { VendorTimeline } from './components/VendorTimeline';
 import { UpcomingPayments } from './components/UpcomingPayments';
+import { VendorFollowUpOverview } from './components/VendorFollowUpOverview';
 import { VendorFilter, VENDOR_COPY, VENDOR_SORT, VENDOR_SORT_OPTIONS } from './lib/vendorConstants';
 import { searchVendors } from './lib/vendorHelpers';
+import { vendorCategoriesForComparison } from './lib/vendorComparison';
 import { useVendors } from './hooks/useVendors';
 
 /**
@@ -96,6 +98,14 @@ export function VendorListScreen() {
           iconLeft="note"
           onPress={() => router.push(Routes.quoteReader())}
         />
+        {vendorCategoriesForComparison(allVendors).length > 0 ? (
+          <Button
+            label={VENDOR_COPY.compareLabel}
+            variant="secondary"
+            iconLeft="vendors"
+            onPress={() => router.push(Routes.vendorCompare)}
+          />
+        ) : null}
 
         <VendorPipeline summary={summary} currency={currency} />
 
@@ -103,6 +113,10 @@ export function VendorListScreen() {
           vendors={allVendors}
           currency={currency}
           onTogglePaid={(payment) => togglePaymentPaid(payment.vendorId, payment.id)}
+        />
+        <VendorFollowUpOverview
+          vendors={allVendors}
+          onVendorPress={(vendor) => router.push(Routes.vendorDetail(vendor.id))}
         />
 
         <VendorTimeline weddingDate={wedding.date} tasks={tasks} onCategoryPress={setCategoryKey} />

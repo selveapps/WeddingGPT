@@ -68,6 +68,7 @@ export const VENDOR_COPY = {
   heroEmptyBody:
     'Save a venue, photographer or caterer here. Track quotes, meetings, what you have booked and what you still owe.',
   addLabel: 'Add vendor',
+  compareLabel: 'Compare vendors',
   saveLabel: 'Save vendor',
   deleteLabel: 'Remove vendor',
   deleteConfirmTitle: 'Remove this vendor?',

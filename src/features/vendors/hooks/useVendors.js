@@ -32,7 +32,17 @@ export function useVendors({ filter = VendorFilter.ALL, sort = VENDOR_SORT.UPDAT
   const wedding = useWeddingStore(selectWedding);
   const addExpense = useBudgetStore((state) => state.addExpense);
 
-  const { addVendor, updateVendor, deleteVendor, setStatus, togglePaymentPaid } = useVendorStore.getState();
+  const {
+    addVendor,
+    updateVendor,
+    deleteVendor,
+    setStatus,
+    togglePaymentPaid,
+    addMeeting,
+    removeMeeting,
+    setFollowUp,
+    clearFollowUp,
+  } = useVendorStore.getState();
 
   const weddingId = wedding?.id ?? null;
 
@@ -79,6 +89,10 @@ export function useVendors({ filter = VendorFilter.ALL, sort = VENDOR_SORT.UPDAT
     removeVendor: deleteVendor,
     setStatus,
     togglePaymentPaid,
+    addMeeting,
+    removeMeeting,
+    setFollowUp,
+    clearFollowUp,
     addToBudget,
   };
 }

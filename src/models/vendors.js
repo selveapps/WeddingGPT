@@ -170,6 +170,9 @@ export function createVendor({
   quoteValidUntil = null,
   meetingAt = null,
   payments = [],
+  meetings = [],
+  followUpAt = null,
+  followUpNote = '',
   expenseId = null,
   bookedAt = null,
   lastContactedAt = null,
@@ -197,6 +200,9 @@ export function createVendor({
     meetingAt,
     /** `[{ id, label, amount, dueDate, paidAt }]` - see `paymentsFromMilestones`. */
     payments,
+    meetings,
+    followUpAt,
+    followUpNote,
     /** The budget expense created from this vendor, once there is one. */
     expenseId,
     bookedAt,

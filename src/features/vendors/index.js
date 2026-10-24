@@ -13,5 +13,6 @@
 export { VendorListScreen } from './VendorListScreen';
 export { VendorDetailScreen } from './VendorDetailScreen';
 export { VendorFormScreen } from './VendorFormScreen';
+export { VendorCompareScreen } from './VendorCompareScreen';
 export { useVendors } from './hooks/useVendors';
 export { useVendorForm } from './hooks/useVendorForm';

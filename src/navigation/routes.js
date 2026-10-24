@@ -27,7 +27,8 @@ export const Routes = {
 
   // --- Assistant ----------------------------------------------------------
   /** `prompt` is sent as the first message when the chat opens. */
-  assistantNew: (prompt) => (prompt ? `/assistant/new?prompt=${encodeURIComponent(prompt)}` : '/assistant/new'),
+  assistantNew: (prompt) =>
+    prompt ? `/assistant/new?prompt=${encodeURIComponent(prompt)}` : '/assistant/new',
   assistantChat: (id) => `/assistant/${id}`,
 
   // --- Home details -------------------------------------------------------
@@ -86,6 +87,7 @@ export const Routes = {
   vendorEdit: (id) => `/vendors/${id}/edit`,
   /** Read a pasted quote; with a vendor id, save it as that vendor's quote. */
   quoteReader: (vendorId) => (vendorId ? `/vendors/quote?vendor=${vendorId}` : '/vendors/quote'),
+  vendorCompare: '/vendors/compare',
 
   // --- Vision -------------------------------------------------------------
   vision: '/vision',

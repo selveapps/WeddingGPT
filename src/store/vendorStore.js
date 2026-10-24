@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 import { zustandStorage } from '../services/storage';
+import { createId } from '../lib/id';
+import { isValidISODate } from '../lib/date';
 import {
   VendorStatus,
   createVendor,
@@ -110,6 +112,39 @@ export const useVendorStore = create()(
               : payment
           ),
         }));
+      },
+
+      addMeeting(vendorId, { date, notes = '' } = {}) {
+        if (!isValidISODate(date)) return null;
+        const meeting = {
+          id: createId('vmeet'),
+          date,
+          notes: String(notes).trim(),
+          createdAt: new Date().toISOString(),
+        };
+        return get().updateVendor(vendorId, (vendor) => ({
+          meetings: [...(vendor.meetings ?? []), meeting],
+        }));
+      },
+
+      removeMeeting(vendorId, meetingId) {
+        const vendor = get().vendors.byId[vendorId];
+        if (!vendor?.meetings?.some((meeting) => meeting.id === meetingId)) return null;
+        return get().updateVendor(vendorId, (current) => ({
+          meetings: (current.meetings ?? []).filter((meeting) => meeting.id !== meetingId),
+        }));
+      },
+
+      setFollowUp(vendorId, { date, note = '' } = {}) {
+        if (!isValidISODate(date)) return null;
+        return get().updateVendor(vendorId, {
+          followUpAt: date,
+          followUpNote: String(note).trim(),
+        });
+      },
+
+      clearFollowUp(vendorId) {
+        return get().updateVendor(vendorId, { followUpAt: null, followUpNote: '' });
       },
 
       deleteVendor(id) {
