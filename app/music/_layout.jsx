@@ -1,14 +1,14 @@
-import {{ Stack }} from 'expo-router';
+import { Stack } from 'expo-router';
 
-export default function Layout() {{
+export default function Layout() {
   return (
     <Stack
-      screenOptions={{{{
+      screenOptions={{
         headerShown: true,
-        headerTitleStyle: {{ fontWeight: '600' }},
+        headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: false,
-        contentStyle: {{ backgroundColor: '#FAF7F5' }},
-      }}}}
+        contentStyle: { backgroundColor: '#FAF7F5' },
+      }}
     />
   );
-}}
+}

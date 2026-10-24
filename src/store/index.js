@@ -17,8 +17,6 @@ import { usePartyStore } from './partyStore';
 import { useRunOfShowStore } from './runOfShowStore';
 import { usePackingStore } from './packingStore';
 import { workspaceStorage } from '../services/storage';
-import { useAuthStore } from './authStore';
-import { useProfileStore } from './profileStore';
 import { useSettingsStore } from './settingsStore';
 
 export * from './weddingStore';
@@ -39,7 +37,6 @@ export * from './runOfShowStore';
 export * from './packingStore';
 // Not in STORES below: sign-in is optional, so launch never waits on it.
 export * from './authStore';
-export * from './profileStore';
 export * from './settingsStore';
 
 const STORES = [
@@ -59,6 +56,7 @@ const STORES = [
   usePartyStore,
   useRunOfShowStore,
   usePackingStore,
+  useSettingsStore,
 ];
 
 // Every persisted store switches with the active workspace (slice A3).
@@ -137,4 +135,5 @@ export function resetAllStores() {
   usePartyStore.getState().reset();
   useRunOfShowStore.getState().reset();
   usePackingStore.getState().reset();
+  useSettingsStore.getState().resetAll();
 }
