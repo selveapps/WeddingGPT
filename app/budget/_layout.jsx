@@ -1,19 +1,11 @@
-import React from 'react';
 import { Stack } from 'expo-router';
-
-import { useTheme } from '@/design-system/theme';
-
-/** Budget detail stack. Screens draw their own `ScreenHeader`. */
-export default function BudgetStackLayout() {
-  const { colors } = useTheme();
-
+export default function Layout() {
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.canvas },
-        animation: 'slide_from_right',
-      }}
-    />
+    <Stack screenOptions={{
+      headerShown: true,
+      headerTitleStyle: { fontWeight: '600' },
+      headerShadowVisible: false,
+      contentStyle: { backgroundColor: '#FAF7F5' },
+    }} />
   );
 }

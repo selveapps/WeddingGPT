@@ -1,18 +1,17 @@
-/**
- * Vendors feature: the couple's shortlist, quotes, bookings and payments.
- *
- *  - VendorListScreen / VendorDetailScreen / VendorFormScreen  routed from app/vendors
- *  - components/   presentational pieces
- *  - hooks/        list and form state
- *  - lib/          constants, helpers, validation, the one-time Labs import
- *
- * The vendor model and its payment maths live in `src/models/vendors.js`, so
- * the assistant, budget and reminders can share them.
- */
-
-export { VendorListScreen } from './VendorListScreen';
-export { VendorDetailScreen } from './VendorDetailScreen';
-export { VendorFormScreen } from './VendorFormScreen';
-export { VendorCompareScreen } from './VendorCompareScreen';
-export { useVendors } from './hooks/useVendors';
-export { useVendorForm } from './hooks/useVendorForm';
+/** Vendors feature barrel */
+export { default as SummaryCard } from './SummaryCard';
+export { default as List } from './List';
+export { default as EmptyState } from './EmptyState';
+export { default as VendorList } from './VendorList';
+export { default as VendorCard } from './VendorCard';
+export { default as VendorForm } from './VendorForm';
+export { default as VendorDetail } from './VendorDetail';
+export { default as VendorCategoryChips } from './VendorCategoryChips';
+export { default as VendorStatusPipeline } from './VendorStatusPipeline';
+export { default as PaymentSchedule } from './PaymentSchedule';
+export { default as VendorCompareTable } from './VendorCompareTable';
+export { default as VendorNotes } from './VendorNotes';
+export { default as VendorFilterBar } from './VendorFilterBar';
+export { default as BookedVendorsStrip } from './BookedVendorsStrip';
+export * from './lib/selectors';
+export { useVendorsList } from './hooks/useVendorsList';

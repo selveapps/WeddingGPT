@@ -1,99 +1,59 @@
 import React from 'react';
-import { View } from 'react-native';
-
-import { Row, Stack, Text, Checkbox, Badge, Touchable, Icon } from '@/design-system/components';
-import { useTheme } from '@/design-system/theme';
-import { TaskStatus, TaskPriority, isTaskOverdue, isSnoozeActive } from '@/models';
-import { formatRelativeDay } from '@/lib/date';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 
 /**
- * One task in a list.
- *
- * The checkbox and the row body are separate targets on purpose: ticking a task
- * off is the single most common action in the app and must never be one
- * mis-tap away from navigating to a detail screen instead.
- *
- * Overdue is computed here rather than stored, so a row that was fine last
- * night is red this morning without anything having to run in between.
+ * planning · TaskRow
+ * Task with due date
  */
-export function TaskRow({ task, categoryName, waitingFor = 0, onToggle, onPress }) {
-  const { colors, spacing, borderWidths } = useTheme();
-
-  const done = task.status === TaskStatus.DONE;
-  const overdue = isTaskOverdue(task);
-  const snoozed = isSnoozeActive(task);
-
-  const dueColor = overdue ? 'danger' : snoozed ? 'subtle' : 'muted';
-
+export default function TaskRow({ title, items = [], stats, onPress, onAdd, children, style }) {
   return (
-    <Row
-      gap="sm"
-      align="flex-start"
-      style={{
-        paddingVertical: spacing.sm,
-        borderBottomWidth: borderWidths.hairline,
-        borderBottomColor: colors.border,
-      }}
-    >
-      <View style={{ paddingTop: spacing.hair }}>
-        <Checkbox
-          checked={done}
-          onChange={() => onToggle?.(task)}
-          accessibilityLabel={done ? `Mark ${task.title} as not done` : `Mark ${task.title} as done`}
-        />
-      </View>
-
-      <Touchable
-        onPress={() => onPress?.(task)}
-        scaleOnPress={false}
-        haptic="light"
-        accessibilityLabel={task.title}
-        accessibilityHint="Opens this task"
-        style={{ flex: 1 }}
-      >
-        <Row gap="xs" align="center">
-          <Stack gap="hair" style={{ flex: 1 }}>
-            <Text
-              variant="body"
-              color={done ? 'subtle' : 'default'}
-              numberOfLines={2}
-              style={done ? { textDecorationLine: 'line-through' } : null}
-            >
-              {task.title}
-            </Text>
-
-            <Row gap="xs" wrap>
-              {task.dueDate && !done ? (
-                <Text variant="caption" color={dueColor}>
-                  {snoozed ? `Snoozed until ${formatRelativeDay(task.snoozedUntil)}` : formatRelativeDay(task.dueDate)}
-                </Text>
+    <View style={[styles.wrap, style]}>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
+      {stats ? (
+        <View style={styles.stats}>
+          {Object.entries(stats).map(([k, v]) => (
+            <View key={k} style={styles.stat}>
+              <Text style={styles.statVal}>{String(v)}</Text>
+              <Text style={styles.statLab}>{k}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {items.length > 0 ? (
+        <View style={styles.list}>
+          {items.map((item) => (
+            <Pressable key={item.id || item.key || String(item)} onPress={() => onPress?.(item)} style={styles.row}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {item.title || item.name || item.label || 'Item'}
+              </Text>
+              {item.subtitle || item.description ? (
+                <Text style={styles.rowSub} numberOfLines={2}>{item.subtitle || item.description}</Text>
               ) : null}
-
-              {waitingFor && !done ? (
-                <Text variant="caption" color="subtle">
-                  {task.dueDate ? '· ' : ''}
-                  {`Waits for ${waitingFor}`}
-                </Text>
-              ) : null}
-
-              {categoryName ? (
-                <Text variant="caption" color="subtle">
-                  {(task.dueDate || waitingFor) && !done ? '· ' : ''}
-                  {categoryName}
-                </Text>
-              ) : null}
-            </Row>
-          </Stack>
-
-          {task.priority === TaskPriority.HIGH && !done ? (
-            <Badge label="High" tone="warning" />
-          ) : null}
-
-          <Icon name="chevronRight" size="sm" color="inkSubtle" />
-        </Row>
-      </Touchable>
-    </Row>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {children}
+      {onAdd ? (
+        <Pressable onPress={onAdd} style={styles.add}>
+          <Text style={styles.addText}>Add</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
-export default TaskRow;
+const styles = StyleSheet.create({
+  wrap: { marginBottom: 12 },
+  title: { fontSize: 13, fontWeight: '700', color: '#6B5E5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  stat: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#EDE6E3', minWidth: 72, alignItems: 'center' },
+  statVal: { fontSize: 16, fontWeight: '700', color: '#C93862' },
+  statLab: { fontSize: 11, color: '#8A7E7A', marginTop: 2 },
+  list: { gap: 8 },
+  row: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE6E3' },
+  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
+  rowSub: { fontSize: 13, color: '#6B5E5A', marginTop: 2 },
+  add: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#C93862', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
+  addText: { color: '#FFF', fontWeight: '600' },
+});

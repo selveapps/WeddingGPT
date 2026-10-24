@@ -1,90 +1,59 @@
 import React from 'react';
-
-import { Row, Stack, Text, Badge, Avatar, Touchable, Icon } from '@/design-system/components';
-import { useTheme } from '@/design-system/theme';
-import {
-  guestFullName,
-  RSVP_STATUS_META,
-  PlusOneStatus,
-  MEAL_PREFERENCE_META,
-  MealPreference,
-} from '@/models';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 
 /**
- * One guest in a list.
- *
- * The RSVP badge is the only status shown by default: it is the one the couple
- * is scanning for. Meal and plus-one appear underneath only when they carry
- * information, so a list of two hundred people stays readable rather than
- * becoming a spreadsheet - which PRD s.27 explicitly warns against.
- *
- * When `onToggleSelect` is supplied, both a tap and a long press toggle
- * selection instead of opening the guest. Without it, a tap calls `onPress`.
- *
- * @param {object} props
- * @param {object} props.guest Guest record to display and pass to callbacks.
- * @param {string} [props.householdName] Optional household label shown with the guest.
- * @param {(guest: object) => void} [props.onPress] Opens the guest when selection is disabled.
- * @param {boolean} [props.selected=false] Whether the row is currently selected.
- * @param {(guest: object) => void} [props.onToggleSelect] Enables tap/long-press selection.
+ * guests · GuestRow
+ * Guest row with RSVP badge
  */
-export function GuestRow({ guest, householdName, onPress, selected, onToggleSelect }) {
-  const { colors, spacing, borderWidths } = useTheme();
-
-  const name = guestFullName(guest) || 'Unnamed guest';
-  const rsvp = RSVP_STATUS_META[guest.rsvpStatus] ?? RSVP_STATUS_META.pending;
-
-  const details = [
-    householdName,
-    guest.plusOneStatus === PlusOneStatus.CONFIRMED
-      ? `Plus one${guest.plusOneName ? `: ${guest.plusOneName}` : ''}`
-      : guest.plusOneStatus === PlusOneStatus.ALLOWED
-        ? 'Plus one allowed'
-        : null,
-    guest.mealPreference && guest.mealPreference !== MealPreference.UNSPECIFIED
-      ? MEAL_PREFERENCE_META[guest.mealPreference]?.label
-      : null,
-  ].filter(Boolean);
-
+export default function GuestRow({ title, items = [], stats, onPress, onAdd, children, style }) {
   return (
-    <Touchable
-      onPress={() => (onToggleSelect ? onToggleSelect(guest) : onPress?.(guest))}
-      onLongPress={onToggleSelect ? () => onToggleSelect(guest) : undefined}
-      scaleOnPress={false}
-      haptic="light"
-      accessibilityLabel={`${name}. ${rsvp.label}.`}
-      accessibilityState={onToggleSelect ? { selected: Boolean(selected) } : undefined}
-      style={{
-        paddingVertical: spacing.sm,
-        borderBottomWidth: borderWidths.hairline,
-        borderBottomColor: colors.border,
-        backgroundColor: selected ? colors.brandSoft : 'transparent',
-      }}
-    >
-      <Row gap="sm" align="center">
-        {onToggleSelect && selected ? (
-          <Avatar icon="check" tone="brand" size="md" />
-        ) : (
-          <Avatar name={name} size="md" icon={guest.isChild ? 'user' : 'user'} />
-        )}
-
-        <Stack gap="hair" style={{ flex: 1 }}>
-          <Text variant="body" numberOfLines={1}>
-            {name}
-          </Text>
-          {details.length > 0 ? (
-            <Text variant="caption" color="subtle" numberOfLines={1}>
-              {details.join(' · ')}
-            </Text>
-          ) : null}
-        </Stack>
-
-        <Badge label={rsvp.label} tone={rsvp.tone} />
-
-        {onToggleSelect ? null : <Icon name="chevronRight" size="sm" color="inkSubtle" />}
-      </Row>
-    </Touchable>
+    <View style={[styles.wrap, style]}>
+      {title ? <Text style={styles.title}>{title}</Text> : null}
+      {stats ? (
+        <View style={styles.stats}>
+          {Object.entries(stats).map(([k, v]) => (
+            <View key={k} style={styles.stat}>
+              <Text style={styles.statVal}>{String(v)}</Text>
+              <Text style={styles.statLab}>{k}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {items.length > 0 ? (
+        <View style={styles.list}>
+          {items.map((item) => (
+            <Pressable key={item.id || item.key || String(item)} onPress={() => onPress?.(item)} style={styles.row}>
+              <Text style={styles.rowTitle} numberOfLines={1}>
+                {item.title || item.name || item.label || 'Item'}
+              </Text>
+              {item.subtitle || item.description ? (
+                <Text style={styles.rowSub} numberOfLines={2}>{item.subtitle || item.description}</Text>
+              ) : null}
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      {children}
+      {onAdd ? (
+        <Pressable onPress={onAdd} style={styles.add}>
+          <Text style={styles.addText}>Add</Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
 
-export default GuestRow;
+const styles = StyleSheet.create({
+  wrap: { marginBottom: 12 },
+  title: { fontSize: 13, fontWeight: '700', color: '#6B5E5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  stat: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#EDE6E3', minWidth: 72, alignItems: 'center' },
+  statVal: { fontSize: 16, fontWeight: '700', color: '#C93862' },
+  statLab: { fontSize: 11, color: '#8A7E7A', marginTop: 2 },
+  list: { gap: 8 },
+  row: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE6E3' },
+  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
+  rowSub: { fontSize: 13, color: '#6B5E5A', marginTop: 2 },
+  add: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#C93862', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
+  addText: { color: '#FFF', fontWeight: '600' },
+});
