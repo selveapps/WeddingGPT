@@ -17,6 +17,9 @@ import { usePartyStore } from './partyStore';
 import { useRunOfShowStore } from './runOfShowStore';
 import { usePackingStore } from './packingStore';
 import { workspaceStorage } from '../services/storage';
+import { useAuthStore } from './authStore';
+import { useProfileStore } from './profileStore';
+import { useSettingsStore } from './settingsStore';
 
 export * from './weddingStore';
 export * from './planningStore';
@@ -36,6 +39,8 @@ export * from './runOfShowStore';
 export * from './packingStore';
 // Not in STORES below: sign-in is optional, so launch never waits on it.
 export * from './authStore';
+export * from './profileStore';
+export * from './settingsStore';
 
 const STORES = [
   useWeddingStore,

@@ -13,6 +13,12 @@ export const PROFILE_FEATURE_CATEGORIES = [
     features: [
       { id: 'details', title: 'Wedding profile', subtitle: 'Names, date, place and style.', icon: 'user' },
       {
+        id: 'venueDetails',
+        title: 'Venue details',
+        subtitle: 'Venue contact, capacity and day-of logistics.',
+        icon: 'location',
+      },
+      {
         id: 'countdown',
         title: 'Countdown',
         subtitle: 'Days to go and upcoming deadlines.',

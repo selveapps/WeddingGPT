@@ -105,6 +105,18 @@ export const Routes = {
   profile: '/account/profile',
   subscription: '/account/subscription',
   privacy: '/account/privacy',
+
+  // --- Settings -----------------------------------------------------------
+  settings: '/settings',
+  settingsAppearance: '/settings/appearance',
+  settingsNotifications: '/settings/notifications',
+  settingsPrivacy: '/settings/privacy',
+  settingsAccessibility: '/settings/accessibility',
+  settingsLanguage: '/settings/language',
+  settingsAI: '/settings/ai',
+  settingsData: '/settings/data',
+  settingsWeddingDefaults: '/settings/wedding-defaults',
+  settingsAbout: '/settings/about',
 };
 
 /** The five primary destinations, in bottom-bar order (PRD s.5). Assistant leads. */
@@ -115,3 +127,5 @@ export const TAB_ITEMS = [
   { name: 'guests', label: 'Guests', icon: 'guests', route: Routes.guests },
   { name: 'budget', label: 'Budget', icon: 'budget', route: Routes.budget },
 ];
+
+

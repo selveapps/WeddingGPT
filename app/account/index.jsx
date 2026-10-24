@@ -128,6 +128,11 @@ export default function AccountScreen() {
           <Card padding="none">
             <ListRow
               icon="user"
+              title="App settings"
+              onPress={() => router.push(Routes.settings)}
+            />
+            <ListRow
+              icon="user"
               title="Profile"
               subtitle="Your wedding details, preferences and keepsakes"
               onPress={() => router.push(Routes.profile)}

@@ -44,6 +44,7 @@ import { GiftRegistryTracker } from './registry';
 import { HoneymoonPlanner } from './honeymoon';
 import { GuestTransportPlanner } from './transport';
 import { WeddingGuestFaq } from './weddingFaq';
+import { VenueProfile } from './venue';
 
 /**
  * Profile - the couple, the day, and the soft facts the plan leans on.
@@ -240,6 +241,8 @@ function renderProfileFeature(feature, handlers) {
           showActions={false}
         />
       );
+    case 'venueDetails':
+      return <VenueProfile />;
     case 'countdown':
       return <WeddingCountdown />;
     case 'budget':

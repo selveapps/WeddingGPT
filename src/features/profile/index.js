@@ -56,6 +56,7 @@ export { GiftRegistryTracker } from './registry';
 export { HoneymoonPlanner } from './honeymoon';
 export { GuestTransportPlanner } from './transport';
 export { WeddingGuestFaq } from './weddingFaq';
+export { VenueProfile } from './venue';
 
 export {
   PROFILE_SECTIONS,
