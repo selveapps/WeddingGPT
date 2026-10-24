@@ -1,148 +1,80 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useCallback } from 'react';
+import { View, StyleSheet, Pressable, Text, SafeAreaView, ScrollView } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  SafeAreaView,
-} from 'react-native';
-import { useRouter, Stack } from 'expo-router';
+  AttireSummaryHeader, AttireFilterBar, AttireBoard, NextFittingCard, ReadinessIssues,
+} from '../../src/features/attire';
+import { useAttireBoard } from '../../src/features/attire/hooks';
+import { useAttireStore } from '../../src/store/attireStore';
 
-/**
- * Main screen for attire module.
- * Integrates with the corresponding store once wired in store/index.js.
- */
-
-const DEMO_ITEMS = [
-  { id: '1', title: 'Sample item one', subtitle: 'Tap to open details' },
-  { id: '2', title: 'Sample item two', subtitle: 'Long-press for actions' },
-  { id: '3', title: 'Sample item three', subtitle: 'Replace with real data from store' },
-];
-
-export default function Screen() {
+export default function AttireHomeScreen() {
   const router = useRouter();
+  const board = useAttireBoard();
+  const fittings = useAttireStore((s) => s.listFittings());
+  const accessories = useAttireStore((s) => s.listAccessories());
+  const next = board.nextFitting;
+  const itemsById = Object.fromEntries(board.items.map((i) => [i.id, i]));
 
-  const stats = useMemo(
-    () => ({
-      total: DEMO_ITEMS.length,
-      ready: 2,
-      pending: 1,
-    }),
-    []
-  );
-
-  const handleAdd = useCallback(() => {
-    console.log('[attire] add pressed');
-  }, []);
-
-  const handleOpen = useCallback((item) => {
-    console.log('[attire] open', item.id);
-  }, []);
+  const openItem = useCallback((item) => {
+    router.push(`/attire/item/${item.id}`);
+  }, [router]);
 
   return (
     <SafeAreaView style={styles.safe}>
       <Stack.Screen
         options={{
-          title: 'attire',
+          title: 'Attire',
           headerRight: () => (
-            <Pressable onPress={handleAdd} hitSlop={12}>
-              <Text style={styles.headerAction}>Add</Text>
+            <Pressable onPress={() => router.push('/attire/item/new')} hitSlop={12}>
+              <Text style={styles.add}>Add</Text>
             </Pressable>
           ),
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
-          <Text style={styles.heroTitle}>attire</Text>
-          <Text style={styles.heroSubtitle}>
-            New WeddingGPT module. Wire this screen to the matching zustand store
-            and replace demo data with live entities.
-          </Text>
+        <AttireSummaryHeader stats={board.stats} />
+        <NextFittingCard
+          fitting={next}
+          outfitTitle={next ? itemsById[next.attireItemId]?.title : null}
+          onPress={() => router.push('/attire/fitting')}
+        />
+        <AttireFilterBar
+          query={board.query}
+          onQueryChange={board.setQuery}
+          role={board.role}
+          onRoleChange={board.setRole}
+          status={board.status}
+          onStatusChange={board.setStatus}
+          rentalOnly={board.rentalOnly}
+          onRentalOnlyChange={board.setRentalOnly}
+          needsFitting={board.needsFitting}
+          onNeedsFittingChange={board.setNeedsFitting}
+        />
+        <View style={styles.links}>
+          <LinkBtn label="Fittings" onPress={() => router.push('/attire/fitting')} />
+          <LinkBtn label="Palette" onPress={() => router.push('/attire/palette')} />
+          <LinkBtn label="Pack list" onPress={() => router.push('/attire/pack')} />
         </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.total}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.ready}</Text>
-            <Text style={styles.statLabel}>Ready</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{stats.pending}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Items</Text>
-        {DEMO_ITEMS.map((item) => (
-          <Pressable
-            key={item.id}
-            onPress={() => handleOpen(item)}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-          >
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-          </Pressable>
-        ))}
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Tip: register this route in your tab or tools navigator and import the
-            store from src/store.
-          </Text>
-        </View>
+        <AttireBoard items={board.filtered} onPressItem={openItem} onAdd={() => router.push('/attire/item/new')} />
+        <ReadinessIssues items={board.items} fittings={fittings} accessories={accessories} onPressItem={(id) => router.push(`/attire/item/${id}`)} />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
+function LinkBtn({ label, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={styles.linkBtn}>
+      <Text style={styles.linkText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FAF7F5' },
-  content: { padding: 20, paddingBottom: 48 },
-  hero: { marginBottom: 24 },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    textTransform: 'capitalize',
-    marginBottom: 8,
-  },
-  heroSubtitle: { fontSize: 15, color: '#6B5E5A', lineHeight: 22 },
-  statsRow: { flexDirection: 'row', gap: 12, marginBottom: 28 },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#EDE6E3',
-    alignItems: 'center',
-  },
-  statValue: { fontSize: 22, fontWeight: '700', color: '#C93862' },
-  statLabel: { fontSize: 12, color: '#8A7E7A', marginTop: 4 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6B5E5A',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#EDE6E3',
-  },
-  cardPressed: { backgroundColor: '#F8F4F2' },
-  cardTitle: { fontSize: 16, fontWeight: '600', color: '#1A1A1A' },
-  cardSubtitle: { fontSize: 13, color: '#6B5E5A', marginTop: 4 },
-  headerAction: { color: '#C93862', fontWeight: '600', fontSize: 16, marginRight: 8 },
-  footer: { marginTop: 32, padding: 16, backgroundColor: '#F0EBE8', borderRadius: 12 },
-  footerText: { fontSize: 13, color: '#6B5E5A', lineHeight: 20 },
+  content: { padding: 16, paddingBottom: 48 },
+  add: { color: '#C93862', fontWeight: '600', fontSize: 16, marginRight: 8 },
+  links: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  linkBtn: { backgroundColor: '#FFF', borderWidth: 1, borderColor: '#EDE6E3', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  linkText: { fontSize: 13, fontWeight: '600', color: '#57534E' },
 });
