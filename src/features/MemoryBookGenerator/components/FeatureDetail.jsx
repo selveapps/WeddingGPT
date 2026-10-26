@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { formatMemoryBookGeneratorStatus, getMemoryBookGeneratorStatusColor, formatMemoryBookGeneratorPriority, getMemoryBookGeneratorPriorityColor, formatCurrency, formatDate, formatRelativeTime } from '../utils/helpers';
+import { formatMemoryBookGeneratorStatus, getMemoryBookGeneratorStatusColor, formatMemoryBookGeneratorPriority, getMemoryBookGeneratorPriorityColor, formatCurrency, formatRelativeTime } from '../utils/helpers';
 
 export default function FeatureDetail({ item, onEdit, onDelete, onBack }) {
   if (!item) return (<View style={styles.centered}><Text style={styles.empty}>Item not found</Text></View>);

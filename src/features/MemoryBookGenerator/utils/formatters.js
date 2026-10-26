@@ -1,7 +1,7 @@
 /**
  * Formatters for MemoryBookGenerator
  */
-import { formatCurrency, formatDate } from './helpers';
+import { formatCurrency } from './helpers';
 export function formatMemoryBookGeneratorItemSummary(item) {
   if (!item) return '';
   const parts = [item.name];

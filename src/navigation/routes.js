@@ -34,6 +34,7 @@ export const Routes = {
   // --- Home details -------------------------------------------------------
   countdown: '/(tabs)/home',
   progress: '/(tabs)/planning',
+  extendedFeatures: '/extended-features',
   /** Vendor recommendations near the wedding city. */
   local: '/local',
 

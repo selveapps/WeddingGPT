@@ -1,6 +1,6 @@
 # WeddingGPT Extended Features (40 New Modules)
 
-This directory contains **40 new feature modules** added to WeddingGPT **without modifying or deleting any existing files**.
+This directory contains **40 extended feature modules** for WeddingGPT.
 
 ## Features Included
 
@@ -69,6 +69,10 @@ Each feature directory contains:
 - `screens/DetailScreen.jsx`
 
 ## Integration
+
+Open **More planning tools** from the Home dashboard to browse the modules. Each feature's
+`MainScreen` is available at `/extended-features/<FeatureName>`. Feature data is stored locally
+on the device; these modules are not connected to a remote backend.
 
 Import from `src/features` or individual feature:
 

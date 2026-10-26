@@ -22,7 +22,7 @@ export function useMemoryBookGenerator() {
   const clearError = useMemoryBookGeneratorStore((s) => s.clearError);
   const getSelected = useMemoryBookGeneratorStore((s) => s.getSelected);
 
-  useEffect(() => { fetchItems().catch(() => {}); }, []);
+  useEffect(() => { fetchItems().catch(() => {}); }, [fetchItems]);
 
   const filteredItems = useMemo(() => {
     const filtered = filterMemoryBookGeneratorItems(items, filters);
@@ -30,7 +30,7 @@ export function useMemoryBookGenerator() {
   }, [items, filters]);
 
   const progress = useMemo(() => calculateMemoryBookGeneratorProgress(items), [items]);
-  const selected = useMemo(() => getSelected(), [items, selectedId]);
+  const selected = getSelected();
   const refresh = useCallback(() => fetchItems(), [fetchItems]);
 
   return { items, filteredItems, loading, error, filters, stats, selectedId, selected, progress, fetchItems, addItem, updateItem, deleteItem, setFilters, selectItem, clearSelection, clearError, refresh };

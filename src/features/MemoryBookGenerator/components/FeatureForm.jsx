@@ -1,17 +1,16 @@
 /**
  * MemoryBookGenerator FeatureForm
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import useMemoryBookGenerator from '../hooks/useFeature';
-import { MEMORYBOOKGENERATOR_STATUSES, MEMORYBOOKGENERATOR_PRIORITIES, MEMORYBOOKGENERATOR_CATEGORIES } from '../constants';
+import { MEMORYBOOKGENERATOR_STATUSES, MEMORYBOOKGENERATOR_PRIORITIES } from '../constants';
 import { sanitizeMemoryBookGeneratorInput } from '../validators';
 
 export default function FeatureForm({ initialValues, onSuccess, onCancel, mode = 'create' }) {
   const { addItem, updateItem, loading, error, clearError } = useMemoryBookGenerator();
   const [form, setForm] = useState({ name: '', description: '', status: 'pending', priority: 3, budget: '', notes: '', category: 'General', ...initialValues });
   const [localError, setLocalError] = useState(null);
-  useEffect(() => { if (initialValues) setForm((p) => ({ ...p, ...initialValues })); }, [initialValues]);
   const updateField = (key, value) => { setForm((p) => ({ ...p, [key]: value })); setLocalError(null); clearError(); };
   const handleSubmit = async () => {
     if (!form.name || form.name.trim().length < 2) { setLocalError('Name required (min 2 chars)'); return; }

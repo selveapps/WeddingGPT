@@ -300,6 +300,12 @@ export default function HomeScreen() {
             onPress={() => router.push(Routes.vendors)}
           />
           <ListRow
+            icon="sparkle"
+            title="Explore more planning tools"
+            subtitle="Browse 40 additional wedding-planning features"
+            onPress={() => router.push(Routes.extendedFeatures)}
+          />
+          <ListRow
             icon="userPlus"
             title={invited ? `Invited ${partnerName || 'your partner'}` : 'Invite your partner'}
             subtitle={invited ? 'Send the invite again' : 'Plan the wedding together'}
