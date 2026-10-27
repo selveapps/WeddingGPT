@@ -1,84 +1,34 @@
-# WeddingGPT Extended Features (40 New Modules)
+# 300 New WeddingGPT Features
 
-This directory contains **40 extended feature modules** for WeddingGPT.
+These are **new files only**. No existing application code was modified or deleted.
 
-## Features Included
+## Stats
+- **Features:** 300
+- **Modules per feature:** 12 (store, api, validators, constants, helpers, hooks, 5 components, screen, index)
+- **Total new files:** ~3602
 
-1. VenueFinder
-2. FloristManager
-3. CakeDesigner
-4. InvitationStudio
-5. GiftRegistryPro
-6. HoneymoonPlannerAdvanced
-7. PhotoBoothManager
-8. DanceFloorCoordinator
-9. MenuTastingScheduler
-10. VendorContractTracker
-11. WeatherContingency
-12. CulturalTraditionGuide
-13. SpeechWriterAI
-14. SeatingChartAI
-15. TimelineOptimizer
-16. GuestTransportation
-17. AccommodationManager
-18. KidsEntertainment
-19. PetInclusionPlanner
-20. SustainabilityTracker
-21. BudgetForecastAI
-22. RSVPAnalytics
-23. PhotoAlbumCollaborator
-24. MusicPlaylistAI
-25. DecorVisualizer
-26. MakeupHairScheduler
-27. LegalDocuments
-28. NameChangeHelper
-29. PostWeddingTasks
-30. AnniversaryPlanner
-31. VirtualWeddingSupport
-32. LiveStreamingManager
-33. GuestExperienceSurvey
-34. VendorReviewAggregator
-35. CostComparisonEngine
-36. ThemeMoodboard
-37. CeremonyScriptBuilder
-38. ReceptionFlowDesigner
-39. EmergencyKitPlanner
-40. MemoryBookGenerator
-
-## Structure per Feature (18 modules each)
-
-Each feature directory contains:
-
-- `index.js` - Module exports
-- `store.js` - Zustand store with persist
-- `types.js` - Type definitions / JSDoc
-- `constants.js` - Statuses, priorities, categories
-- `validators.js` - Input validation & sanitization
-- `services/api.js` - CRUD API (AsyncStorage backed)
-- `services/localStorage.js` - Prefs & key helpers
-- `utils/helpers.js` - Formatters, filters, sort, progress
-- `utils/formatters.js` - Summary & share text
-- `hooks/useFeature.js` - Primary React hook
-- `hooks/useFeatureList.js` - Multi-select list hook
-- `components/FeatureList.jsx`
-- `components/FeatureCard.jsx`
-- `components/FeatureForm.jsx`
-- `components/FeatureDetail.jsx`
-- `components/EmptyState.jsx`
-- `screens/MainScreen.jsx`
-- `screens/DetailScreen.jsx`
-
-## Integration
-
-Open **More planning tools** from the Home dashboard to browse the modules. Each feature's
-`MainScreen` is available at `/extended-features/<FeatureName>`. Feature data is stored locally
-on the device; these modules are not connected to a remote backend.
-
-Import from `src/features` or individual feature:
-
-```js
-import { VenueFinder, EXTENDED_FEATURES, FEATURE_COUNT } from '../features';
-import useVenueFinder from '../features/VenueFinder/hooks/useFeature';
+## Structure per feature
+```
+FeatureName/
+  index.js
+  store.js
+  api.js
+  validators.js
+  constants.js
+  helpers.js
+  hooks/useFeature.js
+  components/FeatureList.jsx
+  components/FeatureCard.jsx
+  components/FeatureForm.jsx
+  components/FeatureDetail.jsx
+  components/EmptyState.jsx
+  screens/MainScreen.jsx
 ```
 
-All existing code remains untouched.
+## Usage
+```js
+import { AisleRunnerDesigner, FEATURE_COUNT_300 } from ./features;
+import useAisleRunnerDesigner from ./features/AisleRunnerDesigner/hooks/useFeature;
+```
+
+Drop this folder into your existing `src/features/` (or merge).
