@@ -6,7 +6,20 @@ const expoConfig = require('eslint-config-expo/flat');
 module.exports = defineConfig([
   expoConfig,
   {
-    ignores: ['dist/*', '.expo/*', 'node_modules/*', 'server/ai-proxy/node_modules/*', 'WeddingGPT/*'],
+    ignores: [
+      'dist/*',
+      '.expo/*',
+      'node_modules/*',
+      'server/ai-proxy/node_modules/*',
+      'WeddingGPT/*',
+      // Unfinished extended-feature modules: files are missing and nothing
+      // imports them (src/features/index.js leaves them out). Finish or
+      // delete them, then take them off this list.
+      'src/features/CocktailHourFlow/*',
+      'src/features/LinenColorMatcher/*',
+      'src/features/SeatingChartAIPro/**',
+      'src/features/TulleDrapeDesigner/*',
+    ],
   },
   {
     // Resolve the `@/` alias from jsconfig.json.
