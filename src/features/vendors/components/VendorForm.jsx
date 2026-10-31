@@ -145,11 +145,6 @@ export function VendorForm({
           value={values.quoteValidUntil}
           onChange={(value) => onChange('quoteValidUntil', value)}
         />
-        <DateField
-          label="Meeting date"
-          value={values.meetingAt}
-          onChange={(value) => onChange('meetingAt', value)}
-        />
       </Stack>
 
       <Stack gap="md">

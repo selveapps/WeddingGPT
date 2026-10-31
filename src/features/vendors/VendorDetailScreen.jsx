@@ -21,6 +21,7 @@ import { formatMoney } from '@/lib/currency';
 import { formatMediumDate } from '@/lib/date';
 import { Routes } from '@/navigation/routes';
 
+import { VendorAppointments } from './components/VendorAppointments';
 import { VendorPaymentPlan } from './components/VendorPaymentPlan';
 import { VENDOR_COPY, QUICK_ACTION_DEFS } from './lib/vendorConstants';
 import { contactUrl, vendorCategory } from './lib/vendorHelpers';
@@ -195,12 +196,7 @@ export function VendorDetailScreen() {
           </Card>
         </Stack>
 
-        {vendor.meetingAt ? (
-          <Card tone="muted">
-            <Text variant="label">Meeting</Text>
-            <Text variant="body">{formatMediumDate(vendor.meetingAt)}</Text>
-          </Card>
-        ) : null}
+        <VendorAppointments vendor={vendor} />
 
         {vendor.notes ? (
           <Stack gap="sm">

@@ -60,6 +60,7 @@ export const NotificationType = {
   MILESTONES: 'milestones',
   EVENT_SOON: 'event_soon',
   CATERER_NUMBERS: 'caterer_numbers',
+  VENDOR_APPOINTMENT: 'vendor_appointment',
   PARTNER_ACTIVITY: 'partner_activity',
   PRODUCT_NEWS: 'product_news',
 };
@@ -103,6 +104,11 @@ export const NOTIFICATION_TYPE_META = {
   [NotificationType.EVENT_SOON]: {
     label: 'Events coming up',
     description: 'Three days before each event, with the time and place.',
+    defaultEnabled: true,
+  },
+  [NotificationType.VENDOR_APPOINTMENT]: {
+    label: 'Vendor appointments',
+    description: 'The evening before a tasting, fitting or meeting.',
     defaultEnabled: true,
   },
   [NotificationType.CATERER_NUMBERS]: {

@@ -9,10 +9,14 @@ import {
   eventGuestSummary,
   eventName,
   eventWhen,
+  appointmentLabel,
+  upcomingAppointments,
   planDailyChecklists,
   summariseDailyTasks,
 } from '../../models';
 import { Routes } from '../../navigation/routes';
+import { formatTime, fromClock } from '../../lib/time';
+import { toISODate } from '../../lib/date';
 
 /**
  * Local reminders.
@@ -49,6 +53,8 @@ const MILESTONE_DAYS = [365, 180, 100, 30, 7, 1, 0];
 const EVENT_SOON_DAYS = 3;
 /** Caterers usually want final plates about a week out. */
 const CATERER_DAYS = 7;
+/** Appointment reminders land the evening before, when there is still time to prepare. */
+const EVENING_HOUR = 18;
 
 let configured = false;
 
@@ -115,6 +121,8 @@ export function buildReminderSchedule({
   /** The wedding's events (workstream C), each reminded from its own date (G2). */
   events = [],
   guests = [],
+  /** Vendors, for their appointments (H1). */
+  vendors = [],
   preferences,
   /** Today's checklist as shown in the app, so this morning's note matches it. */
   todayTasks = null,
@@ -227,6 +235,23 @@ export function buildReminderSchedule({
     }
   }
 
+  if (on(NotificationType.VENDOR_APPOINTMENT)) {
+    const today = toISODate(now);
+    for (const appointment of upcomingAppointments(vendors, { today, limit: Infinity })) {
+      const label = appointmentLabel(appointment);
+      const minutes = fromClock(appointment.time);
+      const details = [minutes === null ? '' : formatTime(minutes), appointment.place].filter(Boolean).join(' at ');
+      items.push({
+        type: NotificationType.VENDOR_APPOINTMENT,
+        title: `Tomorrow: ${label.toLowerCase()} with ${appointment.vendorName}`,
+        body: [details, appointment.notes].filter(Boolean).join('. ') || 'Open the vendor to check the details.',
+        name: `${label} with ${appointment.vendorName}`,
+        url: Routes.vendorDetail(appointment.vendorId),
+        date: at(appointment.date, -1, EVENING_HOUR),
+      });
+    }
+  }
+
   const weeklyOn = on(NotificationType.WEEKLY_DIGEST);
   const dated = capPerDay(
     mergeSameDay(items.filter((item) => item.date.getTime() > now.getTime())),
@@ -255,6 +280,7 @@ const MERGED_TITLES = {
   [NotificationType.PAYMENT_DUE]: (n) => `${n} payments due in 3 days`,
   [NotificationType.EVENT_SOON]: (n) => `${n} events in ${EVENT_SOON_DAYS} days`,
   [NotificationType.CATERER_NUMBERS]: (n) => `Final numbers for ${n} events`,
+  [NotificationType.VENDOR_APPOINTMENT]: (n) => `${n} vendor appointments tomorrow`,
 };
 
 /** Several things: the right screen is the overview, not one of them. */
@@ -262,6 +288,7 @@ const MERGED_URLS = {
   [NotificationType.PAYMENT_DUE]: Routes.budget,
   [NotificationType.EVENT_SOON]: Routes.events,
   [NotificationType.CATERER_NUMBERS]: Routes.guestMeals,
+  [NotificationType.VENDOR_APPOINTMENT]: Routes.vendors,
 };
 
 function dayKey(date) {
@@ -300,6 +327,7 @@ const PRIORITY = [
   NotificationType.MILESTONES,
   NotificationType.EVENT_SOON,
   NotificationType.CATERER_NUMBERS,
+  NotificationType.VENDOR_APPOINTMENT,
   NotificationType.PAYMENT_DUE,
   NotificationType.TASK_OVERDUE,
   NotificationType.TASK_DUE,

@@ -11,7 +11,9 @@ import { importLabVendors } from '../lib/labsImport';
 
 /** Form values (deposit and balance as fields) -> the fields a vendor stores. */
 export function vendorFieldsFromForm(values, existing = null) {
-  const { depositAmount, depositDueAt, finalAmount, finalDueAt, ...fields } = values;
+  // Appointments are edited on the vendor screen, never by the form; leaving
+  // them out means saving the form cannot undo a change synced meanwhile.
+  const { depositAmount, depositDueAt, finalAmount, finalDueAt, appointments, meetingAt, ...fields } = values;
   return {
     ...fields,
     payments: paymentsFromMilestones(

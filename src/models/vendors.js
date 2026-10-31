@@ -170,6 +170,7 @@ export function createVendor({
   quoteValidUntil = null,
   meetingAt = null,
   payments = [],
+  appointments = [],
   expenseId = null,
   bookedAt = null,
   lastContactedAt = null,
@@ -194,9 +195,12 @@ export function createVendor({
     /** What the quote actually covers - vital when comparing two vendors. */
     quoteScope,
     quoteValidUntil,
+    /** Before slice H1, the one meeting date; read through `vendorAppointments`. */
     meetingAt,
     /** `[{ id, label, amount, dueDate, paidAt }]` - see `paymentsFromMilestones`. */
     payments,
+    /** `[{ id, kind, date, time, place, notes, outcome }]` - see `models/appointments`. */
+    appointments,
     /** The budget expense created from this vendor, once there is one. */
     expenseId,
     bookedAt,

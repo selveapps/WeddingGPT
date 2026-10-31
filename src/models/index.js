@@ -206,6 +206,23 @@ export {
 export { PLAN_MAX_TABLES, buildEventPlan, eventPlanText, eventPlanHtml, escapeHtml } from './eventPlan';
 export { DEFAULT_EVENT_MINUTES, calendarEntries, calendarIcs, icsText, foldLine } from './calendar';
 export {
+  AppointmentKind,
+  APPOINTMENT_KIND_META,
+  APPOINTMENT_LIMITS,
+  LEGACY_MEETING_ID,
+  appointmentLabel,
+  appointmentWhen,
+  createAppointment,
+  vendorAppointments,
+  sortAppointments,
+  isUpcoming,
+  upcomingAppointments,
+  validateAppointment,
+  addAppointment,
+  updateAppointment,
+  removeAppointment,
+} from './appointments';
+export {
   ThankYouStatus,
   THANK_YOU_META,
   GiftKind,

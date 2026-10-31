@@ -26,6 +26,7 @@ import { VendorTips } from './components/VendorTips';
 import { VendorCategories } from './components/VendorCategories';
 import { VendorTimeline } from './components/VendorTimeline';
 import { UpcomingPayments } from './components/UpcomingPayments';
+import { UpcomingAppointments } from './components/UpcomingAppointments';
 import { VendorFilter, VENDOR_COPY, VENDOR_SORT, VENDOR_SORT_OPTIONS } from './lib/vendorConstants';
 import { searchVendors } from './lib/vendorHelpers';
 import { useVendors } from './hooks/useVendors';
@@ -98,6 +99,11 @@ export function VendorListScreen() {
         />
 
         <VendorPipeline summary={summary} currency={currency} />
+
+        <UpcomingAppointments
+          vendors={allVendors}
+          onPress={(appointment) => router.push(Routes.vendorDetail(appointment.vendorId))}
+        />
 
         <UpcomingPayments
           vendors={allVendors}

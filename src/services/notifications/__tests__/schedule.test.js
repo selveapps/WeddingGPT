@@ -174,3 +174,56 @@ describe('buildReminderSchedule for events (G2)', () => {
     expect(schedule).toEqual([]);
   });
 });
+
+describe('buildReminderSchedule for vendor appointments (H1)', () => {
+  const preferences = {
+    enabled: true,
+    types: Object.fromEntries(
+      Object.values(NotificationType).map((type) => [type, type === NotificationType.VENDOR_APPOINTMENT])
+    ),
+  };
+  const vendor = (id, name, appointments) => ({ id, name, appointments });
+
+  it('reminds the evening before, with the time and place', () => {
+    const [item] = buildReminderSchedule({
+      vendors: [
+        vendor('v1', 'Sugar & Co', [
+          { id: 'a', kind: 'tasting', date: '2027-03-06', time: '11:00', place: 'The Bakery', notes: 'Bring swatches' },
+        ]),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(item.title).toBe('Tomorrow: tasting with Sugar & Co');
+    expect(item.body).toBe('11:00 AM at The Bakery. Bring swatches');
+    expect(item.url).toBe('/vendors/v1');
+    expect(item.date).toEqual(new Date(2027, 2, 5, 18, 0, 0));
+  });
+
+  it('folds appointments on the same day, and skips past and undated ones', () => {
+    const schedule = buildReminderSchedule({
+      vendors: [
+        vendor('v1', 'Sugar & Co', [{ id: 'a', kind: 'tasting', date: '2027-03-06' }]),
+        vendor('v2', 'Bloom', [
+          { id: 'b', kind: 'meeting', date: '2027-03-06' },
+          { id: 'old', kind: 'call', date: '2026-12-01' },
+          { id: 'tbd', kind: 'call', date: null },
+        ]),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0].title).toBe('2 vendor appointments tomorrow');
+    expect(schedule[0].url).toBe('/vendors');
+  });
+
+  it("includes a vendor's meeting date saved before appointments existed", () => {
+    const schedule = buildReminderSchedule({
+      vendors: [{ id: 'v3', name: 'Old Hall', meetingAt: '2027-02-10' }],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule.map((item) => item.title)).toEqual(['Tomorrow: meeting with Old Hall']);
+  });
+});

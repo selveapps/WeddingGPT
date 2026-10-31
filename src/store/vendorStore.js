@@ -4,6 +4,9 @@ import { persist } from 'zustand/middleware';
 import { zustandStorage } from '../services/storage';
 import {
   VendorStatus,
+  addAppointment,
+  removeAppointment,
+  updateAppointment,
   createVendor,
   denormalise,
   emptyCollection,
@@ -110,6 +113,21 @@ export const useVendorStore = create()(
               : payment
           ),
         }));
+      },
+
+      /** Returns the vendor, or null if it was not found or already has the most appointments. */
+      addAppointment(vendorId, fields) {
+        const vendor = get().vendors.byId[vendorId];
+        const patch = vendor && addAppointment(vendor, fields);
+        return patch ? get().updateVendor(vendorId, patch) : null;
+      },
+
+      updateAppointment(vendorId, appointmentId, fields) {
+        return get().updateVendor(vendorId, (vendor) => updateAppointment(vendor, appointmentId, fields));
+      },
+
+      removeAppointment(vendorId, appointmentId) {
+        return get().updateVendor(vendorId, (vendor) => removeAppointment(vendor, appointmentId));
       },
 
       deleteVendor(id) {
