@@ -4,6 +4,7 @@ import { Image } from 'react-native';
 import { Button, Chip, Row, Stack, Text, TextField, useToast } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
 import { PHOTOS_SUPPORTED, photoUri, pickPhoto, removePhoto } from '@/services/photos';
+import { useFlag } from '@/services/flags';
 import { MAX_VISION_PHOTOS, VISION_CATEGORIES, VISION_MOODS } from '../lib/visionConstants';
 import { validateVisionIdea, visionPhotoAspect } from '../lib/visionHelpers';
 
@@ -24,6 +25,7 @@ export function VisionIdeaForm({ onSave, weddingId = null, photoCount = 0 }) {
   const [values, setValues] = useState(EMPTY_IDEA);
   const [errors, setErrors] = useState({});
   const [picking, setPicking] = useState(false);
+  const photosOn = useFlag('visionPhotos') && PHOTOS_SUPPORTED;
   const preview = values.photo ? photoUri(weddingId, values.photo.key) : null;
   const photosFull = photoCount >= MAX_VISION_PHOTOS;
 
@@ -98,7 +100,7 @@ export function VisionIdeaForm({ onSave, weddingId = null, photoCount = 0 }) {
           ))}
         </Row>
       </Stack>
-      {PHOTOS_SUPPORTED ? (
+      {photosOn ? (
         <Stack gap="xs">
           {preview ? (
             <Image

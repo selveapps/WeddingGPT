@@ -28,6 +28,14 @@ export default function LabsHubScreen() {
           />
         ))}
       </Card>
+      <Card padding="none">
+        <ListRow
+          icon="settings"
+          title="Feature flags"
+          subtitle="Turn finished features on or off on this phone to test them."
+          onPress={() => router.push('/labs/flags')}
+        />
+      </Card>
     </LabScreen>
   );
 }

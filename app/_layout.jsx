@@ -11,6 +11,7 @@ import { ThemeProvider, useTheme, appFonts } from '@/design-system/theme';
 import { ToastProvider } from '@/design-system/components';
 import { analytics, AnalyticsEvents } from '@/services/analytics';
 import { useAuthStore } from '@/store/authStore';
+import { useFlagStore } from '@/services/flags';
 import { useSyncLifecycle } from '@/features/sync/useSyncLifecycle';
 
 // Hold the native splash until fonts are ready, so the first frame the user
@@ -57,6 +58,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) analytics.track(AnalyticsEvents.APP_OPENED);
   }, [ready]);
+
+  // This phone's feature-flag overrides, set in Labs for testing.
+  useEffect(() => {
+    useFlagStore.getState().load();
+  }, []);
 
   // Restore a saved sign-in in the background. Nothing waits on it: the app
   // works signed out, and the Account button updates when this lands.

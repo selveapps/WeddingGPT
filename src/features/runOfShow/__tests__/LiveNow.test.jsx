@@ -3,7 +3,8 @@ import { Linking } from 'react-native';
 
 import { usePartyStore, useRunOfShowStore, useVendorStore, useWeddingStore, selectRunOfShow } from '@/store';
 import { createWedding } from '@/models';
-import { press, renderWithProviders, shownTexts } from '@/test/render';
+import { useFlagStore } from '@/services/flags';
+import { act, press, renderWithProviders, shownTexts } from '@/test/render';
 
 import { RunOfShowScreen } from '../RunOfShowScreen';
 
@@ -74,6 +75,13 @@ describe('Live mode on the day', () => {
     const texts = shownTexts(tree);
     expect(texts).toEqual(expect.arrayContaining(['First up', '4:00 PM, in 7h · Officiant']));
     expect(texts).not.toContain('Running late?');
+  });
+
+  it('is not shown with its flag off', async () => {
+    await act(async () => useFlagStore.getState().setOverride('liveMode', false));
+    const tree = await renderWithProviders(<RunOfShowScreen />);
+    expect(shownTexts(tree)).not.toContain('Live');
+    await act(async () => useFlagStore.getState().clearOverrides());
   });
 
   it('is not shown on any other day', async () => {
