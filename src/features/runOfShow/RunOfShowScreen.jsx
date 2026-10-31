@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform } from 'react-native';
 
 import {
+  Badge,
   BottomSheet,
   Button,
   Card,
@@ -29,20 +30,24 @@ import {
 import {
   RUN_OF_SHOW_LIMITS,
   coupleDisplayName,
+  dayDate,
   eventName,
   findOverlaps,
   itemEnd,
   itemsForDay,
+  liveDay,
+  minutesOfDay,
   runOfShowText,
   sortEvents,
   sortRunOfShow,
   validateRunOfShowItem,
 } from '@/models';
 import { formatDuration, formatTime, parseTime } from '@/lib/time';
-import { formatMediumDate } from '@/lib/date';
+import { formatMediumDate, todayISO } from '@/lib/date';
 import { shareText } from '@/services/share';
 
 import { importLabTimeline } from './labsImport';
+import { LiveNow } from './LiveNow';
 import { VendorShareSection } from './VendorShareSection';
 
 /**
@@ -75,6 +80,12 @@ export function RunOfShowScreen({ initialEventId = null }) {
   const overlapping = new Set(overlaps.flatMap((pair) => [pair.first.id, pair.second.id]));
   const dayName = event ? eventName(event) : 'The wedding day';
   const full = dayItems.length >= RUN_OF_SHOW_LIMITS.perDay;
+  // Live mode on the day itself. The list's "Now" badges move with the
+  // screen's renders; the live card keeps its own clock.
+  const isToday = dayItems.length > 0 && dayDate({ event, wedding }) === todayISO();
+  const onNow = isToday
+    ? new Set(liveDay(dayItems, minutesOfDay(new Date())).current.map((item) => item.id))
+    : new Set();
 
   const share = async () => {
     const title = [
@@ -146,6 +157,8 @@ export function RunOfShowScreen({ initialEventId = null }) {
             />
           ) : (
             <>
+              {isToday ? <LiveNow items={dayItems} onPush={push} /> : null}
+
               {overlaps.length ? (
                 <Card tone="accent">
                   <Stack gap="xxs">
@@ -182,7 +195,12 @@ export function RunOfShowScreen({ initialEventId = null }) {
                         </Text>
                       </Stack>
                       <Stack gap="xs" style={{ flex: 1 }}>
-                        <Text variant="bodyStrong">{item.title}</Text>
+                        <Row gap="xs" align="center">
+                          <Text variant="bodyStrong" style={{ flexShrink: 1 }}>
+                            {item.title}
+                          </Text>
+                          {onNow.has(item.id) ? <Badge label="Now" tone="danger" /> : null}
+                        </Row>
                         {item.location || item.owner ? (
                           <Text variant="caption" color="muted">
                             {[item.location, item.owner].filter(Boolean).join(' · ')}

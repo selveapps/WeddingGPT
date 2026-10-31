@@ -266,6 +266,7 @@ export {
   shiftFrom,
   runOfShowText,
 } from './runOfShow';
+export { dayDate, minutesOfDay, liveDay, phoneUrl, findContact, dayContacts } from './liveDay';
 export {
   PACKING_LISTS,
   PACKING_LIMITS,
