@@ -316,3 +316,93 @@ describe('buildReminderSchedule for vendor payments (H2)', () => {
     expect(schedule[0].url).toBe('/budget/expense/e1');
   });
 });
+
+describe('buildReminderSchedule for run-of-show cues (I2)', () => {
+  const preferences = {
+    enabled: true,
+    types: Object.fromEntries(
+      Object.values(NotificationType).map((type) => [type, type === NotificationType.RUN_OF_SHOW_CUE])
+    ),
+  };
+  // NOW is 7am on 4 Jan; the wedding is that day.
+  const wedding = { date: '2027-01-04' };
+  const item = (id, start, fields = {}) => ({
+    id,
+    title: id,
+    start,
+    durationMin: 30,
+    eventId: null,
+    ...fields,
+  });
+
+  it('cues each item ten minutes before it starts, on the day', () => {
+    const [cue] = buildReminderSchedule({
+      wedding,
+      runOfShow: [item('Ceremony', 960, { location: 'The lawn', owner: 'Officiant' })],
+      preferences,
+      now: NOW,
+    });
+    expect(cue).toMatchObject({
+      type: NotificationType.RUN_OF_SHOW_CUE,
+      title: 'In 10 min: Ceremony',
+      body: '4:00 PM · The lawn · Officiant',
+      url: '/planning/run-of-show',
+      date: new Date(2027, 0, 4, 15, 50),
+    });
+  });
+
+  it('is never capped or folded with other reminders, and shares a cue for items starting together', () => {
+    const schedule = buildReminderSchedule({
+      wedding,
+      runOfShow: [
+        item('Photos', 600),
+        item('Hair', 600),
+        item('Lunch', 720),
+        item('Ceremony', 960),
+        item('Dinner', 1080),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule.map((cue) => cue.title)).toEqual([
+      'In 10 min: Photos and Hair',
+      'In 10 min: Lunch',
+      'In 10 min: Ceremony',
+      'In 10 min: Dinner',
+    ]);
+  });
+
+  it("uses each event's own date, and skips past, far-off and orphaned items", () => {
+    const schedule = buildReminderSchedule({
+      wedding: { date: '2027-03-01' },
+      events: [
+        { id: 'mehndi', date: '2027-01-05' },
+        { id: 'sangeet', date: '2027-01-20' },
+      ],
+      runOfShow: [
+        item('Henna', 900, { eventId: 'mehndi' }),
+        item('Dance', 1200, { eventId: 'sangeet' }),
+        item('Stray', 900, { eventId: 'deleted' }),
+        item('Ceremony', 960),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0]).toMatchObject({
+      title: 'In 10 min: Henna',
+      url: '/planning/run-of-show?event=mehndi',
+      date: new Date(2027, 0, 5, 14, 50),
+    });
+    expect(
+      buildReminderSchedule({ wedding, runOfShow: [item('Breakfast', 400)], preferences, now: NOW })
+    ).toEqual([]);
+  });
+
+  it('has its own switch', () => {
+    const off = { enabled: true, types: { ...preferences.types, [NotificationType.RUN_OF_SHOW_CUE]: false } };
+    expect(
+      buildReminderSchedule({ wedding, runOfShow: [item('Ceremony', 960)], preferences: off, now: NOW })
+    ).toEqual([]);
+  });
+});

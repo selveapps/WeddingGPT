@@ -1,4 +1,13 @@
-import { dayContacts, dayDate, findContact, liveDay, minutesOfDay, phoneUrl } from '../liveDay';
+import {
+  CUE_LIMITS,
+  dayContacts,
+  dayDate,
+  findContact,
+  liveDay,
+  minutesOfDay,
+  phoneUrl,
+  upcomingCues,
+} from '../liveDay';
 
 const item = (id, start, durationMin, owner = '') => ({ id, title: id, start, durationMin, owner });
 
@@ -99,4 +108,22 @@ it("finds the day's date and the clock's minutes", () => {
   expect(dayDate({ event: null, wedding: { date: '2027-02-14' } })).toBe('2027-02-14');
   expect(dayDate({ event: { date: null }, wedding: { date: '2027-02-14' } })).toBeNull();
   expect(minutesOfDay(new Date(2027, 1, 14, 16, 30))).toBe(990);
+});
+
+describe('upcomingCues', () => {
+  const now = new Date(2027, 1, 14, 23, 0);
+  const wedding = { date: '2027-02-15' };
+
+  it('looks today and tomorrow ahead, and handles an item right after midnight', () => {
+    const cues = upcomingCues({ items: [item('Late snack', 5, 15), item('Brunch', 600, 60)], wedding, now });
+    expect(cues.map((cue) => [cue.date, cue.items.map((i) => i.id)])).toEqual([
+      [new Date(2027, 1, 14, 23, 55), ['Late snack']],
+      [new Date(2027, 1, 15, 9, 50), ['Brunch']],
+    ]);
+  });
+
+  it('keeps at most the soonest few', () => {
+    const many = Array.from({ length: CUE_LIMITS.max + 5 }, (_, i) => item(`x${i}`, 600 + i, 1));
+    expect(upcomingCues({ items: many, wedding, now })).toHaveLength(CUE_LIMITS.max);
+  });
 });

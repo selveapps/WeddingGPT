@@ -10,6 +10,7 @@ from.
 | Slice | What | New LOC (est.) |
 | --- | --- | ---: |
 | I1 Live mode | Now / next with a countdown, "running late", one-tap calls | 300–450 |
+| I2 Cues | "In 10 min: Ceremony" before each item on the day | 150–250 |
 
 ## I1 — Live mode
 
@@ -43,9 +44,30 @@ do. Names match whole words, so "Dev" does not match "Development".
 item it counts down to it without late buttons. Calling opens the phone's
 dialler with the number's digits.
 
-**Not in this slice:** a notification as each item starts, and live mode on
-the vendor's shared day-of page (it would need the server to know the time
+**Not in this slice:** live mode on the vendor's shared day-of page (it would need the server to know the time
 zone of the wedding).
 
 Status: I1 done on `feature/day-of-live-mode`. Jest fakes the clock; needs a
 check on a real phone on a day with a run of show.
+
+## I2 — Cues on the day
+
+Ten minutes before each item of a run of show, on its day: "In 10 min:
+Ceremony", with the time, place and who runs it. Tapping it opens that day's
+run of show, where live mode takes over. Items starting at the same minute
+share a cue ("In 10 min: Photos and Hair").
+
+A new switch, *Cues on the day*, in reminder settings, on by default.
+
+**Scheduling.** Reminders are rescheduled whenever the plan changes or the
+app opens, so only cues for today and tomorrow are scheduled (30 at most):
+phones keep a limited number of scheduled notifications (iOS: 64), and the
+rest of the reminders need room. A wedding day has many items minutes apart,
+so cues are not folded together or held to the three-a-day cap that other
+reminders follow.
+
+**Acceptance.** Past items, items more than a day ahead, and items of a
+deleted event get no cue. An event's items use the event's date; the
+wedding day's use the wedding date.
+
+Status: I2 done on `feature/day-of-cues`.

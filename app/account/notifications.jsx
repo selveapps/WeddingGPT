@@ -36,6 +36,7 @@ const LOCAL_TYPES = [
   NotificationType.EVENT_SOON,
   NotificationType.CATERER_NUMBERS,
   NotificationType.VENDOR_APPOINTMENT,
+  NotificationType.RUN_OF_SHOW_CUE,
   NotificationType.WEEKLY_DIGEST,
 ];
 
