@@ -24,6 +24,9 @@ export function validateVisionIdea(values = {}) {
   ) {
     errors.moods = 'Choose moods from the list.';
   }
+  if (values.photo != null && typeof values.photo?.key !== 'string') {
+    errors.photo = 'Choose the photo again.';
+  }
   return { isValid: Object.keys(errors).length === 0, errors };
 }
 
@@ -70,9 +73,24 @@ export function summariseVision(ideas = []) {
   return {
     total: ideas.length,
     saved: ideas.filter((idea) => idea.saved).length,
+    photos: visionPhotoKeys(ideas).length,
     categories: new Set(ideas.map((idea) => idea.category).filter(Boolean)).size,
     categoryCounts,
   };
+}
+
+/** Every photo key on the board: what this phone's photo folder keeps. */
+export function visionPhotoKeys(ideas = []) {
+  return ideas.map((idea) => idea.photo?.key).filter((key) => typeof key === 'string');
+}
+
+/**
+ * Width over height for showing a photo, kept between a tall 3:4 and a wide
+ * 16:9 so one odd panorama cannot take over the board. Square when unknown.
+ */
+export function visionPhotoAspect(photo) {
+  const ratio = photo?.width && photo?.height ? photo.width / photo.height : 1;
+  return Math.min(16 / 9, Math.max(3 / 4, ratio));
 }
 
 export function visionCategoryLabel(value) {

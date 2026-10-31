@@ -22,3 +22,5 @@ export const VISION_MOODS = [
 
 export const MAX_VISION_TITLE = 90;
 export const MAX_VISION_NOTE = 600;
+/** Photos kept on one phone for one board (J1). */
+export const MAX_VISION_PHOTOS = 100;

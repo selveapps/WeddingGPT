@@ -34,6 +34,50 @@ jest.mock('expo-calendar/legacy', () => ({
   updateEventAsync: jest.fn(async () => {}),
 }));
 
+jest.mock('expo-image-picker', () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(async () => ({ granted: false, status: 'denied' })),
+  launchImageLibraryAsync: jest.fn(async () => ({ canceled: true, assets: null })),
+}));
+
+// An in-memory file system: `global.__files` holds every file URI that exists.
+jest.mock('expo-file-system', () => {
+  global.__files = new Set();
+  const join = (parts) => parts.map((part) => (typeof part === 'string' ? part : part.uri)).join('/');
+  class File {
+    constructor(...parts) {
+      this.uri = join(parts);
+    }
+    get name() {
+      return this.uri.split('/').pop();
+    }
+    get exists() {
+      return global.__files.has(this.uri);
+    }
+    async copy(destination) {
+      if (!this.exists) throw new Error(`No file at ${this.uri}`);
+      global.__files.add(destination.uri);
+    }
+    delete() {
+      if (!global.__files.delete(this.uri)) throw new Error(`No file at ${this.uri}`);
+    }
+  }
+  class Directory {
+    constructor(...parts) {
+      this.uri = join(parts);
+    }
+    get exists() {
+      return [...global.__files].some((uri) => uri.startsWith(`${this.uri}/`));
+    }
+    create() {}
+    list() {
+      return [...global.__files]
+        .filter((uri) => uri.startsWith(`${this.uri}/`) && !uri.slice(this.uri.length + 1).includes('/'))
+        .map((uri) => new File(uri));
+    }
+  }
+  return { File, Directory, Paths: { document: new Directory('file:///documents') } };
+});
+
 // Reanimated and Worklets need a native runtime; their own mocks make
 // animated components render synchronously in component tests.
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));

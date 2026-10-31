@@ -95,9 +95,9 @@ export const Routes = {
   quoteReader: (vendorId) => (vendorId ? `/vendors/quote?vendor=${vendorId}` : '/vendors/quote'),
 
   // --- Vision -------------------------------------------------------------
-  vision: '/labs',
+  vision: '/planning/vision',
   styleQuiz: '/labs',
-  moodboard: '/labs',
+  moodboard: '/planning/vision',
   inspirationDetail: '/labs',
 
   // --- Monetisation and account -------------------------------------------
