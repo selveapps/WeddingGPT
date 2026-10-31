@@ -5,7 +5,7 @@ import { AccessoryCategoryMeta } from '../../models/attire';
 
 export default function AccessoryForm({ initial = {}, onSubmit, onCancel }) {
   const [values, setValues] = useState({
-    name: '', category: 'other', notes: '', isMustHave: true, isPacked: false, cost: '',
+    name: '', category: 'other', notes: '', isMustHave: true, isPacked: false,
     ...initial, cost: initial.cost != null ? String(initial.cost) : '',
   });
   const [errors, setErrors] = useState({});

@@ -174,10 +174,6 @@ export function parseClampedInt(raw, min, max, fallback) {
   return { ok: true, value: clamped, message: null };
 }
 
-/**
- * Filter hub links by search query (delegates to constants search).
- */
-export { searchSettingsSections } from './settingsConstants';
 
 /**
  * Copy for reset confirmation sheet body, including section name when scoped.

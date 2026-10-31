@@ -5,7 +5,7 @@ import { FittingStatusMeta } from '../../models/attire';
 
 export default function FittingForm({ initial = {}, items = [], onSubmit, onCancel }) {
   const [values, setValues] = useState({
-    attireItemId: '', status: 'scheduled', scheduledAt: '', location: '', tailorName: '', notes: '',
+    attireItemId: '', status: 'scheduled', location: '', tailorName: '', notes: '',
     ...initial,
     scheduledAt: initial.scheduledAt ? String(initial.scheduledAt).slice(0, 16) : '',
   });

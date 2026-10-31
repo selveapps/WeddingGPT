@@ -18,6 +18,30 @@ import { useRunOfShowStore } from './runOfShowStore';
 import { usePackingStore } from './packingStore';
 import { workspaceStorage } from '../services/storage';
 import { useSettingsStore } from './settingsStore';
+// Feature stores added on main; each persists, so each switches with the
+// workspace like the core stores.
+import { useAfterPartyStore } from './afterPartyStore';
+import { useAnalyticsStore } from './analyticsStore';
+import { useAttireStore } from './attireStore';
+import { useBackupStore } from './backupStore';
+import { useBudgetAIStore } from './budgetAIStore';
+import { useContentStudioStore } from './contentStudioStore';
+import { useDocumentsStore } from './documentsStore';
+import { useGuestExperienceStore } from './guestExperienceStore';
+import { useHoneymoonProStore } from './honeymoonProStore';
+import { useKidsCrewStore } from './kidsCrewStore';
+import { useMenuStore } from './menuStore';
+import { useMusicStore } from './musicStore';
+import { usePhotoAlbumStore } from './photoAlbumStore';
+import { useRegistryStore } from './registryStore';
+import { useRehearsalStore } from './rehearsalStore';
+import { useRsvpProStore } from './rsvpProStore';
+import { useSeatingProStore } from './seatingProStore';
+import { useSpeechesStore } from './speechesStore';
+import { useTimelineProStore } from './timelineProStore';
+import { useTravelStore } from './travelStore';
+import { useVendorsProStore } from './vendorsProStore';
+import { useWeatherStore } from './weatherStore';
 
 export * from './weddingStore';
 export * from './planningStore';
@@ -57,6 +81,28 @@ const STORES = [
   useRunOfShowStore,
   usePackingStore,
   useSettingsStore,
+  useAfterPartyStore,
+  useAnalyticsStore,
+  useAttireStore,
+  useBackupStore,
+  useBudgetAIStore,
+  useContentStudioStore,
+  useDocumentsStore,
+  useGuestExperienceStore,
+  useHoneymoonProStore,
+  useKidsCrewStore,
+  useMenuStore,
+  useMusicStore,
+  usePhotoAlbumStore,
+  useRegistryStore,
+  useRehearsalStore,
+  useRsvpProStore,
+  useSeatingProStore,
+  useSpeechesStore,
+  useTimelineProStore,
+  useTravelStore,
+  useVendorsProStore,
+  useWeatherStore,
 ];
 
 // Every persisted store switches with the active workspace (slice A3).
