@@ -75,6 +75,14 @@
           "calendarPermission": "WeddingGPT adds your wedding events to your calendar when you ask, and keeps them up to date if a time or place changes."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WeddingGPT adds the photos you choose to your wedding vision board.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
       "expo-secure-store"
     ],
     "experiments": {

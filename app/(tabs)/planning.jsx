@@ -273,6 +273,13 @@ export default function PlanningScreen() {
             subtitleLines={1}
             onPress={() => router.push(Routes.style)}
           />
+          <ListRow
+            icon="camera"
+            title="Vision board"
+            subtitle="Photos and notes for the look and feel you want"
+            subtitleLines={1}
+            onPress={() => router.push(Routes.vision)}
+          />
         </Card>
 
         {/* --- Filters ----------------------------------------------------- */}

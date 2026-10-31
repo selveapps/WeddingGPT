@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import {
   Card,
@@ -11,9 +11,18 @@ import {
   TextField,
   useToast,
 } from '@/design-system/components';
+import { useWeddingStore, selectWedding } from '@/store';
+import { PHOTOS_SUPPORTED, prunePhotos, removePhoto } from '@/services/photos';
+import { VISION_FIELD } from './lib/visionConstants';
 import { useWeddingVision } from './hooks/useWeddingVision';
 import { VisionFilters, VisionIdeaCard, VisionIdeaForm } from './components';
-import { filterVisionIdeas, searchVisionIdeas, sortVisionIdeas, summariseVision } from './lib/visionHelpers';
+import {
+  filterVisionIdeas,
+  searchVisionIdeas,
+  sortVisionIdeas,
+  summariseVision,
+  visionPhotoKeys,
+} from './lib/visionHelpers';
 
 const DEFAULT_FILTERS = { category: 'all', mood: 'all', savedOnly: false };
 
@@ -23,11 +32,20 @@ export function WeddingVisionBoard() {
   const [query, setQuery] = useState('');
   const [sortBy, setSortBy] = useState('recent');
   const { ideas, addRecord, updateRecord, removeRecord } = useWeddingVision();
+  const weddingId = useWeddingStore(selectWedding)?.id ?? null;
   const visibleIdeas = useMemo(
     () => sortVisionIdeas(searchVisionIdeas(filterVisionIdeas(ideas, filters), query), sortBy),
     [ideas, filters, query, sortBy]
   );
   const summary = summariseVision(ideas);
+
+  // Tidy this phone's photos when the board opens: drop ones picked for an
+  // idea never saved, or whose idea was deleted on the other phone. Only on
+  // open, so a photo waiting in the form is never swept up by a sync.
+  useEffect(() => {
+    const board = useWeddingStore.getState().wedding?.[VISION_FIELD];
+    prunePhotos(weddingId, visionPhotoKeys(Array.isArray(board) ? board : []));
+  }, [weddingId]);
 
   const saveIdea = (values) => {
     if (!addRecord(values)) {
@@ -43,7 +61,10 @@ export function WeddingVisionBoard() {
   };
 
   const removeIdea = (id) => {
-    if (removeRecord(id)) toast.info('Idea removed.');
+    const photo = ideas.find((idea) => idea.id === id)?.photo;
+    if (!removeRecord(id)) return;
+    if (photo) removePhoto(weddingId, photo.key);
+    toast.info('Idea removed.');
   };
 
   return (
@@ -51,10 +72,10 @@ export function WeddingVisionBoard() {
       <SectionHeader
         eyebrow="Make the feeling tangible"
         title="Wedding vision"
-        subtitle={`${summary.total} ideas · ${summary.saved} pinned · ${summary.categories} areas`}
+        subtitle={`${summary.total} ideas · ${summary.photos} photos · ${summary.saved} pinned`}
       />
       <Card>
-        <VisionIdeaForm onSave={saveIdea} />
+        <VisionIdeaForm onSave={saveIdea} weddingId={weddingId} photoCount={summary.photos} />
       </Card>
       {ideas.length ? (
         <Stack gap="md">
@@ -77,7 +98,13 @@ export function WeddingVisionBoard() {
           {visibleIdeas.length ? (
             <Stack gap="sm">
               {visibleIdeas.map((idea) => (
-                <VisionIdeaCard key={idea.id} idea={idea} onToggleSaved={toggleSaved} onRemove={removeIdea} />
+                <VisionIdeaCard
+                  key={idea.id}
+                  idea={idea}
+                  weddingId={weddingId}
+                  onToggleSaved={toggleSaved}
+                  onRemove={removeIdea}
+                />
               ))}
             </Stack>
           ) : (
@@ -99,11 +126,17 @@ export function WeddingVisionBoard() {
           icon="sparkle"
           compact
           title="Collect the details that feel like you"
-          message="Save notes for colors, flowers, music and the atmosphere you want to create."
+          message={
+            PHOTOS_SUPPORTED
+              ? 'Save photos and notes for colors, flowers, music and the atmosphere you want to create.'
+              : 'Save notes for colors, flowers, music and the atmosphere you want to create.'
+          }
         />
       )}
       <Text variant="caption" color="subtle">
-        This board stores notes and tags only; add links to your own trusted inspiration sources in a note.
+        {PHOTOS_SUPPORTED
+          ? 'Ideas sync with your partner. Photos stay on the phone that added them.'
+          : 'Ideas sync with your partner. Photos can be added from the phone app.'}
       </Text>
     </Stack>
   );

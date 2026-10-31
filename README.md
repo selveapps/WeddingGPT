@@ -443,6 +443,10 @@ Two deliberate choices in the generator:
   item on its day, opening that day's run of show. Its own switch in reminder
   settings; only today's and tomorrow's are scheduled, and they are not held
   to the three-a-day cap.
+- **Vision board photos (J1).** *Vision board* on Planning: ideas for the look
+  and feel, each with an optional photo from the library. Ideas sync; photos
+  are copied into the app's documents folder and stay on the phone that added
+  them (`services/photos`, `expo-image-picker`, `expo-file-system`).
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

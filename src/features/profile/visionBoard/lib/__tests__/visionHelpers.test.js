@@ -5,6 +5,8 @@ import {
   sortVisionIdeas,
   summariseVision,
   validateVisionIdea,
+  visionPhotoAspect,
+  visionPhotoKeys,
 } from '../visionHelpers';
 
 const ideas = [
@@ -61,8 +63,29 @@ describe('wedding vision board helpers', () => {
     expect(summariseVision(ideas)).toEqual({
       total: 2,
       saved: 1,
+      photos: 0,
       categories: 2,
       categoryCounts: { decor: 1, palette: 1 },
     });
+  });
+});
+
+describe('vision board photos', () => {
+  it('lists the photo keys on the board and counts them', () => {
+    const board = [{ photo: { key: 'photo_A.jpg' } }, { photo: null }, {}];
+    expect(visionPhotoKeys(board)).toEqual(['photo_A.jpg']);
+    expect(summariseVision(board).photos).toBe(1);
+  });
+
+  it('keeps odd shapes between 3:4 and 16:9', () => {
+    expect(visionPhotoAspect({ width: 3024, height: 4032 })).toBe(0.75);
+    expect(visionPhotoAspect({ width: 6000, height: 1000 })).toBeCloseTo(16 / 9);
+    expect(visionPhotoAspect({ width: null, height: null })).toBe(1);
+  });
+
+  it('refuses a photo without a key', () => {
+    const idea = { title: 'Lanterns', category: 'decor' };
+    expect(validateVisionIdea({ ...idea, photo: { key: 'photo_A.jpg' } }).isValid).toBe(true);
+    expect(validateVisionIdea({ ...idea, photo: {} }).errors.photo).toBeTruthy();
   });
 });

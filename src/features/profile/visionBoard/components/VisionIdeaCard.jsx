@@ -1,12 +1,32 @@
 import React from 'react';
+import { Image } from 'react-native';
 
 import { Button, Card, Chip, Row, Stack, Text } from '@/design-system/components';
-import { visionCategoryLabel, visionMoodLabel } from '../lib/visionHelpers';
+import { useTheme } from '@/design-system/theme';
+import { PHOTOS_SUPPORTED, photoUri } from '@/services/photos';
+import { visionCategoryLabel, visionMoodLabel, visionPhotoAspect } from '../lib/visionHelpers';
 
-export function VisionIdeaCard({ idea, onToggleSaved, onRemove }) {
+export function VisionIdeaCard({ idea, weddingId = null, onToggleSaved, onRemove }) {
+  const { radii } = useTheme();
+  // Photos stay on the phone that added them (J1); the idea itself syncs.
+  const uri = idea.photo ? photoUri(weddingId, idea.photo.key) : null;
   return (
     <Card padding="md" tone={idea.saved ? 'accent' : 'plain'}>
       <Stack gap="sm">
+        {uri ? (
+          <Image
+            source={{ uri }}
+            accessibilityLabel={`Photo: ${idea.title}`}
+            style={{ width: '100%', aspectRatio: visionPhotoAspect(idea.photo), borderRadius: radii.md }}
+          />
+        ) : null}
+        {idea.photo && !uri ? (
+          <Text variant="caption" color="subtle">
+            {PHOTOS_SUPPORTED
+              ? 'The photo for this idea is on the phone that added it.'
+              : 'The photo for this idea is in the phone app.'}
+          </Text>
+        ) : null}
         <Row justify="space-between" align="flex-start" gap="sm">
           <Stack gap="xs" style={{ flex: 1 }}>
             <Text variant="labelStrong">{idea.title}</Text>
