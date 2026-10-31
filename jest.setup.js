@@ -23,6 +23,17 @@ jest.mock('expo-secure-store', () => {
   };
 });
 
+// The phone's calendar is native-only; tests that use it mock it in detail.
+jest.mock('expo-calendar/legacy', () => ({
+  EntityTypes: { EVENT: 'event' },
+  requestCalendarPermissionsAsync: jest.fn(async () => ({ status: 'denied' })),
+  getDefaultCalendarAsync: jest.fn(async () => null),
+  getCalendarsAsync: jest.fn(async () => []),
+  getEventAsync: jest.fn(async () => null),
+  createEventAsync: jest.fn(async () => 'event-id'),
+  updateEventAsync: jest.fn(async () => {}),
+}));
+
 // Reanimated and Worklets need a native runtime; their own mocks make
 // animated components render synchronously in component tests.
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));

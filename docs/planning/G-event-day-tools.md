@@ -11,6 +11,7 @@ tools couples hand to other people.
 | G1 Meals per event | The caterer's numbers, allergy list and CSV for one event | 150–300 |
 | G2 Reminders per event | "The mehndi is in 3 days" and "send the caterer final numbers" timed from each event's date | 300–500 |
 | G3 Printable plan | One page per event - schedule, place, seating, contacts - to print or save as PDF | 500–800 |
+| G4 Add to calendar | Events into the phone's calendar, or an .ics file in a browser | 400–600 |
 
 ## G1 — Meals per event
 
@@ -67,3 +68,30 @@ the wedding day shows the day's; empty sections are left out; a day with
 nothing in it says so and links to the run of show.
 
 Status: G3 done on `feature/printable-event-plan`.
+
+## G4 — Add to calendar
+
+From the M0 roadmap's integrations row ("calendar export"). *Add all to my
+calendar* on Events, and *Add to my calendar* on each event.
+
+- **Phone:** `expo-calendar` (new dependency, in Expo Go; the config plugin
+  adds the iOS usage text and Android calendar permissions) writes into the
+  default calendar - the system default on iOS, the primary writable one on
+  Android. Which calendar entry belongs to which event is kept on this device
+  only (`calendar:links`, per workspace, not synced), so adding again updates
+  the entries; one deleted from the calendar is added back. The links are
+  saved even when a write fails part way, so a retry never duplicates.
+- **Browser:** an RFC 5545 `.ics` download (`models/calendar.js`): floating
+  local times, text escaped, lines folded at 75 octets, a stable UID per
+  event.
+
+Times: no start time is all day; no end time gets two hours; an end before
+the start runs past midnight. Undated events are left out, and the button is
+hidden when no event has a date.
+
+**Not in this slice:** a calendar link for guests on the wedding website. The
+site's schedule holds times as display text, so it needs the events' clocks
+synced to the server first.
+
+Status: G4 done on `feature/calendar-export`. Needs a check on a real iPhone
+and Android phone: Jest mocks the native calendar.

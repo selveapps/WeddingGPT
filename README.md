@@ -425,6 +425,9 @@ Two deliberate choices in the generator:
   page with when and where, the run of show, plates and allergies, seating and
   who to call (`models/eventPlan.js`). Prints or saves as PDF in a browser;
   shares as text on a phone.
+- **Add to calendar (G4).** On Events and each event: straight into the phone's
+  calendar (`expo-calendar`), updating rather than duplicating when added
+  again, or an `.ics` download in a browser (`models/calendar.js`).
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

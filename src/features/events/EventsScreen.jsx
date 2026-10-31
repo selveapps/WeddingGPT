@@ -37,6 +37,8 @@ import {
 } from '@/models';
 import { formatMediumDate } from '@/lib/date';
 
+import { useAddToCalendar } from './useAddToCalendar';
+
 /**
  * The wedding's events (slice C1): the mehndi on Friday, the ceremony and
  * reception on Saturday. Listed by date and time; events at the same time can
@@ -68,18 +70,29 @@ export function EventsScreen() {
   // Only neighbours at the same date and time can swap; the rest sort themselves.
   const sameSlot = (a, b) => Boolean(a && b) && a.date === b.date && a.startTime === b.startTime;
   const full = sorted.length >= EVENT_LIMITS.perWedding;
+  const [addToCalendar, datedCount] = useAddToCalendar(sorted);
 
   return (
     <Screen
       bottomInset={spacing.xxl}
       footer={
         sorted.length ? (
-          <Button
-            label={full ? 'Twenty events is the limit' : 'Add an event'}
-            iconLeft="plus"
-            disabled={full}
-            onPress={() => router.push(Routes.eventAdd)}
-          />
+          <Stack gap="xs">
+            <Button
+              label={full ? 'Twenty events is the limit' : 'Add an event'}
+              iconLeft="plus"
+              disabled={full}
+              onPress={() => router.push(Routes.eventAdd)}
+            />
+            {datedCount ? (
+              <Button
+                label={datedCount === 1 ? 'Add to my calendar' : `Add all ${datedCount} to my calendar`}
+                iconLeft="calendar"
+                variant="secondary"
+                onPress={addToCalendar}
+              />
+            ) : null}
+          </Stack>
         ) : null
       }
     >

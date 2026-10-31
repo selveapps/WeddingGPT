@@ -204,6 +204,7 @@ export {
   cateringCsv,
 } from './catering';
 export { PLAN_MAX_TABLES, buildEventPlan, eventPlanText, eventPlanHtml, escapeHtml } from './eventPlan';
+export { DEFAULT_EVENT_MINUTES, calendarEntries, calendarIcs, icsText, foldLine } from './calendar';
 export {
   ThankYouStatus,
   THANK_YOU_META,

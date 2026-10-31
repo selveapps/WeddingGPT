@@ -37,6 +37,7 @@ import { DateField } from '@/features/shared/DateField';
 
 import { GuestPickerSheet } from './GuestPickerSheet';
 import { deleteEvent, eventLinks } from './deleteEvent';
+import { useAddToCalendar } from './useAddToCalendar';
 
 const SCOPE_OPTIONS = [
   { value: GuestScope.EVERYONE, label: 'Everyone' },
@@ -73,6 +74,8 @@ export function EventFormScreen({ eventId }) {
   const [picking, setPicking] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [errors, setErrors] = useState({});
+  // The saved event, so the calendar never gets half-typed changes.
+  const [addToCalendar, canAddToCalendar] = useAddToCalendar(existing ? [existing] : []);
 
   if (eventId && !existing) {
     return (
@@ -313,6 +316,9 @@ export function EventFormScreen({ eventId }) {
                 iconLeft="note"
                 onPress={() => router.push(Routes.eventPlan(existing.id))}
               />
+            ) : null}
+            {canAddToCalendar ? (
+              <Button label="Add to my calendar" variant="secondary" iconLeft="calendar" onPress={addToCalendar} />
             ) : null}
             {existing && eventChecklist(existing.kind).length ? (
               <Button
