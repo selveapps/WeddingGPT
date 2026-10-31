@@ -22,6 +22,7 @@ import {
 } from '@/store';
 import { todayISO } from '@/lib/date';
 import { syncReminders, onReminderOpened } from '@/services/notifications';
+import { useFlag } from '@/services/flags';
 
 /** Long enough that ticking off five tasks in a row reschedules once. */
 const SYNC_DELAY_MS = 1200;
@@ -42,6 +43,7 @@ export function useReminderSync() {
   const guests = useGuestStore(selectAllGuests);
   const vendors = useVendorStore(selectAllVendors);
   const runOfShow = useRunOfShowStore(selectRunOfShow);
+  const cuesOn = useFlag('runOfShowCues');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -56,13 +58,13 @@ export function useReminderSync() {
         events,
         guests,
         vendors,
-        runOfShow,
+        runOfShow: cuesOn ? runOfShow : [],
         preferences,
         todayTasks,
       });
     }, SYNC_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [wedding, tasks, expenses, events, guests, vendors, runOfShow, preferences, today]);
+  }, [wedding, tasks, expenses, events, guests, vendors, runOfShow, cuesOn, preferences, today]);
 
   useEffect(() => onReminderOpened((url) => router.push(url)), [router]);
 }

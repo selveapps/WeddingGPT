@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 import { useWeddingStore } from '@/store';
 import { createWedding } from '@/models';
+import { useFlagStore } from '@/services/flags';
 import { act, press, renderWithProviders, shownTexts } from '@/test/render';
 
 import { VisionScreen } from '../VisionScreen';
@@ -74,6 +75,13 @@ describe('Vision board photos', () => {
     const tree = await renderWithProviders(<VisionScreen />);
     expect(images(tree)).toHaveLength(0);
     expect(shownTexts(tree)).toContain('The photo for this idea is on the phone that added it.');
+  });
+
+  it('offers no photo button with its flag off', async () => {
+    await act(async () => useFlagStore.getState().setOverride('visionPhotos', false));
+    const tree = await renderWithProviders(<VisionScreen />);
+    expect(shownTexts(tree)).not.toContain('Add a photo');
+    await act(async () => useFlagStore.getState().clearOverrides());
   });
 
   it('asks for access when it was refused', async () => {

@@ -45,6 +45,7 @@ import {
 import { formatDuration, formatTime, parseTime } from '@/lib/time';
 import { formatMediumDate, todayISO } from '@/lib/date';
 import { shareText } from '@/services/share';
+import { useFlag } from '@/services/flags';
 
 import { importLabTimeline } from './labsImport';
 import { LiveNow } from './LiveNow';
@@ -82,7 +83,8 @@ export function RunOfShowScreen({ initialEventId = null }) {
   const full = dayItems.length >= RUN_OF_SHOW_LIMITS.perDay;
   // Live mode on the day itself. The list's "Now" badges move with the
   // screen's renders; the live card keeps its own clock.
-  const isToday = dayItems.length > 0 && dayDate({ event, wedding }) === todayISO();
+  const liveOn = useFlag('liveMode');
+  const isToday = liveOn && dayItems.length > 0 && dayDate({ event, wedding }) === todayISO();
   const onNow = isToday
     ? new Set(liveDay(dayItems, minutesOfDay(new Date())).current.map((item) => item.id))
     : new Set();
