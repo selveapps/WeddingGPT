@@ -24,3 +24,24 @@ CSV (named after the event) follow the chosen event; nothing changes for a
 wedding without events.
 
 Status: G1 done on `feature/meals-per-event`.
+
+## G2 — Reminders per event
+
+Each dated event schedules, in the existing on-device reminder service:
+
+- **3 days before, 9am** — "Mehndi is in 3 days", with the time, place and
+  dress code; opens the event.
+- **7 days before, 9am** — "Final numbers for the Mehndi": that event's plates
+  (G1's count, plus-ones included) and how many invited guests have still to
+  answer; opens Meals on that event. Skipped when nobody is invited.
+
+Two new reminder types, `event_soon` and `caterer_numbers`, each with a switch
+in reminder settings, on by default (saved preferences without them read as
+on). Two events landing on the same reminder day fold into one notification,
+and both rank just below milestones when a day is over the three-reminder cap.
+
+**Acceptance.** Undated and past events schedule nothing; a declined answer
+for the event is not a plate; turning a type off removes it; the reminder's
+link opens Meals on that event.
+
+Status: G2 done on `feature/event-reminders`.

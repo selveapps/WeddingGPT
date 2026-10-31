@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Share } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import {
   Screen,
@@ -43,7 +43,9 @@ export function MealsScreen() {
   const wedding = useWeddingStore(selectWedding);
   const events = useEventStore(selectEvents);
   const sortedEvents = useMemo(() => sortEvents(events), [events]);
-  const [eventId, setEventId] = useState(null);
+  // The caterer reminder (G2) links here with the event it is about.
+  const params = useLocalSearchParams();
+  const [eventId, setEventId] = useState(typeof params.event === 'string' ? params.event : null);
   // Each event's caterer needs that event's plates (G1); a deleted event falls back to the wedding.
   const event = sortedEvents.find((entry) => entry.id === eventId) ?? null;
   const report = useMemo(() => buildCateringReport(guests, { event }), [guests, event]);

@@ -5,6 +5,10 @@ import {
   NotificationType,
   isTaskOpen,
   hasExactDate,
+  buildCateringReport,
+  eventGuestSummary,
+  eventName,
+  eventWhen,
   planDailyChecklists,
   summariseDailyTasks,
 } from '../../models';
@@ -41,6 +45,10 @@ const DAILY_HOUR = 8;
 /** How many mornings ahead the daily checklist is scheduled. */
 const DAILY_DAYS = 14;
 const MILESTONE_DAYS = [365, 180, 100, 30, 7, 1, 0];
+/** Days before an event for "the mehndi is in 3 days". */
+const EVENT_SOON_DAYS = 3;
+/** Caterers usually want final plates about a week out. */
+const CATERER_DAYS = 7;
 
 let configured = false;
 
@@ -104,6 +112,9 @@ export function buildReminderSchedule({
   wedding,
   tasks = [],
   expenses = [],
+  /** The wedding's events (workstream C), each reminded from its own date (G2). */
+  events = [],
+  guests = [],
   preferences,
   /** Today's checklist as shown in the app, so this morning's note matches it. */
   todayTasks = null,
@@ -182,6 +193,40 @@ export function buildReminderSchedule({
     }
   }
 
+  for (const event of events) {
+    if (!event.date) continue;
+    const name = eventName(event);
+
+    if (on(NotificationType.EVENT_SOON)) {
+      const when = eventWhen(event);
+      const place = event.venueName?.trim();
+      const details = [when && place ? `${when} at ${place}` : when || place, event.dressCode?.trim() && `Dress code: ${event.dressCode.trim()}`];
+      items.push({
+        type: NotificationType.EVENT_SOON,
+        title: `${name} is in ${EVENT_SOON_DAYS} days`,
+        body: details.filter(Boolean).join('. ') || 'Open the event to check the details.',
+        name,
+        url: Routes.eventDetail(event.id),
+        date: at(event.date, -EVENT_SOON_DAYS),
+      });
+    }
+
+    // Only worth a nudge once someone is invited; the numbers are this event's own (G1).
+    const { invited, awaiting } = eventGuestSummary(event, guests);
+    if (on(NotificationType.CATERER_NUMBERS) && invited > 0) {
+      const { headcount } = buildCateringReport(guests, { event });
+      const plates = headcount === 1 ? '1 plate' : `${headcount} plates`;
+      items.push({
+        type: NotificationType.CATERER_NUMBERS,
+        title: `Final numbers for the ${name}`,
+        body: awaiting > 0 ? `${plates} so far, ${awaiting} still to answer.` : `${plates}. Everyone has answered.`,
+        name,
+        url: Routes.guestMealsFor(event.id),
+        date: at(event.date, -CATERER_DAYS),
+      });
+    }
+  }
+
   const weeklyOn = on(NotificationType.WEEKLY_DIGEST);
   const dated = capPerDay(
     mergeSameDay(items.filter((item) => item.date.getTime() > now.getTime())),
@@ -208,6 +253,15 @@ const MERGED_TITLES = {
   [NotificationType.TASK_DUE]: (n) => `${n} tasks coming up in 2 days`,
   [NotificationType.TASK_OVERDUE]: (n) => `${n} tasks slipped - no stress`,
   [NotificationType.PAYMENT_DUE]: (n) => `${n} payments due in 3 days`,
+  [NotificationType.EVENT_SOON]: (n) => `${n} events in ${EVENT_SOON_DAYS} days`,
+  [NotificationType.CATERER_NUMBERS]: (n) => `Final numbers for ${n} events`,
+};
+
+/** Several things: the right screen is the overview, not one of them. */
+const MERGED_URLS = {
+  [NotificationType.PAYMENT_DUE]: Routes.budget,
+  [NotificationType.EVENT_SOON]: Routes.events,
+  [NotificationType.CATERER_NUMBERS]: Routes.guestMeals,
 };
 
 function dayKey(date) {
@@ -236,8 +290,7 @@ function mergeSameDay(items) {
       ...group[0],
       title: merge(group.length),
       body: `${names.join(', ')}${more}.`,
-      // Several things: the right screen is the overview, not one of them.
-      url: group[0].type === NotificationType.PAYMENT_DUE ? Routes.budget : Routes.planning,
+      url: MERGED_URLS[group[0].type] ?? Routes.planning,
     };
   });
 }
@@ -245,6 +298,8 @@ function mergeSameDay(items) {
 /** Most important first: what survives when a day is over the cap. */
 const PRIORITY = [
   NotificationType.MILESTONES,
+  NotificationType.EVENT_SOON,
+  NotificationType.CATERER_NUMBERS,
   NotificationType.PAYMENT_DUE,
   NotificationType.TASK_OVERDUE,
   NotificationType.TASK_DUE,

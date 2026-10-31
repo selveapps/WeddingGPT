@@ -417,6 +417,10 @@ Two deliberate choices in the generator:
   (`models/daily.js`, held for the day in `planningStore.today`). An 8am local
   notification names the day's tasks; it is scheduled 14 days ahead and
   rebuilt whenever the plan changes.
+- **Event reminders (G2).** Each dated event gets "the mehndi is in 3 days"
+  with its time, place and dress code, and a week out "final numbers for the
+  mehndi" with that event's plates and how many guests have still to answer,
+  opening Meals on that event. Both have their own switch in reminder settings.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

@@ -75,6 +75,8 @@ export const Routes = {
   guestWebsite: '/guests/website',
   guestSeating: '/guests/seating',
   guestMeals: '/guests/meals',
+  /** Meals opened on one event's numbers. */
+  guestMealsFor: (eventId) => `/guests/meals?event=${eventId}`,
   guestGifts: '/guests/gifts',
   guestParty: '/guests/party',
   householdDetail: (id) => `/guests/household/${id}`,

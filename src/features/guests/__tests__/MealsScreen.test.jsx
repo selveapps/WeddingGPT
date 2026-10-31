@@ -7,7 +7,8 @@ import { press, renderWithProviders, shownTexts } from '@/test/render';
 import { MealsScreen } from '../MealsScreen';
 
 const mockRouter = { push: jest.fn() };
-jest.mock('expo-router', () => ({ useRouter: () => mockRouter }));
+let mockParams = {};
+jest.mock('expo-router', () => ({ useRouter: () => mockRouter, useLocalSearchParams: () => mockParams }));
 
 const mockExport = jest.fn(async () => 'downloaded');
 jest.mock('@/services/files', () => ({
@@ -17,6 +18,7 @@ jest.mock('@/services/files', () => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockParams = {};
   useGuestStore.getState().reset();
   const wedding = createWedding({ ownerName: 'Priya' });
   useWeddingStore.setState({ wedding });
@@ -84,5 +86,17 @@ describe('MealsScreen per event (G1)', () => {
     const tree = await renderWithProviders(<MealsScreen />);
     await press(tree, 'Farewell brunch');
     expect(shownTexts(tree)).toContain('No one is attending the farewell brunch yet');
+  });
+
+  it('opens on the event a reminder links to (G2)', async () => {
+    useEventStore.getState().reset();
+    const [meera] = selectAllGuests(useGuestStore.getState());
+    const mehndi = useEventStore
+      .getState()
+      .addEvent({ kind: 'mehndi', guestScope: 'invited', invitedGuestIds: [meera.id] });
+    mockParams = { event: mehndi.id };
+    const tree = await renderWithProviders(<MealsScreen />);
+    await press(tree, 'Export as a spreadsheet (CSV)');
+    expect(mockExport.mock.calls.at(-1)[0].filename).toBe('catering-mehndi-2027-01-04.csv');
   });
 });

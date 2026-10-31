@@ -78,3 +78,99 @@ describe('buildReminderSchedule', () => {
     expect(schedule).toEqual([]);
   });
 });
+
+describe('buildReminderSchedule for events (G2)', () => {
+  const only = (...types) => ({
+    enabled: true,
+    types: Object.fromEntries(
+      Object.values(NotificationType).map((type) => [type, types.includes(type)])
+    ),
+  });
+  const guest = (id, rsvpStatus, extra = {}) => ({ id, firstName: id, rsvpStatus, ...extra });
+  const mehndi = {
+    id: 'ev1',
+    kind: 'mehndi',
+    name: 'Mehndi',
+    date: '2027-02-12',
+    startTime: '16:00',
+    endTime: '21:00',
+    venueName: 'The Rose Garden',
+    dressCode: 'Bright colours',
+    guestScope: 'invited',
+    invitedGuestIds: ['a', 'b', 'c'],
+    attendance: { b: 'declined' },
+  };
+  const guests = [
+    guest('a', 'attending', { plusOneStatus: 'confirmed' }),
+    guest('b', 'attending'),
+    guest('c', 'pending'),
+    guest('d', 'attending'),
+  ];
+
+  it('reminds three days before each event, with its time, place and dress code', () => {
+    const [item] = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON),
+      now: NOW,
+    });
+    expect(item.title).toBe('Mehndi is in 3 days');
+    expect(item.body).toContain('The Rose Garden');
+    expect(item.body).toContain('Dress code: Bright colours');
+    expect(item.url).toBe('/planning/events/ev1');
+    expect(item.date).toEqual(new Date(2027, 1, 9, 9, 0, 0));
+  });
+
+  it("asks for the caterer's final numbers a week out, counting only that event's plates", () => {
+    const [item] = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.CATERER_NUMBERS),
+      now: NOW,
+    });
+    // a and her plus-one; b declined the mehndi; d is not invited to it.
+    expect(item.title).toBe('Final numbers for the Mehndi');
+    expect(item.body).toBe('2 plates so far, 1 still to answer.');
+    expect(item.url).toBe('/guests/meals?event=ev1');
+    expect(item.date).toEqual(new Date(2027, 1, 5, 9, 0, 0));
+  });
+
+  it('skips undated events, past events, and caterer numbers for an event nobody is invited to', () => {
+    const schedule = buildReminderSchedule({
+      events: [
+        { ...mehndi, id: 'undated', date: null },
+        { ...mehndi, id: 'past', date: '2026-12-01' },
+        { ...mehndi, id: 'empty', date: '2027-03-01', invitedGuestIds: [] },
+      ],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON, NotificationType.CATERER_NUMBERS),
+      now: NOW,
+    });
+    expect(schedule.map((item) => [item.type, item.url])).toEqual([
+      [NotificationType.EVENT_SOON, '/planning/events/empty'],
+    ]);
+  });
+
+  it('folds two events on the same reminder day into one', () => {
+    const schedule = buildReminderSchedule({
+      events: [mehndi, { ...mehndi, id: 'ev2', kind: 'sangeet', name: 'Sangeet' }],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON),
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0].title).toBe('2 events in 3 days');
+    expect(schedule[0].body).toBe('Mehndi, Sangeet.');
+    expect(schedule[0].url).toBe('/planning/events');
+  });
+
+  it('respects the switches for each kind', () => {
+    const schedule = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.MILESTONES),
+      now: NOW,
+    });
+    expect(schedule).toEqual([]);
+  });
+});
