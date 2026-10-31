@@ -58,6 +58,9 @@ export const NotificationType = {
   RSVP_ACTIVITY: 'rsvp_activity',
   WEEKLY_DIGEST: 'weekly_digest',
   MILESTONES: 'milestones',
+  EVENT_SOON: 'event_soon',
+  CATERER_NUMBERS: 'caterer_numbers',
+  VENDOR_APPOINTMENT: 'vendor_appointment',
   PARTNER_ACTIVITY: 'partner_activity',
   PRODUCT_NEWS: 'product_news',
 };
@@ -96,6 +99,21 @@ export const NOTIFICATION_TYPE_META = {
   [NotificationType.MILESTONES]: {
     label: 'Milestones',
     description: 'Countdown moments worth marking.',
+    defaultEnabled: true,
+  },
+  [NotificationType.EVENT_SOON]: {
+    label: 'Events coming up',
+    description: 'Three days before each event, with the time and place.',
+    defaultEnabled: true,
+  },
+  [NotificationType.VENDOR_APPOINTMENT]: {
+    label: 'Vendor appointments',
+    description: 'The evening before a tasting, fitting or meeting.',
+    defaultEnabled: true,
+  },
+  [NotificationType.CATERER_NUMBERS]: {
+    label: 'Caterer numbers',
+    description: "A week before each event, when the caterer needs final plates.",
     defaultEnabled: true,
   },
   [NotificationType.PARTNER_ACTIVITY]: {

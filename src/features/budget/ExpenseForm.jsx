@@ -1,59 +1,251 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+
+import {
+  Stack,
+  Row,
+  Text,
+  TextField,
+  Chip,
+  Button,
+  SectionHeader,
+} from '@/design-system/components';
+import {
+  PaymentStatus,
+  PAYMENT_STATUS_META,
+  ExpenseCommitment,
+} from '@/models';
+import { rules, validate } from '@/lib/validation';
+import { DateField } from '@/features/shared/DateField';
+import { MoneyField } from '@/features/shared/MoneyField';
+import { EventPicker } from '@/features/events/EventPicker';
 
 /**
- * budget · ExpenseForm
- * Add/edit expense
+ * The add/edit form for an expense.
+ *
+ * "Committed" is asked as a plain question rather than left to the payment
+ * status, because the two are genuinely independent: a signed contract you have
+ * not paid a dollar on is committed money, and a casual estimate you already
+ * paid a deposit against is not. `summariseBudget` relies on that distinction
+ * to produce a remaining figure the couple can act on.
  */
-export default function ExpenseForm({ title, items = [], stats, onPress, onAdd, children, style }) {
+export function ExpenseForm({
+  initial,
+  categories = [],
+  currency,
+  submitLabel = 'Save',
+  onSubmit,
+  onCancel,
+}) {
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [vendorName, setVendorName] = useState(initial?.vendorName ?? '');
+  const [amount, setAmount] = useState(initial?.amount ?? null);
+  const [paidAmount, setPaidAmount] = useState(initial?.paidAmount ?? null);
+  const [budgetCategoryId, setBudgetCategoryId] = useState(initial?.budgetCategoryId ?? null);
+  const [eventId, setEventId] = useState(initial?.eventId ?? null);
+  const [commitment, setCommitment] = useState(initial?.commitment ?? ExpenseCommitment.ESTIMATED);
+  const [paymentStatus, setPaymentStatus] = useState(initial?.paymentStatus ?? PaymentStatus.UNPAID);
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? null);
+  const [date, setDate] = useState(initial?.date ?? null);
+  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [errors, setErrors] = useState({});
+
+  const titleRules = useMemo(
+    () => [rules.required('A description'), rules.maxLength(120, 'The description')],
+    []
+  );
+
+  const submit = () => {
+    // Collect errors together so an expense is saved only when its amounts agree.
+    const nextErrors = {};
+
+    const titleError = validate(title, titleRules);
+    if (titleError) nextErrors.title = titleError;
+
+    if (amount === null || amount === undefined) {
+      nextErrors.amount = 'How much is it?';
+    } else if (amount < 0) {
+      nextErrors.amount = 'An amount cannot be negative.';
+    }
+
+    if ((paidAmount ?? 0) > (amount ?? 0)) {
+      nextErrors.paidAmount = 'Paid cannot be more than the total.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
+
+    const paid = paidAmount ?? 0;
+    // Keep the status honest with the numbers rather than trusting whichever
+    // chip happens to be selected - the amounts are the source of truth.
+    const derivedStatus =
+      paid >= (amount ?? 0) && paid > 0
+        ? PaymentStatus.PAID
+        : paid > 0
+          ? PaymentStatus.PARTIALLY_PAID
+          : paymentStatus === PaymentStatus.PAID || paymentStatus === PaymentStatus.PARTIALLY_PAID
+            ? PaymentStatus.UNPAID
+            : paymentStatus;
+
+    onSubmit({
+      title: title.trim(),
+      vendorName: vendorName.trim(),
+      amount: amount ?? 0,
+      paidAmount: paid,
+      budgetCategoryId,
+      eventId,
+      commitment,
+      paymentStatus: derivedStatus,
+      dueDate,
+      date,
+      notes: notes.trim(),
+    });
+  };
+
   return (
-    <View style={[styles.wrap, style]}>
-      {title ? <Text style={styles.title}>{title}</Text> : null}
-      {stats ? (
-        <View style={styles.stats}>
-          {Object.entries(stats).map(([k, v]) => (
-            <View key={k} style={styles.stat}>
-              <Text style={styles.statVal}>{String(v)}</Text>
-              <Text style={styles.statLab}>{k}</Text>
-            </View>
+    <Stack gap="lg">
+      <Stack gap="md">
+        <TextField
+          label="What is it?"
+          value={title}
+          onChangeText={(next) => {
+            setTitle(next);
+            // Clear this field's message as soon as the user starts correcting it.
+            if (errors.title) setErrors((e) => ({ ...e, title: undefined }));
+          }}
+          placeholder="Venue deposit"
+          error={errors.title}
+          autoCapitalize="sentences"
+          autoFocus={!initial}
+          required
+        />
+
+        <TextField
+          label="Who is it to?"
+          value={vendorName}
+          onChangeText={setVendorName}
+          placeholder="Vendor or supplier name"
+          autoCapitalize="words"
+        />
+
+        <MoneyField
+          label="Total amount"
+          value={amount}
+          onChange={(next) => {
+            setAmount(next);
+            // Remove stale validation feedback when the amount changes.
+            if (errors.amount) setErrors((e) => ({ ...e, amount: undefined }));
+          }}
+          currency={currency}
+          error={errors.amount}
+          required
+        />
+
+        <MoneyField
+          label="Paid so far"
+          value={paidAmount}
+          onChange={(next) => {
+            setPaidAmount(next);
+            if (errors.paidAmount) setErrors((e) => ({ ...e, paidAmount: undefined }));
+          }}
+          currency={currency}
+          error={errors.paidAmount}
+          helper="Leave empty if nothing has changed hands yet."
+        />
+      </Stack>
+
+      {/* Categories are optional until budget setup provides choices. */}
+      {categories.length > 0 ? (
+        <Stack gap="sm">
+          <SectionHeader eyebrow="Where it belongs" title="Category" />
+          <Row gap="xs" wrap align="flex-start">
+            <Chip
+              label="Uncategorised"
+              size="sm"
+              selected={budgetCategoryId === null}
+              onPress={() => setBudgetCategoryId(null)}
+            />
+            {categories.map((category) => (
+              <Chip
+                key={category.id}
+                label={category.name}
+                size="sm"
+                selected={budgetCategoryId === category.id}
+                onPress={() => setBudgetCategoryId(category.id)}
+              />
+            ))}
+          </Row>
+        </Stack>
+      ) : null}
+
+      <EventPicker value={eventId} onChange={setEventId} />
+
+      <Stack gap="sm">
+        <SectionHeader
+          eyebrow="How firm is it"
+          title="Committed or estimated"
+          subtitle="Committed money is contractually owed. Estimates inform the plan without reducing what you can still allocate."
+        />
+        <Row gap="xs" wrap align="flex-start">
+          <Chip
+            label="Just an estimate"
+            selected={commitment === ExpenseCommitment.ESTIMATED}
+            onPress={() => setCommitment(ExpenseCommitment.ESTIMATED)}
+          />
+          <Chip
+            label="Committed"
+            selected={commitment === ExpenseCommitment.COMMITTED}
+            onPress={() => setCommitment(ExpenseCommitment.COMMITTED)}
+          />
+        </Row>
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="Payment" title="Status" />
+        <Row gap="xs" wrap align="flex-start">
+          {Object.entries(PAYMENT_STATUS_META).map(([value, meta]) => (
+            <Chip
+              key={value}
+              label={meta.label}
+              size="sm"
+              selected={paymentStatus === value}
+              onPress={() => setPaymentStatus(value)}
+            />
           ))}
-        </View>
-      ) : null}
-      {items.length > 0 ? (
-        <View style={styles.list}>
-          {items.map((item) => (
-            <Pressable key={item.id || item.key || String(item)} onPress={() => onPress?.(item)} style={styles.row}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.title || item.name || item.label || 'Item'}
-              </Text>
-              {item.subtitle || item.description ? (
-                <Text style={styles.rowSub} numberOfLines={2}>{item.subtitle || item.description}</Text>
-              ) : null}
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      {children}
-      {onAdd ? (
-        <Pressable onPress={onAdd} style={styles.add}>
-          <Text style={styles.addText}>Add</Text>
-        </Pressable>
-      ) : null}
-    </View>
+        </Row>
+        <Text variant="caption" color="subtle">
+          Paid and part-paid follow the amounts above automatically.
+        </Text>
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="Dates" title="When" />
+        <DateField label="Payment due" value={dueDate} onChange={setDueDate} />
+        <DateField label="Date paid" value={date} onChange={setDate} icon="check" />
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="Anything else" title="Notes" />
+        <TextField
+          label="Notes"
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Invoice number, what the quote covers, what it does not."
+          multiline
+          numberOfLines={3}
+          autoCapitalize="sentences"
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Button label={submitLabel} onPress={submit} />
+        {onCancel ? <Button label="Cancel" variant="ghost" onPress={onCancel} /> : null}
+      </Stack>
+    </Stack>
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
-  title: { fontSize: 13, fontWeight: '700', color: '#6B5E5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stat: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#EDE6E3', minWidth: 72, alignItems: 'center' },
-  statVal: { fontSize: 16, fontWeight: '700', color: '#C93862' },
-  statLab: { fontSize: 11, color: '#8A7E7A', marginTop: 2 },
-  list: { gap: 8 },
-  row: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE6E3' },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
-  rowSub: { fontSize: 13, color: '#6B5E5A', marginTop: 2 },
-  add: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#C93862', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
-  addText: { color: '#FFF', fontWeight: '600' },
-});
+export default ExpenseForm;
