@@ -32,11 +32,11 @@ export const Routes = {
   assistantChat: (id) => `/assistant/${id}`,
 
   // --- Home details -------------------------------------------------------
-  countdown: '/(tabs)/home',
-  progress: '/(tabs)/planning',
+  countdown: '/home/countdown',
+  progress: '/home/progress',
   extendedFeatures: '/extended-features',
   /** Vendor recommendations near the wedding city. */
-  local: '/local',
+  local: '/home/local',
 
   // --- Notifications ------------------------------------------------------
   /** The in-app feed of what is coming up. Settings live at `notifications`. */
@@ -46,49 +46,53 @@ export const Routes = {
   taskDetail: (id) => `/planning/task/${id}`,
   taskEdit: (id) => `/planning/task/${id}`,
   taskAdd: '/planning/task/new',
-  taskCategory: () => '/(tabs)/planning',
+  taskCategory: (id) => `/planning/category/${id}`,
   /** The wedding's events: mehndi, ceremony, reception... */
-  events: '/events',
-  eventAdd: '/events',
-  eventDetail: () => '/events',
+  events: '/planning/events',
+  eventAdd: '/planning/events/new',
+  eventDetail: (id) => `/planning/events/${id}`,
   /** The suggested checklist for one event (slice C3). */
-  eventChecklist: () => '/events',
-  packing: '/packing',
+  eventChecklist: (id) => `/planning/events/${id}/checklist`,
+  packing: '/planning/packing',
   /** The style quiz and palette (graduated from the Labs style studio). */
-  style: '/style',
+  style: '/planning/style',
   /** The run of show for the wedding day, or for one event. */
-  runOfShow: (eventId) => (eventId ? `/run-of-show?event=${eventId}` : '/run-of-show'),
+  runOfShow: (eventId) => (eventId ? `/planning/run-of-show?event=${eventId}` : '/planning/run-of-show'),
+  /** One page to print or share for the wedding day, or for one event (slice G3). */
+  eventPlan: (eventId) => (eventId ? `/planning/plan?event=${eventId}` : '/planning/plan'),
 
   // --- Budget -------------------------------------------------------------
-  budgetCategory: () => '/(tabs)/budget',
-  expenseAdd: '/(tabs)/budget',
-  expenseDetail: () => '/(tabs)/budget',
-  budgetSetup: '/(tabs)/budget',
+  budgetCategory: (id) => `/budget/category/${id}`,
+  expenseAdd: '/budget/expense/new',
+  expenseDetail: (id) => `/budget/expense/${id}`,
+  budgetSetup: '/budget/setup',
   /** Planned against actual, by category and event, and payments due (slice C4). */
-  budgetReport: '/(tabs)/budget',
+  budgetReport: '/budget/report',
 
   // --- Guests -------------------------------------------------------------
-  guestDetail: () => '/(tabs)/guests',
-  guestAdd: '/(tabs)/guests',
+  guestDetail: (id) => `/guests/${id}`,
+  guestAdd: '/guests/new',
   /** Pick guests from the phone's address book. */
-  guestImport: '/(tabs)/guests',
-  guestSpreadsheet: '/(tabs)/guests',
-  guestRsvp: '/rsvp',
-  guestWebsite: '/website',
-  guestSeating: '/seating',
-  guestMeals: '/(tabs)/guests',
-  guestGifts: '/gifts',
-  guestParty: '/party',
-  householdDetail: () => '/(tabs)/guests',
+  guestImport: '/guests/import',
+  guestSpreadsheet: '/guests/spreadsheet',
+  guestRsvp: '/guests/rsvp',
+  guestWebsite: '/guests/website',
+  guestSeating: '/guests/seating',
+  guestMeals: '/guests/meals',
+  /** Meals opened on one event's numbers. */
+  guestMealsFor: (eventId) => `/guests/meals?event=${eventId}`,
+  guestGifts: '/guests/gifts',
+  guestParty: '/guests/party',
+  householdDetail: (id) => `/guests/household/${id}`,
 
   // --- Vendors ------------------------------------------------------------
   vendors: '/vendors',
-  vendorAdd: '/vendors',
-  vendorDetail: () => '/vendors',
-  vendorEdit: () => '/vendors',
-  /** Read a pasted quote; with a vendor id, save it as that vendor's quote. */
-  quoteReader: '/vendors',
+  vendorAdd: '/vendors/new',
+  vendorDetail: (id) => `/vendors/${id}`,
+  vendorEdit: (id) => `/vendors/${id}/edit`,
   vendorCompare: '/vendors',
+  /** Read a pasted quote; with a vendor id, save it as that vendor's quote. */
+  quoteReader: (vendorId) => (vendorId ? `/vendors/quote?vendor=${vendorId}` : '/vendors/quote'),
 
   // --- Vision -------------------------------------------------------------
   vision: '/labs',

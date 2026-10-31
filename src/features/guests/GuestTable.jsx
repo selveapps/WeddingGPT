@@ -1,18 +1,20 @@
-import React from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
 
-import { Checkbox } from '@/design-system/components';
+import { Badge, Card, Checkbox, Icon, Row, Text, Touchable } from '@/design-system/components';
 import { useTheme } from '@/design-system/theme';
-import { guestFullName, INVITATION_STATUS_META, RSVP_STATUS_META } from '@/models';
-import { GuestColumn } from './lib/guestTable';
+import { INVITATION_STATUS_META, RSVP_STATUS_META, guestFullName } from '@/models';
 
-const COLUMNS = [
-  { key: GuestColumn.NAME, label: 'Guest', flex: 2 },
-  { key: GuestColumn.HOUSEHOLD, label: 'Household', flex: 1.5 },
-  { key: GuestColumn.RSVP, label: 'RSVP', flex: 1.2 },
-  { key: GuestColumn.INVITATION, label: 'Invitation', flex: 1.4 },
-];
+import { GUEST_TABLE_COLUMNS, GuestColumn, mealLabel, nextSort, selectionState } from './lib/guestTable';
 
+/**
+ * The guest list as a table, for wide screens.
+ *
+ * On a phone the list is rows built for scanning one status (`GuestRow`). With
+ * a keyboard and a big screen the job changes to comparing and fixing many
+ * guests at once, so every column is visible, headers sort, and a checkbox
+ * column replaces long-press selection.
+ */
 export function GuestTable({
   guests,
   householdNameById,
@@ -22,141 +24,137 @@ export function GuestTable({
   onSelectionChange,
   onOpen,
 }) {
-  const { colors, spacing, radii } = useTheme();
-  const allSelected = guests.length > 0 && guests.every((guest) => selectedIds.includes(guest.id));
-
-  const toggleGuest = (guestId) => {
-    onSelectionChange(
-      selectedIds.includes(guestId)
-        ? selectedIds.filter((id) => id !== guestId)
-        : [...selectedIds, guestId]
-    );
-  };
+  const { colors, spacing, borderWidths } = useTheme();
+  const visibleIds = useMemo(() => guests.map((guest) => guest.id), [guests]);
+  const allState = selectionState(visibleIds, selectedIds);
 
   const toggleAll = () => {
-    if (allSelected) {
-      const visibleIds = new Set(guests.map((guest) => guest.id));
-      onSelectionChange(selectedIds.filter((id) => !visibleIds.has(id)));
-    } else {
-      onSelectionChange([...new Set([...selectedIds, ...guests.map((guest) => guest.id)])]);
-    }
+    if (allState === 'all') onSelectionChange(selectedIds.filter((id) => !visibleIds.includes(id)));
+    else onSelectionChange([...new Set([...selectedIds, ...visibleIds])]);
   };
 
-  const headerTextStyle = {
-    color: colors.inkMuted,
-    fontSize: 12,
-    fontWeight: '700',
-  };
-  const cellTextStyle = {
-    color: colors.ink,
-    fontSize: 14,
-  };
+  const toggleOne = (id) =>
+    onSelectionChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
+
+  const cell = (flex) => ({ flex, paddingHorizontal: spacing.xs, justifyContent: 'center' });
   const rowStyle = {
-    alignItems: 'center',
-    backgroundColor: colors.surface,
+    minHeight: 48,
+    paddingHorizontal: spacing.sm,
+    borderBottomWidth: borderWidths.hairline,
     borderBottomColor: colors.border,
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    minHeight: 54,
-    paddingHorizontal: spacing.md,
   };
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator>
-      <View
-        accessibilityRole="table"
-        style={{
-          backgroundColor: colors.surface,
-          borderColor: colors.border,
-          borderRadius: radii.md,
-          borderWidth: 1,
-          minWidth: 680,
-          overflow: 'hidden',
-        }}
-      >
-        <View accessibilityRole="row" style={[rowStyle, { backgroundColor: colors.surfaceMuted }]}>
-          <View style={{ alignItems: 'center', width: 48 }}>
-            <Checkbox
-              checked={allSelected}
-              onChange={toggleAll}
-              size={20}
-              label={allSelected ? 'Deselect all visible guests' : 'Select all visible guests'}
-            />
-          </View>
-          {COLUMNS.map((column) => {
-            const active = sort.column === column.key;
-            const nextDirection = active && sort.direction === 'asc' ? 'desc' : 'asc';
-            return (
-              <Pressable
-                key={column.key}
-                accessibilityRole="button"
-                accessibilityLabel={`Sort by ${column.label}`}
-                onPress={() => onSortChange({ column: column.key, direction: nextDirection })}
-                style={{ flex: column.flex, paddingHorizontal: spacing.sm }}
-              >
-                <Text style={headerTextStyle}>
-                  {column.label}
-                  {active ? (sort.direction === 'desc' ? ' ↓' : ' ↑') : ''}
-                </Text>
-              </Pressable>
-            );
-          })}
+    <Card padding="none" accessibilityRole="list">
+      <Row align="center" style={[rowStyle, { backgroundColor: colors.surfaceSunken }]}>
+        <View style={{ width: 40 }}>
+          <Checkbox
+            checked={allState === 'all'}
+            onChange={toggleAll}
+            label={allState === 'all' ? 'Clear selection' : 'Select every guest shown'}
+            size={20}
+          />
         </View>
-
-        {guests.map((guest) => {
-          const selected = selectedIds.includes(guest.id);
-          const rsvp = RSVP_STATUS_META[guest.rsvpStatus]?.label || 'Unknown';
-          const invitation = INVITATION_STATUS_META[guest.invitationStatus]?.label || 'Unknown';
-
-          return (
-            <View
-              key={guest.id}
-              accessibilityRole="row"
-              style={[
-                rowStyle,
-                {
-                  backgroundColor: selected ? colors.brandSoft : colors.surface,
-                  borderBottomWidth: 0,
-                },
-              ]}
-            >
-              <View style={{ alignItems: 'center', width: 48 }}>
-                <Checkbox
-                  checked={selected}
-                  onChange={() => toggleGuest(guest.id)}
-                  size={20}
-                  label={`Select ${guestFullName(guest) || 'guest'}`}
+        {GUEST_TABLE_COLUMNS.map((column) => {
+          const active = sort.column === column.key;
+          const header = (
+            <Row gap="hair" align="center">
+              <Text variant="eyebrow" color={active ? 'default' : 'subtle'}>
+                {column.label}
+              </Text>
+              {active ? (
+                <Icon
+                  name={sort.direction === 'asc' ? 'chevronUp' : 'chevronDown'}
+                  size="xs"
+                  color="inkMuted"
                 />
-              </View>
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => onOpen(guest)}
-                style={{ flex: COLUMNS[0].flex, paddingHorizontal: spacing.sm }}
-              >
-                <Text numberOfLines={1} style={[cellTextStyle, { fontWeight: '600' }]}>
-                  {guestFullName(guest) || 'Unnamed guest'}
-                </Text>
-                {guest.email ? (
-                  <Text numberOfLines={1} style={{ color: colors.inkSubtle, fontSize: 12 }}>
-                    {guest.email}
-                  </Text>
-                ) : null}
-              </Pressable>
-              <Text numberOfLines={1} style={[cellTextStyle, { flex: COLUMNS[1].flex, paddingHorizontal: spacing.sm }]}>
-                {householdNameById.get(guest.householdId) || '—'}
-              </Text>
-              <Text numberOfLines={1} style={[cellTextStyle, { flex: COLUMNS[2].flex, paddingHorizontal: spacing.sm }]}>
-                {rsvp}
-              </Text>
-              <Text numberOfLines={1} style={[cellTextStyle, { flex: COLUMNS[3].flex, paddingHorizontal: spacing.sm }]}>
-                {invitation}
-              </Text>
+              ) : null}
+            </Row>
+          );
+          return (
+            <View key={column.key} style={cell(column.flex)}>
+              {column.sortable === false ? (
+                header
+              ) : (
+                <Touchable
+                  onPress={() => onSortChange(nextSort(sort, column.key))}
+                  scaleOnPress={false}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Sort by ${column.label}${active ? `, currently ${sort.direction === 'asc' ? 'ascending' : 'descending'}` : ''}`}
+                >
+                  {header}
+                </Touchable>
+              )}
             </View>
           );
         })}
-      </View>
-    </ScrollView>
+      </Row>
+
+      {guests.map((guest) => {
+        const selected = selectedIds.includes(guest.id);
+        const rsvp = RSVP_STATUS_META[guest.rsvpStatus] ?? RSVP_STATUS_META.pending;
+        const invitation = INVITATION_STATUS_META[guest.invitationStatus];
+        const name = guestFullName(guest) || 'Unnamed guest';
+
+        return (
+          <Row
+            key={guest.id}
+            align="center"
+            style={[rowStyle, selected ? { backgroundColor: colors.brandSoft } : null]}
+          >
+            <View style={{ width: 40 }}>
+              <Checkbox
+                checked={selected}
+                onChange={() => toggleOne(guest.id)}
+                label={`Select ${name}`}
+                size={20}
+              />
+            </View>
+            <Touchable
+              onPress={() => onOpen(guest)}
+              scaleOnPress={false}
+              accessibilityRole="button"
+              accessibilityLabel={`${name}, ${rsvp.label}. Opens guest details.`}
+              style={cell(GUEST_TABLE_COLUMNS[0].flex)}
+            >
+              <Text variant="bodyStrong" numberOfLines={1}>
+                {name}
+              </Text>
+              {guest.isChild ? (
+                <Text variant="caption" color="subtle">
+                  Child
+                </Text>
+              ) : null}
+            </Touchable>
+            <View style={cell(2)}>
+              <Text variant="bodySm" color="muted" numberOfLines={1}>
+                {householdNameById.get(guest.householdId) ?? ''}
+              </Text>
+            </View>
+            <View style={[cell(2), { alignItems: 'flex-start' }]}>
+              <Badge label={rsvp.label} tone={rsvp.tone} />
+            </View>
+            <View style={cell(2)}>
+              <Text variant="bodySm" numberOfLines={1}>
+                {mealLabel(guest)}
+              </Text>
+            </View>
+            <View style={cell(2)}>
+              <Text variant="bodySm" color="muted" numberOfLines={1}>
+                {invitation?.label ?? ''}
+              </Text>
+            </View>
+            <View style={cell(2)}>
+              <Text variant="caption" color="subtle" numberOfLines={1}>
+                {(guest.tags ?? []).join(', ')}
+              </Text>
+            </View>
+          </Row>
+        );
+      })}
+    </Card>
   );
 }
 
+export { GuestColumn };
 export default GuestTable;

@@ -12,6 +12,8 @@ import { Platform, Share } from 'react-native';
 
 export const CAN_PICK_FILES = Platform.OS === 'web';
 export const CAN_DOWNLOAD_FILES = Platform.OS === 'web';
+/** Only a browser has a print dialog without a native module. */
+export const CAN_PRINT = Platform.OS === 'web';
 
 /**
  * Save `text` as a file. Resolves 'downloaded' (web), 'shared' (native share
@@ -87,4 +89,42 @@ export function pickTextFile({ accept = '.csv,text/csv,text/plain' } = {}) {
 export function datedFilename(stem, extension = 'csv', date = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');
   return `${stem}-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.${extension}`;
+}
+
+/**
+ * Print a page (G3). In a browser the HTML goes to the print dialog, where
+ * "Save as PDF" is one of the printers. On a phone there is no print module
+ * without a native build, so the share sheet gets `text` instead. Resolves
+ * 'printed', 'shared' or 'failed'.
+ */
+export async function printPage({ html, text, title }) {
+  if (CAN_PRINT) {
+    try {
+      const doc = globalThis.document;
+      const frame = doc.createElement('iframe');
+      frame.style.position = 'fixed';
+      frame.style.width = '0';
+      frame.style.height = '0';
+      frame.style.border = '0';
+      doc.body.appendChild(frame);
+      const page = frame.contentWindow;
+      page.document.open();
+      page.document.write(html);
+      page.document.close();
+      page.focus();
+      page.print();
+      // print() blocks until the dialog closes in every major browser.
+      setTimeout(() => frame.remove(), 1000);
+      return 'printed';
+    } catch {
+      return 'failed';
+    }
+  }
+
+  try {
+    await Share.share({ message: text, title });
+    return 'shared';
+  } catch {
+    return 'failed';
+  }
 }

@@ -417,6 +417,23 @@ Two deliberate choices in the generator:
   (`models/daily.js`, held for the day in `planningStore.today`). An 8am local
   notification names the day's tasks; it is scheduled 14 days ahead and
   rebuilt whenever the plan changes.
+- **Event reminders (G2).** Each dated event gets "the mehndi is in 3 days"
+  with its time, place and dress code, and a week out "final numbers for the
+  mehndi" with that event's plates and how many guests have still to answer,
+  opening Meals on that event. Both have their own switch in reminder settings.
+- **Printable plan (G3).** *Printable plan* on Planning and on each event: one
+  page with when and where, the run of show, plates and allergies, seating and
+  who to call (`models/eventPlan.js`). Prints or saves as PDF in a browser;
+  shares as text on a phone.
+- **Add to calendar (G4).** On Events and each event: straight into the phone's
+  calendar (`expo-calendar`), updating rather than duplicating when added
+  again, or an `.ics` download in a browser (`models/calendar.js`).
+- **Vendor appointments (H1).** Tastings, fittings, site visits and calls on
+  each vendor, with what was decided, the next three on the Vendors list, and
+  a reminder at 6pm the evening before (`models/appointments.js`).
+- **Vendor payment reminders (H2).** A booked vendor's deposit and final
+  balance are reminded three days before they are due, once even when the
+  vendor is also in the budget.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

@@ -1,59 +1,177 @@
-import React from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+
+import {
+  Stack,
+  Row,
+  Text,
+  TextField,
+  Chip,
+  Button,
+  SectionHeader,
+} from '@/design-system/components';
+import {
+  TaskPriority,
+  TASK_PRIORITY_META,
+  Assignee,
+  ASSIGNEE_META,
+} from '@/models';
+import { rules, validate } from '@/lib/validation';
+import { DateField } from '@/features/shared/DateField';
+import { EventPicker } from '@/features/events/EventPicker';
 
 /**
- * planning · TaskForm
- * Create/edit task
+ * The add/edit form for a task.
+ *
+ * One component for both, because "add" and "edit" differ only in what they
+ * start from and what the submit button says - and two copies of a form is
+ * exactly how two screens end up validating differently.
+ *
+ * Validation runs on submit rather than on every keystroke: telling someone
+ * their title is too short while they are still typing the first letter is
+ * noise, not help.
  */
-export default function TaskForm({ title, items = [], stats, onPress, onAdd, children, style }) {
+export function TaskForm({ initial, categories = [], submitLabel = 'Save', onSubmit, onCancel }) {
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [categoryId, setCategoryId] = useState(initial?.categoryId ?? null);
+  const [eventId, setEventId] = useState(initial?.eventId ?? null);
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? null);
+  const [priority, setPriority] = useState(initial?.priority ?? TaskPriority.NORMAL);
+  const [assignee, setAssignee] = useState(initial?.assignee ?? Assignee.UNASSIGNED);
+  const [errors, setErrors] = useState({});
+
+  const titleRules = useMemo(
+    () => [rules.required('A task name'), rules.maxLength(120, 'The task name')],
+    []
+  );
+
+  const submit = () => {
+    const titleError = validate(title, titleRules);
+    if (titleError) {
+      setErrors({ title: titleError });
+      return;
+    }
+
+    setErrors({});
+    onSubmit({
+      title: title.trim(),
+      description: description.trim(),
+      notes: notes.trim(),
+      categoryId,
+      eventId,
+      dueDate,
+      priority,
+      assignee,
+    });
+  };
+
   return (
-    <View style={[styles.wrap, style]}>
-      {title ? <Text style={styles.title}>{title}</Text> : null}
-      {stats ? (
-        <View style={styles.stats}>
-          {Object.entries(stats).map(([k, v]) => (
-            <View key={k} style={styles.stat}>
-              <Text style={styles.statVal}>{String(v)}</Text>
-              <Text style={styles.statLab}>{k}</Text>
-            </View>
+    <Stack gap="lg">
+      <Stack gap="md">
+        <TextField
+          label="What needs doing?"
+          value={title}
+          onChangeText={(next) => {
+            setTitle(next);
+            if (errors.title) setErrors({});
+          }}
+          placeholder="Book the photographer"
+          error={errors.title}
+          autoCapitalize="sentences"
+          autoFocus={!initial}
+          required
+        />
+
+        <TextField
+          label="Any detail"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="What does done look like?"
+          multiline
+          numberOfLines={3}
+          autoCapitalize="sentences"
+        />
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="When" title="Due date" />
+        <DateField label="Due" value={dueDate} onChange={setDueDate} />
+      </Stack>
+
+      {categories.length > 0 ? (
+        <Stack gap="sm">
+          <SectionHeader eyebrow="Where it belongs" title="Category" />
+          <Row gap="xs" wrap align="flex-start">
+            <Chip
+              label="None"
+              size="sm"
+              selected={categoryId === null}
+              onPress={() => setCategoryId(null)}
+            />
+            {categories.map((category) => (
+              <Chip
+                key={category.id}
+                label={category.name}
+                size="sm"
+                selected={categoryId === category.id}
+                onPress={() => setCategoryId(category.id)}
+              />
+            ))}
+          </Row>
+        </Stack>
+      ) : null}
+
+      <EventPicker value={eventId} onChange={setEventId} />
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="How urgent" title="Priority" />
+        <Row gap="xs" wrap align="flex-start">
+          {Object.entries(TASK_PRIORITY_META).map(([value, meta]) => (
+            <Chip
+              key={value}
+              label={meta.label}
+              selected={priority === value}
+              onPress={() => setPriority(value)}
+            />
           ))}
-        </View>
-      ) : null}
-      {items.length > 0 ? (
-        <View style={styles.list}>
-          {items.map((item) => (
-            <Pressable key={item.id || item.key || String(item)} onPress={() => onPress?.(item)} style={styles.row}>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.title || item.name || item.label || 'Item'}
-              </Text>
-              {item.subtitle || item.description ? (
-                <Text style={styles.rowSub} numberOfLines={2}>{item.subtitle || item.description}</Text>
-              ) : null}
-            </Pressable>
+        </Row>
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="Whose job" title="Assigned to" />
+        <Row gap="xs" wrap align="flex-start">
+          {Object.entries(ASSIGNEE_META).map(([value, meta]) => (
+            <Chip
+              key={value}
+              label={meta.label}
+              size="sm"
+              selected={assignee === value}
+              onPress={() => setAssignee(value)}
+            />
           ))}
-        </View>
-      ) : null}
-      {children}
-      {onAdd ? (
-        <Pressable onPress={onAdd} style={styles.add}>
-          <Text style={styles.addText}>Add</Text>
-        </Pressable>
-      ) : null}
-    </View>
+        </Row>
+      </Stack>
+
+      <Stack gap="sm">
+        <SectionHeader eyebrow="Anything else" title="Notes" />
+        <TextField
+          label="Notes"
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Quotes, phone numbers, what you decided and why."
+          multiline
+          numberOfLines={4}
+          autoCapitalize="sentences"
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Button label={submitLabel} onPress={submit} />
+        {onCancel ? <Button label="Cancel" variant="ghost" onPress={onCancel} /> : null}
+      </Stack>
+    </Stack>
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { marginBottom: 12 },
-  title: { fontSize: 13, fontWeight: '700', color: '#6B5E5A', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 },
-  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
-  stat: { backgroundColor: '#FFF', borderRadius: 12, padding: 12, borderWidth: 1, borderColor: '#EDE6E3', minWidth: 72, alignItems: 'center' },
-  statVal: { fontSize: 16, fontWeight: '700', color: '#C93862' },
-  statLab: { fontSize: 11, color: '#8A7E7A', marginTop: 2 },
-  list: { gap: 8 },
-  row: { backgroundColor: '#FFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#EDE6E3' },
-  rowTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
-  rowSub: { fontSize: 13, color: '#6B5E5A', marginTop: 2 },
-  add: { marginTop: 10, alignSelf: 'flex-start', backgroundColor: '#C93862', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999 },
-  addText: { color: '#FFF', fontWeight: '600' },
-});
+export default TaskForm;

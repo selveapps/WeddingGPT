@@ -63,7 +63,11 @@ describe('buildReminderSchedule', () => {
 
     expect(onThe18th).toHaveLength(3);
     expect(onThe18th).toEqual(
-      expect.arrayContaining([NotificationType.PAYMENT_DUE, NotificationType.TASK_OVERDUE, NotificationType.TASK_DUE])
+      expect.arrayContaining([
+        NotificationType.PAYMENT_DUE,
+        NotificationType.TASK_OVERDUE,
+        NotificationType.TASK_DUE,
+      ])
     );
     expect(onThe18th).not.toContain(NotificationType.DAILY_CHECKLIST);
   });
@@ -72,9 +76,243 @@ describe('buildReminderSchedule', () => {
     const schedule = buildReminderSchedule({
       tasks: [task('done', '2027-01-20', { status: 'done' })],
       expenses: [{ id: 'e1', title: 'Paid', amount: 500, paidAmount: 500, dueDate: '2027-01-21' }],
-      preferences: { enabled: true, types: { [NotificationType.DAILY_CHECKLIST]: false, [NotificationType.WEEKLY_DIGEST]: false } },
+      preferences: {
+        enabled: true,
+        types: { [NotificationType.DAILY_CHECKLIST]: false, [NotificationType.WEEKLY_DIGEST]: false },
+      },
       now: NOW,
     });
     expect(schedule).toEqual([]);
+  });
+});
+
+describe('buildReminderSchedule for events (G2)', () => {
+  const only = (...types) => ({
+    enabled: true,
+    types: Object.fromEntries(Object.values(NotificationType).map((type) => [type, types.includes(type)])),
+  });
+  const guest = (id, rsvpStatus, extra = {}) => ({ id, firstName: id, rsvpStatus, ...extra });
+  const mehndi = {
+    id: 'ev1',
+    kind: 'mehndi',
+    name: 'Mehndi',
+    date: '2027-02-12',
+    startTime: '16:00',
+    endTime: '21:00',
+    venueName: 'The Rose Garden',
+    dressCode: 'Bright colours',
+    guestScope: 'invited',
+    invitedGuestIds: ['a', 'b', 'c'],
+    attendance: { b: 'declined' },
+  };
+  const guests = [
+    guest('a', 'attending', { plusOneStatus: 'confirmed' }),
+    guest('b', 'attending'),
+    guest('c', 'pending'),
+    guest('d', 'attending'),
+  ];
+
+  it('reminds three days before each event, with its time, place and dress code', () => {
+    const [item] = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON),
+      now: NOW,
+    });
+    expect(item.title).toBe('Mehndi is in 3 days');
+    expect(item.body).toContain('The Rose Garden');
+    expect(item.body).toContain('Dress code: Bright colours');
+    expect(item.url).toBe('/planning/events/ev1');
+    expect(item.date).toEqual(new Date(2027, 1, 9, 9, 0, 0));
+  });
+
+  it("asks for the caterer's final numbers a week out, counting only that event's plates", () => {
+    const [item] = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.CATERER_NUMBERS),
+      now: NOW,
+    });
+    // a and her plus-one; b declined the mehndi; d is not invited to it.
+    expect(item.title).toBe('Final numbers for the Mehndi');
+    expect(item.body).toBe('2 plates so far, 1 still to answer.');
+    expect(item.url).toBe('/guests/meals?event=ev1');
+    expect(item.date).toEqual(new Date(2027, 1, 5, 9, 0, 0));
+  });
+
+  it('skips undated events, past events, and caterer numbers for an event nobody is invited to', () => {
+    const schedule = buildReminderSchedule({
+      events: [
+        { ...mehndi, id: 'undated', date: null },
+        { ...mehndi, id: 'past', date: '2026-12-01' },
+        { ...mehndi, id: 'empty', date: '2027-03-01', invitedGuestIds: [] },
+      ],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON, NotificationType.CATERER_NUMBERS),
+      now: NOW,
+    });
+    expect(schedule.map((item) => [item.type, item.url])).toEqual([
+      [NotificationType.EVENT_SOON, '/planning/events/empty'],
+    ]);
+  });
+
+  it('folds two events on the same reminder day into one', () => {
+    const schedule = buildReminderSchedule({
+      events: [mehndi, { ...mehndi, id: 'ev2', kind: 'sangeet', name: 'Sangeet' }],
+      guests,
+      preferences: only(NotificationType.EVENT_SOON),
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0].title).toBe('2 events in 3 days');
+    expect(schedule[0].body).toBe('Mehndi, Sangeet.');
+    expect(schedule[0].url).toBe('/planning/events');
+  });
+
+  it('respects the switches for each kind', () => {
+    const schedule = buildReminderSchedule({
+      events: [mehndi],
+      guests,
+      preferences: only(NotificationType.MILESTONES),
+      now: NOW,
+    });
+    expect(schedule).toEqual([]);
+  });
+});
+
+describe('buildReminderSchedule for vendor appointments (H1)', () => {
+  const preferences = {
+    enabled: true,
+    types: Object.fromEntries(
+      Object.values(NotificationType).map((type) => [type, type === NotificationType.VENDOR_APPOINTMENT])
+    ),
+  };
+  const vendor = (id, name, appointments) => ({ id, name, appointments });
+
+  it('reminds the evening before, with the time and place', () => {
+    const [item] = buildReminderSchedule({
+      vendors: [
+        vendor('v1', 'Sugar & Co', [
+          {
+            id: 'a',
+            kind: 'tasting',
+            date: '2027-03-06',
+            time: '11:00',
+            place: 'The Bakery',
+            notes: 'Bring swatches',
+          },
+        ]),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(item.title).toBe('Tomorrow: tasting with Sugar & Co');
+    expect(item.body).toBe('11:00 AM at The Bakery. Bring swatches');
+    expect(item.url).toBe('/vendors/v1');
+    expect(item.date).toEqual(new Date(2027, 2, 5, 18, 0, 0));
+  });
+
+  it('folds appointments on the same day, and skips past and undated ones', () => {
+    const schedule = buildReminderSchedule({
+      vendors: [
+        vendor('v1', 'Sugar & Co', [{ id: 'a', kind: 'tasting', date: '2027-03-06' }]),
+        vendor('v2', 'Bloom', [
+          { id: 'b', kind: 'meeting', date: '2027-03-06' },
+          { id: 'old', kind: 'call', date: '2026-12-01' },
+          { id: 'tbd', kind: 'call', date: null },
+        ]),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0].title).toBe('2 vendor appointments tomorrow');
+    expect(schedule[0].url).toBe('/vendors');
+  });
+
+  it("includes a vendor's meeting date saved before appointments existed", () => {
+    const schedule = buildReminderSchedule({
+      vendors: [{ id: 'v3', name: 'Old Hall', meetingAt: '2027-02-10' }],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule.map((item) => item.title)).toEqual(['Tomorrow: meeting with Old Hall']);
+  });
+});
+
+describe('buildReminderSchedule for vendor payments (H2)', () => {
+  const preferences = {
+    enabled: true,
+    types: Object.fromEntries(
+      Object.values(NotificationType).map((type) => [type, type === NotificationType.PAYMENT_DUE])
+    ),
+  };
+  const payment = (id, label, dueDate, fields = {}) => ({
+    id,
+    label,
+    amount: 50000,
+    dueDate,
+    paidAt: null,
+    ...fields,
+  });
+  const florist = (payments, fields = {}) => ({
+    id: 'v1',
+    name: 'Bloom',
+    status: 'booked',
+    payments,
+    ...fields,
+  });
+
+  it("reminds a booked vendor's unpaid payments three days ahead", () => {
+    const schedule = buildReminderSchedule({
+      vendors: [
+        florist([
+          payment('deposit', 'Deposit', '2027-02-10'),
+          payment('balance', 'Final balance', '2027-05-01'),
+        ]),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule.map((item) => [item.body, item.date])).toEqual([
+      ['Deposit - Bloom', new Date(2027, 1, 7, 9, 0, 0)],
+      ['Final balance - Bloom', new Date(2027, 3, 28, 9, 0, 0)],
+    ]);
+    expect(schedule[0].url).toBe('/vendors/v1');
+  });
+
+  it('skips paid, undated and not-yet-booked payments', () => {
+    const schedule = buildReminderSchedule({
+      vendors: [
+        florist([
+          payment('deposit', 'Deposit', '2027-02-10', { paidAt: '2027-01-02T10:00:00.000Z' }),
+          payment('balance', 'Final balance', null),
+        ]),
+        florist([payment('deposit', 'Deposit', '2027-02-10')], { id: 'v2', status: 'contacted' }),
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule).toEqual([]);
+  });
+
+  it('reminds a payment once when the vendor is also in the budget', () => {
+    const schedule = buildReminderSchedule({
+      vendors: [florist([payment('deposit', 'Deposit', '2027-02-10')], { expenseId: 'e1' })],
+      expenses: [
+        {
+          id: 'e1',
+          vendorId: 'v1',
+          title: 'Bloom (Florals)',
+          amount: 100000,
+          paidAmount: 0,
+          dueDate: '2027-02-10',
+        },
+      ],
+      preferences,
+      now: NOW,
+    });
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0].url).toBe('/budget/expense/e1');
   });
 });

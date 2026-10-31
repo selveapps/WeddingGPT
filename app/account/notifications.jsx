@@ -33,6 +33,9 @@ const LOCAL_TYPES = [
   NotificationType.TASK_OVERDUE,
   NotificationType.PAYMENT_DUE,
   NotificationType.MILESTONES,
+  NotificationType.EVENT_SOON,
+  NotificationType.CATERER_NUMBERS,
+  NotificationType.VENDOR_APPOINTMENT,
   NotificationType.WEEKLY_DIGEST,
 ];
 

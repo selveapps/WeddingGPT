@@ -253,6 +253,13 @@ export default function PlanningScreen() {
             onPress={() => router.push(Routes.runOfShow())}
           />
           <ListRow
+            icon="note"
+            title="Printable plan"
+            subtitle="One page per event: schedule, seating, numbers and contacts"
+            subtitleLines={1}
+            onPress={() => router.push(Routes.eventPlan())}
+          />
+          <ListRow
             icon="checklist"
             title="Packing lists"
             subtitle="Emergency kit, getting-ready bag, the venue box, the honeymoon"

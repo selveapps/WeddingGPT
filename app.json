@@ -23,7 +23,9 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "POST_NOTIFICATIONS",
-        "READ_CONTACTS"
+        "READ_CONTACTS",
+        "READ_CALENDAR",
+        "WRITE_CALENDAR"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -65,6 +67,12 @@
         "expo-contacts",
         {
           "contactsPermission": "WeddingGPT reads your contacts only when you choose to import guests, so you can add them to your guest list in a few taps."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "WeddingGPT adds your wedding events to your calendar when you ask, and keeps them up to date if a time or place changes."
         }
       ],
       "expo-secure-store"
