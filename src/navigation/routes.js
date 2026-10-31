@@ -56,6 +56,8 @@ export const Routes = {
   style: '/planning/style',
   /** The run of show for the wedding day, or for one event. */
   runOfShow: (eventId) => (eventId ? `/planning/run-of-show?event=${eventId}` : '/planning/run-of-show'),
+  /** One page to print or share for the wedding day, or for one event (slice G3). */
+  eventPlan: (eventId) => (eventId ? `/planning/plan?event=${eventId}` : '/planning/plan'),
 
   // --- Budget -------------------------------------------------------------
   budgetCategory: (id) => `/budget/category/${id}`,

@@ -306,6 +306,14 @@ export function EventFormScreen({ eventId }) {
                 onPress={() => router.push(Routes.runOfShow(existing.id))}
               />
             ) : null}
+            {existing ? (
+              <Button
+                label="Printable plan"
+                variant="secondary"
+                iconLeft="note"
+                onPress={() => router.push(Routes.eventPlan(existing.id))}
+              />
+            ) : null}
             {existing && eventChecklist(existing.kind).length ? (
               <Button
                 label="Suggested tasks"

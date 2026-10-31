@@ -421,6 +421,10 @@ Two deliberate choices in the generator:
   with its time, place and dress code, and a week out "final numbers for the
   mehndi" with that event's plates and how many guests have still to answer,
   opening Meals on that event. Both have their own switch in reminder settings.
+- **Printable plan (G3).** *Printable plan* on Planning and on each event: one
+  page with when and where, the run of show, plates and allergies, seating and
+  who to call (`models/eventPlan.js`). Prints or saves as PDF in a browser;
+  shares as text on a phone.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

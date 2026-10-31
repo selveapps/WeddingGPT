@@ -203,6 +203,7 @@ export {
   attendingGuests,
   cateringCsv,
 } from './catering';
+export { PLAN_MAX_TABLES, buildEventPlan, eventPlanText, eventPlanHtml, escapeHtml } from './eventPlan';
 export {
   ThankYouStatus,
   THANK_YOU_META,

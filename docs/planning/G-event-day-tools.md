@@ -45,3 +45,25 @@ for the event is not a plate; turning a type off removes it; the reminder's
 link opens Meals on that event.
 
 Status: G2 done on `feature/event-reminders`.
+
+## G3 — Printable plan
+
+One page per event, or for the wedding day: date, time, place and dress code;
+guests attending of invited and plates (G1's count); that event's run of
+show; allergies to check; its seating chart; booked vendors and wedding-party
+members with a phone or email; and the event's notes.
+
+`models/eventPlan.js` builds the plan and lays it out as text and as a
+standalone HTML page (everything the couple typed is escaped). In a browser
+*Print or save as PDF* sends the page to the print dialog; on a phone *Share
+the plan* sends the text to the share sheet, since printing there needs a
+native module (`expo-print`) and a new build. Charts over 30 tables are cut
+with a count.
+
+Reached from Planning (*Printable plan*) and from each event.
+
+**Acceptance.** Each event shows only its own schedule, tables and guests;
+the wedding day shows the day's; empty sections are left out; a day with
+nothing in it says so and links to the run of show.
+
+Status: G3 done on `feature/printable-event-plan`.
