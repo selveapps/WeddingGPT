@@ -13,10 +13,15 @@ import {
 import { LabScreen } from '@/labs/shared/LabScreen';
 import { FLAGS, FLAG_KEYS, resolveFlag, useFlagStore } from '@/services/flags';
 
-const SOURCE_LABEL = { device: 'Set on this phone', build: 'Set by the build', default: 'Default' };
+const SOURCE_LABEL = {
+  device: 'Set on this phone',
+  remote: 'Set by the server',
+  build: 'Set by the build',
+  default: 'Default',
+};
 
 const CHOICES = [
-  { value: 'auto', label: 'Build' },
+  { value: 'auto', label: 'Auto' },
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
 ];
@@ -29,13 +34,14 @@ const CHOICES = [
 export function FlagsScreen() {
   const toast = useToast();
   const overrides = useFlagStore((state) => state.overrides);
+  const remote = useFlagStore((state) => state.remote);
   const { setOverride, clearOverrides } = useFlagStore.getState();
   const overridden = Object.keys(overrides).length;
 
   return (
     <LabScreen
       title="Feature flags"
-      intro="Turn features on or off on this phone to test them. Build follows how this build was made. Nothing here syncs or changes anyone else's app."
+      intro="Turn features on or off on this phone to test them. Auto follows the server, then how this build was made. Nothing here syncs or changes anyone else's app."
       footer={
         overridden ? (
           <Button
@@ -52,7 +58,7 @@ export function FlagsScreen() {
     >
       <Stack gap="sm">
         {FLAG_KEYS.map((key) => {
-          const { value, source } = resolveFlag(key, { overrides });
+          const { value, source } = resolveFlag(key, { overrides, remote });
           const choice = typeof overrides[key] === 'boolean' ? (overrides[key] ? 'on' : 'off') : 'auto';
           return (
             <Card key={key}>

@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import { createAuthServer } from './app.mjs';
 import { openDatabase } from './db.mjs';
+import { parseFlagList } from './flags.mjs';
 
 /**
  * Starts the WeddingGPT account server. See app.mjs for the API.
@@ -14,6 +15,7 @@ import { openDatabase } from './db.mjs';
  *   PUBLIC_BASE_URL where guests open RSVP pages (default http://localhost:PORT)
  *   INVITE_URL_BASE where invite links point; the token is appended
  *                   (default weddinggpt://invite/, the app's own link)
+ *   REMOTE_FLAGS    feature flags for every app, e.g. liveMode=off,visionPhotos=on
  */
 
 const PORT = Number(process.env.PORT ?? 8788);
@@ -22,6 +24,8 @@ const APP_TOKEN = process.env.APP_TOKEN || null;
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*';
 const INVITE_URL_BASE = process.env.INVITE_URL_BASE || undefined;
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`;
+const { flags: FLAGS, skipped: SKIPPED_FLAGS } = parseFlagList(process.env.REMOTE_FLAGS);
+if (SKIPPED_FLAGS.length) console.warn(`[auth] REMOTE_FLAGS: ignoring ${SKIPPED_FLAGS.join(', ')}`);
 
 const db = openDatabase(DB_PATH);
 const server = createAuthServer({
@@ -30,6 +34,7 @@ const server = createAuthServer({
   allowedOrigin: ALLOWED_ORIGIN,
   inviteUrlBase: INVITE_URL_BASE,
   publicBaseUrl: PUBLIC_BASE_URL,
+  flags: FLAGS,
 });
 
 // Expired sessions are already ignored on read, and old tombstones are only

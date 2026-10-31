@@ -26,9 +26,10 @@ import { Role, WORKSPACE_LIMITS, canRemoveMember, validateWorkspaceName } from '
  *   POST   /v1/workspaces/:id/invites                               -> 201 { token, url, expiresAt } (owner)
  *   DELETE /v1/workspaces/:id/invites                               -> 204 (owner)
  *   POST   /v1/invites/accept            { token }                 -> 200 { workspace }
+ *   GET    /v1/flags                                                -> 200 { flags } (public)
  *   GET    /health                                                  -> 200 { ok: true }
  *
- * Everything except register, login and health needs `Authorization: Bearer
+ * Everything except register, login, flags and health needs `Authorization: Bearer
  * <token>`. Errors are `{ error: code }`, plus `fields` for a 400. A failed
  * sign-in never says whether the email exists, and a workspace the caller is
  * not a member of is a 404, never a 403, so workspace ids cannot be probed.
@@ -138,6 +139,8 @@ export function createAuthServer({
   inviteUrlBase = 'weddinggpt://invite/',
   /** Where guests open RSVP pages, e.g. https://rsvp.weddinggpt.app (decision D7). */
   publicBaseUrl = 'http://localhost:8788',
+  /** Remote feature flags, `{ name: boolean }` (see flags.mjs). */
+  flags = {},
   log = console,
 } = {}) {
   const rateLimited = createRateLimiter(LIMITS.attemptsPerMinute);
@@ -313,6 +316,11 @@ export function createAuthServer({
     return send(res, 204);
   }
 
+  // The same answer for everyone; apps ask once each time they start.
+  function getFlags(req, res) {
+    return send(res, 200, { flags });
+  }
+
   // --- Routing ---------------------------------------------------------------
   //
   // `access`: 'public' (no session), 'user' (a valid session) or 'member'
@@ -324,6 +332,7 @@ export function createAuthServer({
     .add('POST', '/v1/auth/login', login, { access: 'public', limited: true })
     .add('GET', '/v1/auth/me', me, { access: 'public' })
     .add('POST', '/v1/auth/logout', logout, { access: 'public' })
+    .add('GET', '/v1/flags', getFlags, { access: 'public' })
     .add('GET', '/v1/workspaces', listWorkspaces, { access: 'user' })
     .add('POST', '/v1/workspaces', createWorkspace, { access: 'user', limited: true })
     .add('GET', '/v1/workspaces/:id/members', listMembers, { access: 'member' })
