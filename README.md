@@ -434,6 +434,11 @@ Two deliberate choices in the generator:
 - **Vendor payment reminders (H2).** A booked vendor's deposit and final
   balance are reminded three days before they are due, once even when the
   vendor is also in the budget.
+- **Live mode on the day (I1).** On the day of a run of show, a live card at
+  the top says what is on now, what is next and in how long, moves everything
+  still to come with *Running late? +5m/+10m/+15m*, and calls whoever runs it:
+  owners like "Caterer" or "Ushers" are matched to a booked vendor or a
+  wedding party member with a number (`models/liveDay.js`).
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 
