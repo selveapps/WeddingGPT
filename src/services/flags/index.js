@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 
 import { storage } from '../storage';
+import { createApiRequest } from '../api/request';
 
 /**
  * Feature flags (slice K1): switch a feature off in a build, or on and off on
@@ -9,15 +10,16 @@ import { storage } from '../storage';
  * A flag's value comes from, in order:
  *  1. a device override, set on the Labs flags screen (`/labs/flags`) and
  *     kept on this phone only;
- *  2. the build, from `EXPO_PUBLIC_FLAGS`, e.g. `liveMode=off,visionPhotos=on`;
- *  3. the flag's default below.
+ *  2. the server's (K1b): `GET /v1/flags` on the account server, set there
+ *     with `REMOTE_FLAGS`, so a feature can be switched off for everyone
+ *     without a release. Fetched at start and kept for offline starts;
+ *  3. the build, from `EXPO_PUBLIC_FLAGS`, e.g. `liveMode=off,visionPhotos=on`;
+ *  4. the flag's default below.
  *
  * Screens read flags with `useFlag(key)`; code outside React with
- * `isEnabled(key)`. Overrides load just after start, so a flag overridden on
- * a phone can flip on the first screen; builds and defaults are known at once.
- *
- * Remote flags (turning a feature off for everyone without a release) need a
- * server and are not here yet; `resolveFlag` is where they would slot in.
+ * `isEnabled(key)`. Overrides and the server's flags load just after start,
+ * so they can flip a flag on the first screen; builds and defaults are known
+ * at once.
  */
 
 /** Every flag. Remove one once its feature is settled and the code is cleaned up. */
@@ -42,6 +44,8 @@ export const FLAGS = {
 export const FLAG_KEYS = Object.keys(FLAGS);
 
 const OVERRIDES_KEY = 'device:flagOverrides';
+const REMOTE_KEY = 'device:remoteFlags';
+const REMOTE_TIMEOUT_MS = 5000;
 const ON = new Set(['on', 'true', '1', 'yes']);
 const OFF = new Set(['off', 'false', '0', 'no']);
 
@@ -63,13 +67,24 @@ export function parseBuildFlags(text) {
 
 const buildFlags = parseBuildFlags(process.env.EXPO_PUBLIC_FLAGS);
 
-/** `{ value, source }`, source being 'device', 'build' or 'default'. */
-export function resolveFlag(key, { overrides = {}, build = buildFlags } = {}) {
+/** The account server's flags, when this build has one (`EXPO_PUBLIC_AUTH_URL`). */
+const serverUrl = process.env.EXPO_PUBLIC_AUTH_URL;
+const serverRequest = serverUrl
+  ? createApiRequest({
+      url: serverUrl,
+      appToken: process.env.EXPO_PUBLIC_AUTH_APP_TOKEN,
+      timeoutMs: REMOTE_TIMEOUT_MS,
+    })
+  : null;
+
+/** `{ value, source }`, source being 'device', 'remote', 'build' or 'default'. */
+export function resolveFlag(key, { overrides = {}, remote = {}, build = buildFlags } = {}) {
   if (!FLAGS[key]) {
     if (__DEV__) throw new Error(`[flags] Unknown flag "${key}"`);
     return { value: false, source: 'default' };
   }
   if (typeof overrides[key] === 'boolean') return { value: overrides[key], source: 'device' };
+  if (typeof remote[key] === 'boolean') return { value: remote[key], source: 'remote' };
   if (typeof build[key] === 'boolean') return { value: build[key], source: 'build' };
   return { value: FLAGS[key].defaultValue, source: 'default' };
 }
@@ -82,17 +97,37 @@ const cleanOverrides = (value) =>
   );
 
 /**
- * Device overrides. Per phone, not per wedding, so they live in plain
- * storage rather than the workspace and never sync.
+ * Device overrides and the server's flags. Per phone, not per wedding, so
+ * they live in plain storage rather than the workspace and never sync.
  */
 export const useFlagStore = create((set, get) => ({
   overrides: {},
+  remote: {},
 
-  async load() {
+  /** This phone's overrides and the last server flags, then fresh ones. */
+  async load({ request = serverRequest } = {}) {
     try {
-      set({ overrides: cleanOverrides(await storage.get(OVERRIDES_KEY)) });
+      const [overrides, remote] = await Promise.all([storage.get(OVERRIDES_KEY), storage.get(REMOTE_KEY)]);
+      set({ overrides: cleanOverrides(overrides), remote: cleanOverrides(remote) });
     } catch {
-      // No overrides is the safe state: the build and defaults apply.
+      // Nothing saved is the safe state: the build and defaults apply.
+    }
+    await get().refreshRemote({ request });
+  },
+
+  /**
+   * Ask the server for its flags. Offline, or on any error, the last ones
+   * stay; names this version of the app does not know are dropped.
+   */
+  async refreshRemote({ request = serverRequest } = {}) {
+    if (!request) return;
+    try {
+      const response = await request('/v1/flags');
+      const remote = cleanOverrides(response?.flags);
+      set({ remote });
+      await storage.set(REMOTE_KEY, remote);
+    } catch {
+      // Keep what we had.
     }
   },
 
@@ -114,10 +149,13 @@ export const useFlagStore = create((set, get) => ({
 
 /** Whether a feature is on, for code outside React. */
 export function isEnabled(key) {
-  return resolveFlag(key, { overrides: useFlagStore.getState().overrides }).value;
+  const { overrides, remote } = useFlagStore.getState();
+  return resolveFlag(key, { overrides, remote }).value;
 }
 
 /** Whether a feature is on; re-renders when an override changes. */
 export function useFlag(key) {
-  return useFlagStore((state) => resolveFlag(key, { overrides: state.overrides }).value);
+  return useFlagStore(
+    (state) => resolveFlag(key, { overrides: state.overrides, remote: state.remote }).value
+  );
 }

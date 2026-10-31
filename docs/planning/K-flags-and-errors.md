@@ -9,6 +9,7 @@ phones. K adds both, flags first.
 | Slice | What | New LOC (est.) |
 | --- | --- | ---: |
 | K1 Feature flags | Flags with build values and per-phone overrides | 250–400 |
+| K1b Remote flags | The server switches a flag for every app, no release | 150–250 |
 | K2 Error reporting | Catch crashes, keep a log, send to a reporting service | needs a decision, see below |
 
 ## K1 — Feature flags
@@ -43,12 +44,31 @@ branches it guarded, once the feature is settled.
 Overrides load just after start, so a flag overridden on a phone can flip
 on the first screen; build values and defaults are known at once.
 
-**Not in this slice:** remote flags, to turn a feature off for everyone
-without a release. They need a flags endpoint on the server (or a service
-such as PostHog or LaunchDarkly); `resolveFlag` is where they would slot in,
-between the device override and the build.
+Status: K1 done on `feature/feature-flags` (merged, #62).
 
-Status: K1 done on `feature/feature-flags`.
+## K1b — Remote flags
+
+Turn a feature off for everyone without a release: set `REMOTE_FLAGS` on the
+account server (`server/auth`), e.g. `REMOTE_FLAGS="liveMode=off"`, and
+restart it.
+
+- **Server:** `GET /v1/flags` → `{ flags: { liveMode: false } }`. Public (no
+  sign-in) but still needs the app token when the server has one. The
+  server does not know the app's flag list, since old and new apps ask the
+  same server, so it passes on any well-formed name (letters, digits, `_`,
+  starting with a letter, at most 64 characters, at most 50 flags) with a
+  value of on/off. Anything else is skipped and logged at start.
+- **App:** asks once at start (5 second timeout) when the build has an
+  account server (`EXPO_PUBLIC_AUTH_URL`), drops names it does not know and
+  keeps the answer on the phone, so an offline start uses the last one. On
+  any error the last answer stays.
+- **Order:** this phone's override, then the server, then the build, then
+  the default. The server can also switch *on* a feature a build switched
+  off; that is the point of a central switch, so use it with care.
+
+Builds without an account server never ask, and behave as in K1.
+
+Status: K1b done on `feature/remote-flags`.
 
 ## K2 — Error reporting (not started)
 

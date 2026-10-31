@@ -1,6 +1,9 @@
 import { FLAGS, isEnabled, parseBuildFlags, resolveFlag, useFlagStore } from '../index';
 
-beforeEach(() => useFlagStore.getState().clearOverrides());
+beforeEach(() => {
+  useFlagStore.getState().clearOverrides();
+  useFlagStore.setState({ remote: {} });
+});
 
 describe('parseBuildFlags', () => {
   it('reads key=value pairs, ignoring case and spaces', () => {
@@ -61,5 +64,48 @@ describe('device overrides', () => {
     await storage.set('device:flagOverrides', { liveMode: false, removedFlag: true, visionPhotos: 'yes' });
     await useFlagStore.getState().load();
     expect(useFlagStore.getState().overrides).toEqual({ liveMode: false });
+  });
+});
+
+describe('server flags', () => {
+  const server = (flags) => jest.fn(async () => ({ flags }));
+
+  it('sit between this phone and the build', () => {
+    const remote = { liveMode: false };
+    expect(resolveFlag('liveMode', { remote, build: { liveMode: true } })).toEqual({
+      value: false,
+      source: 'remote',
+    });
+    expect(resolveFlag('liveMode', { overrides: { liveMode: true }, remote })).toEqual({
+      value: true,
+      source: 'device',
+    });
+  });
+
+  it('are fetched, cleaned of names this app does not know, and kept for the next start', async () => {
+    const request = server({ liveMode: false, futureFeature: true, visionPhotos: 'off' });
+    await useFlagStore.getState().refreshRemote({ request });
+    expect(request).toHaveBeenCalledWith('/v1/flags');
+    expect(useFlagStore.getState().remote).toEqual({ liveMode: false });
+    expect(isEnabled('liveMode')).toBe(false);
+
+    useFlagStore.setState({ remote: {} });
+    await useFlagStore.getState().load({ request: null });
+    expect(isEnabled('liveMode')).toBe(false);
+  });
+
+  it('keep the last ones when the server cannot be reached', async () => {
+    await useFlagStore.getState().refreshRemote({ request: server({ runOfShowCues: false }) });
+    await useFlagStore.getState().refreshRemote({
+      request: jest.fn(async () => {
+        throw new Error('offline');
+      }),
+    });
+    expect(useFlagStore.getState().remote).toEqual({ runOfShowCues: false });
+  });
+
+  it('are skipped without an account server', async () => {
+    await useFlagStore.getState().refreshRemote({ request: null });
+    expect(useFlagStore.getState().remote).toEqual({});
   });
 });

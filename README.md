@@ -449,8 +449,9 @@ Two deliberate choices in the generator:
   them (`services/photos`, `expo-image-picker`, `expo-file-system`).
 - **Feature flags (K1).** `useFlag('liveMode')` / `isEnabled(...)` from
   `services/flags`. A flag is on or off from a per-phone override (*Feature
-  flags* in Labs, `/labs/flags`), then the build (`EXPO_PUBLIC_FLAGS=
-  "liveMode=off"`), then its default. Live mode, cues and vision photos are
+  flags* in Labs, `/labs/flags`), then the account server's `REMOTE_FLAGS`
+  (`GET /v1/flags`, cached for offline starts), then the build
+  (`EXPO_PUBLIC_FLAGS="liveMode=off"`), then its default. Live mode, cues and vision photos are
   flagged. See `docs/planning/K-flags-and-errors.md`.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
