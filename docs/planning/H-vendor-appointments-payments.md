@@ -39,3 +39,19 @@ without a date is refused; past and undated appointments are not reminded;
 an old meeting date shows, reminds, and stays deleted once deleted.
 
 Status: H1 done on `feature/vendor-appointments`.
+
+## H2 — Payment reminders
+
+Booked vendors' payment plans (deposit, final balance) were shown on the
+Vendors list but never reminded; only budget expenses were. Each unpaid,
+dated payment of a booked vendor now gets "Payment due in 3 days" at 9am,
+under the existing *Payments due* switch, opening the vendor.
+
+A vendor added to the budget has an expense carrying its next due date, so
+a payment whose vendor already has a reminded expense on that date is left
+to the expense: one reminder per payment, never two.
+
+**Acceptance.** Paid, undated and not-yet-booked payments are not reminded;
+a payment due the same day as its vendor's expense is reminded once.
+
+Status: H2 done on `feature/vendor-payment-reminders`.

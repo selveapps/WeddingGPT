@@ -11,6 +11,7 @@ import {
   eventWhen,
   appointmentLabel,
   upcomingAppointments,
+  VendorStatus,
   planDailyChecklists,
   summariseDailyTasks,
 } from '../../models';
@@ -121,7 +122,7 @@ export function buildReminderSchedule({
   /** The wedding's events (workstream C), each reminded from its own date (G2). */
   events = [],
   guests = [],
-  /** Vendors, for their appointments (H1). */
+  /** Vendors, for their appointments (H1) and payment plans (H2). */
   vendors = [],
   preferences,
   /** Today's checklist as shown in the app, so this morning's note matches it. */
@@ -171,8 +172,12 @@ export function buildReminderSchedule({
   }
 
   if (on(NotificationType.PAYMENT_DUE)) {
+    // A vendor added to the budget has an expense carrying its next due date;
+    // that payment is reminded once, through the expense.
+    const remindedByExpense = new Set();
     for (const expense of expenses) {
       if (!expense.dueDate || (expense.paidAmount ?? 0) >= (expense.amount ?? 0)) continue;
+      if (expense.vendorId) remindedByExpense.add(`${expense.vendorId}|${expense.dueDate}`);
       items.push({
         type: NotificationType.PAYMENT_DUE,
         title: 'Payment due in 3 days',
@@ -181,6 +186,24 @@ export function buildReminderSchedule({
         url: Routes.expenseDetail(expense.id),
         date: at(expense.dueDate, -3),
       });
+    }
+
+    // Booked vendors' payment plans: the deposit and the final balance (H2).
+    for (const vendor of vendors) {
+      if (vendor.status !== VendorStatus.BOOKED) continue;
+      for (const payment of vendor.payments ?? []) {
+        if (payment.paidAt || !payment.dueDate || !(payment.amount > 0)) continue;
+        if (remindedByExpense.has(`${vendor.id}|${payment.dueDate}`)) continue;
+        const name = `${payment.label} - ${vendor.name}`;
+        items.push({
+          type: NotificationType.PAYMENT_DUE,
+          title: 'Payment due in 3 days',
+          body: name,
+          name,
+          url: Routes.vendorDetail(vendor.id),
+          date: at(payment.dueDate, -3),
+        });
+      }
     }
   }
 

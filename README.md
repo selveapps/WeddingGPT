@@ -431,6 +431,9 @@ Two deliberate choices in the generator:
 - **Vendor appointments (H1).** Tastings, fittings, site visits and calls on
   each vendor, with what was decided, the next three on the Vendors list, and
   a reminder at 6pm the evening before (`models/appointments.js`).
+- **Vendor payment reminders (H2).** A booked vendor's deposit and final
+  balance are reminded three days before they are due, once even when the
+  vendor is also in the budget.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 
