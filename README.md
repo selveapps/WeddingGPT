@@ -439,6 +439,10 @@ Two deliberate choices in the generator:
   still to come with *Running late? +5m/+10m/+15m*, and calls whoever runs it:
   owners like "Caterer" or "Ushers" are matched to a booked vendor or a
   wedding party member with a number (`models/liveDay.js`).
+- **Cues on the day (I2).** "In 10 min: Ceremony" before each run-of-show
+  item on its day, opening that day's run of show. Its own switch in reminder
+  settings; only today's and tomorrow's are scheduled, and they are not held
+  to the three-a-day cap.
 
 ### What Phase 4 delivered - The assistant (PRD s.12-14)
 

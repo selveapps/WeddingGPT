@@ -121,6 +121,38 @@ export function findContact(owner, { vendors = [], party = [] } = {}) {
   return member ? asMember(member) : null;
 }
 
+/** How long before an item its cue goes off, and how many days ahead. */
+export const CUE_LIMITS = { leadMin: 10, daysAhead: 2, max: 30 };
+
+/**
+ * The cues to send before run-of-show items (slice I2): one per start time
+ * within the next `daysAhead` days (today included) that is still in the
+ * future, `leadMin` minutes before it. Items starting together share a cue.
+ * Returns `[{ date, eventId, items }]`, soonest first, at most `max`.
+ */
+export function upcomingCues({ items = [], events = [], wedding = null, now = new Date() } = {}) {
+  const eventsById = new Map(events.map((event) => [event.id, event]));
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const horizon = new Date(today);
+  horizon.setDate(horizon.getDate() + CUE_LIMITS.daysAhead);
+  const cues = new Map();
+
+  for (const item of sortRunOfShow(items)) {
+    const event = item.eventId ? eventsById.get(item.eventId) : null;
+    // An event deleted elsewhere takes its run of show with it; skip strays.
+    if (item.eventId && !event) continue;
+    const iso = dayDate({ event, wedding });
+    if (!iso) continue;
+    const [y, m, d] = iso.split('-').map(Number);
+    const date = new Date(y, m - 1, d, 0, item.start - CUE_LIMITS.leadMin);
+    if (date <= now || date >= horizon) continue;
+    const key = `${item.eventId ?? ''}|${date.getTime()}`;
+    if (!cues.has(key)) cues.set(key, { date, eventId: item.eventId ?? null, items: [] });
+    cues.get(key).items.push(item);
+  }
+  return [...cues.values()].sort((a, b) => a.date - b.date).slice(0, CUE_LIMITS.max);
+}
+
 /**
  * Everyone to call on the day: one row per contact found for the items'
  * owners, in run-of-show order, with the items they run.

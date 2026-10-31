@@ -9,6 +9,7 @@ import {
   useEventStore,
   useGuestStore,
   useVendorStore,
+  useRunOfShowStore,
   selectWedding,
   selectAllTasks,
   selectAllExpenses,
@@ -17,6 +18,7 @@ import {
   selectEvents,
   selectAllGuests,
   selectAllVendors,
+  selectRunOfShow,
 } from '@/store';
 import { todayISO } from '@/lib/date';
 import { syncReminders, onReminderOpened } from '@/services/notifications';
@@ -39,6 +41,7 @@ export function useReminderSync() {
   const events = useEventStore(selectEvents);
   const guests = useGuestStore(selectAllGuests);
   const vendors = useVendorStore(selectAllVendors);
+  const runOfShow = useRunOfShowStore(selectRunOfShow);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -46,10 +49,20 @@ export function useReminderSync() {
         today.date === todayISO()
           ? today.taskIds.map((id) => tasks.find((task) => task.id === id)).filter(Boolean)
           : null;
-      syncReminders({ wedding, tasks, expenses, events, guests, vendors, preferences, todayTasks });
+      syncReminders({
+        wedding,
+        tasks,
+        expenses,
+        events,
+        guests,
+        vendors,
+        runOfShow,
+        preferences,
+        todayTasks,
+      });
     }, SYNC_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [wedding, tasks, expenses, events, guests, vendors, preferences, today]);
+  }, [wedding, tasks, expenses, events, guests, vendors, runOfShow, preferences, today]);
 
   useEffect(() => onReminderOpened((url) => router.push(url)), [router]);
 }

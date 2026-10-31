@@ -61,6 +61,7 @@ export const NotificationType = {
   EVENT_SOON: 'event_soon',
   CATERER_NUMBERS: 'caterer_numbers',
   VENDOR_APPOINTMENT: 'vendor_appointment',
+  RUN_OF_SHOW_CUE: 'run_of_show_cue',
   PARTNER_ACTIVITY: 'partner_activity',
   PRODUCT_NEWS: 'product_news',
 };
@@ -109,6 +110,11 @@ export const NOTIFICATION_TYPE_META = {
   [NotificationType.VENDOR_APPOINTMENT]: {
     label: 'Vendor appointments',
     description: 'The evening before a tasting, fitting or meeting.',
+    defaultEnabled: true,
+  },
+  [NotificationType.RUN_OF_SHOW_CUE]: {
+    label: 'Cues on the day',
+    description: 'Ten minutes before each item in the run of show, on the day itself.',
     defaultEnabled: true,
   },
   [NotificationType.CATERER_NUMBERS]: {

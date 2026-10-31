@@ -11,6 +11,8 @@ import {
   eventWhen,
   appointmentLabel,
   upcomingAppointments,
+  upcomingCues,
+  CUE_LIMITS,
   VendorStatus,
   planDailyChecklists,
   summariseDailyTasks,
@@ -124,6 +126,8 @@ export function buildReminderSchedule({
   guests = [],
   /** Vendors, for their appointments (H1) and payment plans (H2). */
   vendors = [],
+  /** Run-of-show items, for cues on the day (I2). */
+  runOfShow = [],
   preferences,
   /** Today's checklist as shown in the app, so this morning's note matches it. */
   todayTasks = null,
@@ -139,7 +143,9 @@ export function buildReminderSchedule({
       items.push({
         type: NotificationType.DAILY_CHECKLIST,
         title:
-          picked.length === 1 ? "Today's checklist: one small thing" : `Today's checklist: ${picked.length} small things`,
+          picked.length === 1
+            ? "Today's checklist: one small thing"
+            : `Today's checklist: ${picked.length} small things`,
         body: summariseDailyTasks(picked),
         url: Routes.home,
         date: new Date(date.getFullYear(), date.getMonth(), date.getDate(), DAILY_HOUR, 0, 0),
@@ -231,7 +237,10 @@ export function buildReminderSchedule({
     if (on(NotificationType.EVENT_SOON)) {
       const when = eventWhen(event);
       const place = event.venueName?.trim();
-      const details = [when && place ? `${when} at ${place}` : when || place, event.dressCode?.trim() && `Dress code: ${event.dressCode.trim()}`];
+      const details = [
+        when && place ? `${when} at ${place}` : when || place,
+        event.dressCode?.trim() && `Dress code: ${event.dressCode.trim()}`,
+      ];
       items.push({
         type: NotificationType.EVENT_SOON,
         title: `${name} is in ${EVENT_SOON_DAYS} days`,
@@ -250,7 +259,10 @@ export function buildReminderSchedule({
       items.push({
         type: NotificationType.CATERER_NUMBERS,
         title: `Final numbers for the ${name}`,
-        body: awaiting > 0 ? `${plates} so far, ${awaiting} still to answer.` : `${plates}. Everyone has answered.`,
+        body:
+          awaiting > 0
+            ? `${plates} so far, ${awaiting} still to answer.`
+            : `${plates}. Everyone has answered.`,
         name,
         url: Routes.guestMealsFor(event.id),
         date: at(event.date, -CATERER_DAYS),
@@ -263,11 +275,14 @@ export function buildReminderSchedule({
     for (const appointment of upcomingAppointments(vendors, { today, limit: Infinity })) {
       const label = appointmentLabel(appointment);
       const minutes = fromClock(appointment.time);
-      const details = [minutes === null ? '' : formatTime(minutes), appointment.place].filter(Boolean).join(' at ');
+      const details = [minutes === null ? '' : formatTime(minutes), appointment.place]
+        .filter(Boolean)
+        .join(' at ');
       items.push({
         type: NotificationType.VENDOR_APPOINTMENT,
         title: `Tomorrow: ${label.toLowerCase()} with ${appointment.vendorName}`,
-        body: [details, appointment.notes].filter(Boolean).join('. ') || 'Open the vendor to check the details.',
+        body:
+          [details, appointment.notes].filter(Boolean).join('. ') || 'Open the vendor to check the details.',
         name: `${label} with ${appointment.vendorName}`,
         url: Routes.vendorDetail(appointment.vendorId),
         date: at(appointment.date, -1, EVENING_HOUR),
@@ -276,10 +291,11 @@ export function buildReminderSchedule({
   }
 
   const weeklyOn = on(NotificationType.WEEKLY_DIGEST);
-  const dated = capPerDay(
-    mergeSameDay(items.filter((item) => item.date.getTime() > now.getTime())),
-    weeklyOn
-  ).sort((a, b) => a.date - b.date);
+  const dated = [
+    ...capPerDay(mergeSameDay(items.filter((item) => item.date.getTime() > now.getTime())), weeklyOn),
+    // Cues are minutes apart on one day, so they are neither folded nor capped.
+    ...(on(NotificationType.RUN_OF_SHOW_CUE) ? runOfShowCues({ runOfShow, events, wedding, now }) : []),
+  ].sort((a, b) => a.date - b.date);
 
   const weekly = weeklyOn
     ? [
@@ -294,6 +310,24 @@ export function buildReminderSchedule({
     : [];
 
   return [...weekly, ...dated].slice(0, MAX_SCHEDULED);
+}
+
+/**
+ * "In 10 min: Ceremony" before each run-of-show item on the day (I2). Items
+ * starting together share one cue; tapping it opens that day's run of show.
+ */
+function runOfShowCues({ runOfShow, events, wedding, now }) {
+  return upcomingCues({ items: runOfShow, events, wedding, now }).map(({ date, eventId, items }) => {
+    const [first] = items;
+    const details = [formatTime(first.start), first.location, first.owner].filter(Boolean).join(' · ');
+    return {
+      type: NotificationType.RUN_OF_SHOW_CUE,
+      title: `In ${CUE_LIMITS.leadMin} min: ${items.map((item) => item.title).join(' and ')}`,
+      body: items.length > 1 ? formatTime(first.start) : details,
+      url: Routes.runOfShow(eventId),
+      date,
+    };
+  });
 }
 
 /** Per-type wording for several reminders folded into one. */
