@@ -79,21 +79,27 @@ export function buildBackup(slices = [], { createdAt = new Date().toISOString(),
   });
 }
 
+/** `{ byId, allIds }` rebuilt from only valid records, or an error message. */
 function readMany(value, label) {
   if (value === null || value === undefined) return { value: { byId: {}, allIds: [] } };
   if (!isRecord(value) || !isRecord(value.byId) || !Array.isArray(value.allIds)) {
-    return { error: `The ${label} collection is not a valid list.` };
+    return { error: `The ${label} in this backup are damaged.` };
   }
-  if (value.allIds.length > BACKUP_LIMITS.recordsPerCollection) {
-    return { error: `The ${label} collection is too large.` };
-  }
+  if (value.allIds.length > BACKUP_LIMITS.recordsPerCollection)
+    return { error: `This backup has too many ${label}.` };
   const byId = {};
   const allIds = [];
   for (const id of value.allIds) {
-    if (!isId(id)) return { error: `Invalid id in ${label}.` };
-    const rec = value.byId[id];
-    if (!isRecord(rec)) return { error: `Invalid record in ${label}.` };
-    byId[id] = rec;
+    const record = Object.prototype.hasOwnProperty.call(value.byId, id) ? value.byId[id] : undefined;
+    if (
+      !isId(id) ||
+      !isRecord(record) ||
+      record.id !== id ||
+      Object.prototype.hasOwnProperty.call(byId, id)
+    ) {
+      return { error: `The ${label} in this backup are damaged.` };
+    }
+    byId[id] = record;
     allIds.push(id);
   }
   return { value: { byId, allIds } };
@@ -101,82 +107,70 @@ function readMany(value, label) {
 
 function readOne(value, label) {
   if (value === null || value === undefined) return { value: null };
-  if (!isRecord(value)) return { error: `The ${label} record is invalid.` };
+  if (!isRecord(value) || !isId(value.id)) return { error: `The ${label} in this backup is damaged.` };
   return { value };
 }
 
 /**
- * Parse and validate a backup file string.
- * Returns { ok, error?, data?, counts?, createdAt?, version? }
+ * Check a backup's text. `known` is `[{ collection, kind, label }]`, the
+ * collections this version of the app restores. Resolves
+ * `{ ok: true, createdAt, label, deviceName, collections, counts, totalRecords }`
+ * or `{ ok: false, error }`.
+ * Collections the app does not know (from a newer version) are left out.
  */
-export function readBackup(text) {
-  if (typeof text !== 'string') return { ok: false, error: 'Backup must be text.' };
-  if (text.length > BACKUP_LIMITS.textChars) return { ok: false, error: 'Backup file is too large.' };
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return { ok: false, error: 'Backup is not valid JSON.' };
-  }
-  if (!isRecord(parsed)) return { ok: false, error: 'Backup root is invalid.' };
-  if (parsed.format !== BACKUP_FORMAT) return { ok: false, error: 'Not a WeddingGPT backup file.' };
-  if (parsed.version !== BACKUP_VERSION) return { ok: false, error: `Unsupported backup version (${parsed.version}).` };
-  if (!isRecord(parsed.collections)) return { ok: false, error: 'Backup has no collections.' };
+export function readBackup(text, known = []) {
+  const source = String(text ?? '').trim();
+  if (!source) return { ok: false, error: 'Choose a backup file, or paste one.' };
+  if (source.length > BACKUP_LIMITS.textChars)
+    return { ok: false, error: 'That file is too large to be a backup.' };
 
-  const content = JSON.stringify(parsed.collections);
-  if (parsed.checksum && parsed.checksum !== checksum(content)) {
-    return { ok: false, error: 'Backup checksum does not match — file may be damaged.' };
+  let raw;
+  try {
+    raw = JSON.parse(source);
+  } catch {
+    return { ok: false, error: 'That is not a WeddingGPT backup.' };
+  }
+  if (!isRecord(raw) || raw.format !== BACKUP_FORMAT || !isRecord(raw.collections)) {
+    return { ok: false, error: 'That is not a WeddingGPT backup.' };
+  }
+  if (!Number.isInteger(raw.version) || raw.version > BACKUP_VERSION) {
+    return { ok: false, error: 'This backup was made by a newer version of the app. Update the app first.' };
+  }
+  if (raw.checksum !== checksum(JSON.stringify(raw.collections))) {
+    return { ok: false, error: 'This backup has been changed or cut off since it was made.' };
   }
 
   const collections = {};
   const counts = [];
-  let totalRecords = 0;
-
-  for (const [name, value] of Object.entries(parsed.collections)) {
-    if (typeof name !== 'string' || !name) {
-      return { ok: false, error: 'Invalid collection name.' };
-    }
-    // Heuristic: objects with byId+allIds are "many"
-    const isMany = isRecord(value) && isRecord(value?.byId) && Array.isArray(value?.allIds);
-    const result = isMany || value === null || value === undefined
-      ? (isMany || value == null ? readMany(value, name) : readOne(value, name))
-      : readOne(value, name);
-    // Prefer many when shape matches
-    const manyTry = readMany(value, name);
-    const oneTry = readOne(value, name);
-    let chosen;
-    if (!manyTry.error && (isMany || value == null)) chosen = manyTry;
-    else if (!oneTry.error) chosen = oneTry;
-    else chosen = manyTry.error ? oneTry : manyTry;
-    if (chosen.error) return { ok: false, error: chosen.error };
-    collections[name] = chosen.value;
-    const count = chosen.value && chosen.value.allIds
-      ? chosen.value.allIds.length
-      : chosen.value ? 1 : 0;
-    counts.push({ collection: name, count });
-    totalRecords += count;
+  for (const { collection, kind, label } of known) {
+    const read =
+      kind === 'one'
+        ? readOne(raw.collections[collection], label)
+        : readMany(raw.collections[collection], label);
+    if (read.error) return { ok: false, error: read.error };
+    collections[collection] = read.value;
+    counts.push({
+      collection,
+      label,
+      count: kind === 'one' ? (read.value ? 1 : 0) : read.value.allIds.length,
+    });
   }
+  if (!collections.wedding) return { ok: false, error: 'This backup has no wedding in it.' };
 
   return {
     ok: true,
-    data: {
-      format: parsed.format,
-      version: parsed.version,
-      createdAt: parsed.createdAt || null,
-      label: parsed.label || null,
-      deviceName: parsed.deviceName || null,
-      collections,
-    },
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : null,
+    label: typeof raw.label === 'string' ? raw.label : null,
+    deviceName: typeof raw.deviceName === 'string' ? raw.deviceName : null,
+    collections,
     counts,
-    totalRecords,
-    createdAt: parsed.createdAt || null,
-    version: parsed.version,
+    totalRecords: counts.reduce((sum, row) => sum + row.count, 0),
   };
 }
 
-/** Lightweight check used while typing/pasting */
-export function checkBackup(text) {
-  return readBackup(text);
+/** Lightweight check used while typing/pasting. `known` as for `readBackup`. */
+export function checkBackup(text, known = []) {
+  return readBackup(text, known);
 }
 
 export function createBackupHistoryEntry(partial = {}) {
